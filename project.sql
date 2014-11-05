@@ -1,26 +1,21 @@
 ﻿--Домены:
 
 CREATE DOMAIN id AS integer;
-ALTER DOMAIN id OWNER TO aviauser;
 
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS varchar(6)
 CHECK (length(VALUE)> 3 AND length(VALUE)<6);
-ALTER DOMAIN CodeAirportHeliportDesignatorType OWNER TO aviauser;
 
 CREATE DOMAIN TextNameType AS varchar(60)
 CHECK (length(VALUE)>= 1 AND length(VALUE)=<60);
-ALTER DOMAIN TextNameType OWNER TO aviauser;
 
 -- char(4) - установленной длины (4 символа)
 CREATE DOMAIN CodeICAOType AS char(4)
 CHECK (VALUE ~ '[:upper:]{4}');
 -- previous variant: '([:upper:])' AND length(VALUE)=4);
-ALTER DOMAIN CodeICAOType OWNER TO aviauser;
 
 CREATE DOMAIN CodeIATAType AS char(3)
 CHECK (VALUE ~ '[:upper:]{3}');
 -- E'^[a-zA-z]*$' AND length(VALUE)=3);
-ALTER DOMAIN CodeIATAType OWNER TO aviauser;
 
 -- AD - только аэродром, АН - аэродром и вертодром, НР - только вертодром, LS - посадочная площадка
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
@@ -42,12 +37,10 @@ CREATE TYPE CodeMilitaryOperationsType AS enum ('CIVIL', 'MIL', 'JOINT', 'OTHER'
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
 CREATE DOMAIN ValDistanceVerticalType AS varchar
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|UNL|GND|FLOOR|CEILING');
-ALTER DOMAIN ValDistanceVerticalType  OWNER TO aviauser;
 
 -- вообще в AIXM приведены три используемых датума: EGM_96, AHD, NAVD88, но я думаю что, возможно гораздо больше вариантов
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeVerticalDatumType
 CREATE DOMAIN CodeVerticalDatumType AS varchar;
-ALTER DOMAIN CodeVerticalDatumType  OWNER TO aviauser;
 
 -- значение угла в данной точке между направление на магнитный север и направлением на географический север
 -- положительное значение показывает, что магнитный север восточнее географического
@@ -55,57 +48,48 @@ ALTER DOMAIN CodeVerticalDatumType  OWNER TO aviauser;
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationType
 CREATE DOMAIN ValMagneticVariationType AS REAL
 CHECK (VALUE >= -180 AND VALUE <=180);
-ALTER DOMAIN ValMagneticVariationType  OWNER TO aviauser;
 
 -- значение угла
 -- предлагаю объединить этот тип с предыдущим и сделать один, так как они одинаковые
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValAngleType
 CREATE DOMAIN ValAngleType AS REAL
 CHECK (VALUE >= -180 AND VALUE <=180);
-ALTER DOMAIN ValAngleType  OWNER TO aviauser;
 
 -- дата, в которой значимым является только год
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
 CREATE DOMAIN DateYearType AS INTEGER
 CHECK (VALUE ~ '[1-9][0-9][0-9][0-9]');
-ALTER DOMAIN DateYearType  OWNER TO aviauser;
 
 -- величина годового изменения магнитного склонения, единицы измерения - градус/год
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationChangeType
 CREATE DOMAIN ValMagneticVariationChangeType AS REAL
 CHECK (VALUE >= -180 AND VALUE <=180);
-ALTER DOMAIN ValMagneticVariationChangeType OWNER TO aviauser;
 
 -- значение температуры + единицы измерения: С - градусы Цельсия, F - Фаренгейта, К - Кельвина
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValTemperatureType
 CREATE DOMAIN ValTemperatureType AS VARCHAR
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|C|F|K');
-ALTER DOMAIN ValTemperatureType OWNER TO aviauser;
 
 -- единицы измерения: FL - уровень полёта в сотнях футов, SM - стандратные метры (десятки метров)
 -- ставить ли здесь единицы измерения? не очень корректно получится, так как есть ограничение 999 (FL), а как сравнивать не числовое значение с числом?
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
 CREATE DOMAIN ValFLType AS VARCHAR
 CHECK (VALUE ~ '({0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|FL|SM' AND VALUE > 999);
-ALTER DOMAIN ValFLType OWNER TO aviauser;
 
 -- дата по календарю
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateType
 CREATE DOMAIN DateType AS DATE;
-ALTER DOMAIN  DateType OWNER TO aviauser;
 
 
 -- единицы измерения: NM - морские мили, KM - километры, М - метры, FT - футы, MI - мили, CM - сантиметры
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
 CREATE DOMAIN ValDistanceSignedType AS VARCHAR
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|NM|KM|M|FT|MI|CM');
-ALTER DOMAIN  ValDistanceSignedType OWNER TO aviauser;
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
 CREATE DOMAIN ValDistanceType AS VARCHAR
 CHECK (VALUE ~ '({0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|NM|KM|M|FT|MI|CM');
-ALTER DOMAIN  ValDistanceType OWNER TO aviauser;
 
 -- NORMAL - стандартные операции
 -- DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
@@ -119,14 +103,12 @@ CREATE TYPE CodeStatusOperationsType AS ENUM ('NORMAL', 'DOWNGRADED', 'UNSERVICE
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
 CREATE DOMAIN CodeOrganisationDesignatorType AS VARCHAR(12)
 CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*' and length(VALUE )>=1);
-ALTER DOMAIN CodeOrganisationDesignatorType OWNER TO aviauser;
 
 -- код, указывающий на тип организации
 -- STATE - область, STATE_GROUP - группа областей, ORG - организация в области,
 -- INTL_ORG - международная организация, ACFT_OPR - авиационное агентство, HANDLING_AGENCY - транспортное агентство (или логистическое)
 -- NTL_AUTH - национальный департамент, ATS - постащик услуг авиаперевозок, COMMERCIAL - другая коммерческая организация
 CREATE TYPE CodeOrganisationType AS ENUM ('STATE', 'STATE_GROUP', 'ORG', 'INTL_ORG', 'ACFT_OPR', 'HANDLING_AGENCY', 'NTL_AUTH', 'ATS', 'COMMERCIAL', 'OTHER');
-
 
 
 -- Table: AirportHeliport
