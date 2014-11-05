@@ -1,6 +1,8 @@
 ﻿--Домены:
 
-CREATE DOMAIN id AS integer;
+-- В качестве id используем UUID Type
+-- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
+CREATE DOMAIN id AS UUID;
 
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS varchar(6)
 CHECK (length(VALUE)> 3 AND length(VALUE)<6);
