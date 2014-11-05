@@ -134,7 +134,7 @@ CREATE TYPE CodeOrganisationType AS ENUM ('STATE', 'STATE_GROUP', 'ORG', 'INTL_O
 CREATE TABLE AirportHeliport
 (
 
-  uuidAirportHeliport           id PRIMARY KEY,
+  uuid           id PRIMARY KEY,
 
 -- Что мы задаём в designator:
 -- 1)4х буквенник ИКАО, если таковой имеется
@@ -234,13 +234,13 @@ CREATE TABLE AirportHeliport
 CREATE TABLE  City
  (
 -- не знаю, что будем брать за первичный ключ, поэтому пока везде так буду писать
-  uuidCity           id PRIMARY KEY,
+  uuid           id PRIMARY KEY,
 
 -- полное название города
   name TextNameType,
 
 -- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и City
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuidAirportHeliport)
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
 
@@ -252,7 +252,7 @@ CREATE TABLE  City
 CREATE TABLE  ElevatedPoint
  (
 -- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и ElevatedPoint
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuidAirportHeliport),
+  uuid id REFERENCES AirportHeliport (uuid),
 
 -- расстояние по вертикали от уровня моря до измеряемой точки
   elevation ValDistanceVerticalType,
@@ -271,7 +271,7 @@ CREATE TABLE  ElevatedPoint
   horizontalAccuracy ValDistanceType,
 
 -- может здесь взять составной первичный ключ? в предыдущей таблице также можно, пара uuidAirportHeliport + elevation точно не может повториться
-  PRIMARY KEY (uuidAirportHeliport, elevation)
+  PRIMARY KEY (uuid, elevation)
 );
 
 
@@ -282,9 +282,9 @@ CREATE TABLE  ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
 CREATE TABLE AltimeterSource
 (
-  uuidAltimeterSource id,
+  uuid id,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuidAirportHeliport),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
 -- далеко или близко расположен альтиметр
   isRemote CodeYesNoType,
@@ -292,7 +292,7 @@ CREATE TABLE AltimeterSource
 -- первичный или вторичный альтиметр
   isPrimary CodeYesNoType,
 
-  PRIMARY KEY (uuidAirportHeliport, uuidAltimeterSource)
+  PRIMARY KEY (uuidAirportHeliport, uuid)
 );
 
 
@@ -303,9 +303,9 @@ CREATE TABLE AltimeterSource
 CREATE TABLE AltimeterSourceStatus
 (
 -- эта таблица могла бы быть и без первичного ключа, просто с одним внешним ключом, но на нее ссылаются еще 2 таблицы, поэтому я пока оставлю здесь первичный ключ, но подумаю
-  uuidAltimeterSourceStatus          id PRIMARY KEY,
+  uuid          id PRIMARY KEY,
 
-  uuidAltimeterSource id REFERENCES AltimeterSource (uuidAltimeterSource),
+  uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
 
 -- рабочий статус
   operationalStatus CodeStatusOperationsType
@@ -318,9 +318,9 @@ CREATE TABLE AltimeterSourceStatus
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE  OrganisationAuthority
 (
-  uuidOrganisationAuthority id PRIMARY KEY,
+  uuid id PRIMARY KEY,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuidAirportHeliport),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
 -- полное официальное название штата, области, организации, департамента, авиационного агентства (aircraft operating agency)
   name TextNameType,
