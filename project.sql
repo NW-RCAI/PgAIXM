@@ -9,13 +9,12 @@ CREATE DOMAIN id AS UUID;
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(6)
-CHECK (length(VALUE) > 3 AND length(VALUE) < 6);
+CHECK (VALUE ~ '[:upper:]{3,4}|[:upper:]{2}[0-9]{4}');
 
 -- Используется для названий с максимальной длинной в 60 символов
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextNameType
-CREATE DOMAIN TextNameType AS VARCHAR(60)
-CHECK (length(VALUE) >= 1 AND length(VALUE) =< 60);
+CREATE DOMAIN TextNameType AS VARCHAR(60);
 
 -- Четырехбуквенный индекс аэродрома ICAO (http://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code)
 --
