@@ -1,94 +1,138 @@
 ﻿--Домены:
 
 -- В качестве id используем UUID Type
+--
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
 CREATE DOMAIN id AS UUID;
 
+-- Уникальный индификатор для аэродрома/вертодрома
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(6)
 CHECK (length(VALUE) > 3 AND length(VALUE) < 6);
 
+-- Используется для названий с максимальной длинной в 60 символов
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextNameType
 CREATE DOMAIN TextNameType AS VARCHAR(60)
 CHECK (length(VALUE) >= 1 AND length(VALUE) =< 60);
 
--- char(4) - установленной длины (4 символа)
+-- Четырехбуквенный индекс аэродрома ICAO (http://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
 CREATE DOMAIN CodeICAOType AS CHAR(4)
 CHECK (VALUE ~ '[:upper:]{4}');
--- previous variant: '([:upper:])' AND length(VALUE)=4);
 
+-- Трехбуквенный индекс аэродрома IATA (http://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
 CREATE DOMAIN CodeIATAType AS CHAR(3)
 CHECK (VALUE ~ '[:upper:]{3}');
--- E'^[a-zA-z]*$' AND length(VALUE)=3);
 
--- AD - только аэродром, АН - аэродром и вертодром, НР - только вертодром, LS - посадочная площадка
+-- Тип объекта AirportHeliport:
+-- AD - только аэродром
+-- АН - аэродром и вертодром
+-- НР - только вертодром
+-- LS - посадочная площадка
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
 CREATE TYPE CodeAirportHeliportType AS ENUM ('AD', 'AH', 'HP', 'LS', 'OTHER');
 
+--  Тип данных для хранения значений: Да или Нет
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
 CREATE TYPE CodeYesNoType AS ENUM ('YES', 'NO', 'OTHER');
 
--- CIVIL - только гражданская авиация, MIL - только военная авиация, JOINT - и гражданская, и военная авиация
+-- Признак принадлежности к военным:
+-- CIVIL - только гражданская авиация
+-- MIL - только военная авиация
+-- JOINT - совместного использования
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
 CREATE TYPE CodeMilitaryOperationsType AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER');
 
--- значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства)
--- этот тип данных также допускает некоторые специфические не числовые значения:
+-- Значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства).
+-- Этот тип данных также допускает некоторые специфические не числовые значения:
 -- GND - значение "Поверхность Земли"
 -- UNL - значение "неограниченный"
 -- FLOOR - значение "основание (дно) воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной нижней границей
 -- CEILING - значение "верх воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной верхней границей
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
 CREATE DOMAIN ValDistanceVerticalType AS VARCHAR
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|UNL|GND|FLOOR|CEILING');
 
--- вообще в AIXM приведены три используемых датума: EGM_96, AHD, NAVD88, но я думаю что, возможно гораздо больше вариантов
+-- Вообще в AIXM приведены три используемых датума: EGM_96, AHD, NAVD88, но я думаю что, возможно гораздо больше вариантов
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeVerticalDatumType
 CREATE DOMAIN CodeVerticalDatumType AS VARCHAR;
 
--- значение угла в данной точке между направление на магнитный север и направлением на географический север
--- положительное значение показывает, что магнитный север восточнее географического
--- отрицательное значение показывает, что магнитный север западнее географического
+-- Значение угла в данной точке между направление на магнитный север и направлением на географический север.
+-- Положительное значение показывает, что магнитный север восточнее географического.
+-- Отрицательное значение показывает, что магнитный север западнее географического.
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationType
 CREATE DOMAIN ValMagneticVariationType AS REAL
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
--- значение угла
+-- Значение угла.
 -- предлагаю объединить этот тип с предыдущим и сделать один, так как они одинаковые
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValAngleType
 CREATE DOMAIN ValAngleType AS REAL
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
--- дата, в которой значимым является только год
+-- Дата, в которой значимым является только год.
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
 CREATE DOMAIN DateYearType AS INTEGER
 CHECK (VALUE ~ '[1-9][0-9][0-9][0-9]');
 
--- величина годового изменения магнитного склонения, единицы измерения - градус/год
+-- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationChangeType
 CREATE DOMAIN ValMagneticVariationChangeType AS REAL
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
--- значение температуры + единицы измерения: С - градусы Цельсия, F - Фаренгейта, К - Кельвина
+-- Значение температуры + единицы измерения: 
+-- С - градусы Цельсия
+-- F - Фаренгейта
+-- К - Кельвина
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValTemperatureType
 CREATE DOMAIN ValTemperatureType AS VARCHAR
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|C|F|K');
 
--- единицы измерения: FL - уровень полёта в сотнях футов, SM - стандратные метры (десятки метров)
+-- Единицы измерения: 
+-- FL - эшелон
+-- SM - стандратные метры (десятки метров)
 -- ставить ли здесь единицы измерения? не очень корректно получится, так как есть ограничение 999 (FL), а как сравнивать не числовое значение с числом?
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
 CREATE DOMAIN ValFLType AS VARCHAR
 CHECK (VALUE ~ '({0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|FL|SM' AND VALUE > 999);
 
--- дата по календарю
+-- Дата по календарю.
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateType
 CREATE DOMAIN DateType AS DATE;
 
 
--- единицы измерения: NM - морские мили, KM - километры, М - метры, FT - футы, MI - мили, CM - сантиметры
+-- Единицы измерения: 
+-- NM - морские мили
+-- KM - километры
+-- М - метры
+-- FT - футы
+-- MI - мили
+-- CM - сантиметры
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
 CREATE DOMAIN ValDistanceSignedType AS VARCHAR
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|NM|KM|M|FT|MI|CM');
 
+--
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
 CREATE DOMAIN ValDistanceType AS VARCHAR
 CHECK (VALUE ~ '({0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|NM|KM|M|FT|MI|CM');
@@ -97,11 +141,13 @@ CHECK (VALUE ~ '({0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|NM|KM|M|FT|MI|CM');
 -- DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
 -- UNSERVICEABLE - не пригодна для эксплуатации
 -- WORK_IN_PROGRESS - работа налаживается (в ремонте) - under construction
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusOperationsType
 CREATE TYPE CodeStatusOperationsType AS ENUM ('NORMAL', 'DOWNGRADED', 'UNSERVICEABLE', 'WORK_IN_PROGRESS', 'OTHER');
 
 -- закодированный идентификатор организации, департамента, агенства или объединения
 -- Максимальная длина = 12, минимальная = 1
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
 CREATE DOMAIN CodeOrganisationDesignatorType AS VARCHAR(12)
 CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*' AND length(VALUE) >= 1);
@@ -110,11 +156,14 @@ CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*' AND length(VALUE) >= 1
 -- STATE - область, STATE_GROUP - группа областей, ORG - организация в области,
 -- INTL_ORG - международная организация, ACFT_OPR - авиационное агентство, HANDLING_AGENCY - транспортное агентство (или логистическое)
 -- NTL_AUTH - национальный департамент, ATS - постащик услуг авиаперевозок, COMMERCIAL - другая коммерческая организация
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationType
 CREATE TYPE CodeOrganisationType AS ENUM ('STATE', 'STATE_GROUP', 'ORG', 'INTL_ORG', 'ACFT_OPR', 'HANDLING_AGENCY', 'NTL_AUTH', 'ATS', 'COMMERCIAL', 'OTHER');
 
 
 -- Table: AirportHeliport
-
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
 (
 
