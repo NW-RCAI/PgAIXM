@@ -57,7 +57,7 @@ CREATE TYPE CodeMilitaryOperationsType AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER'
 -- SM - standard meters (tens of meters)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceVerticalType
-CREATE TYPE  UomDistanceVerticalType AS ENUM ('FT', 'M', 'FL', 'SM', 'OTHER');
+CREATE TYPE UomDistanceVerticalType AS ENUM ('FT', 'M', 'FL', 'SM', 'OTHER');
 
 -- Значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства).
 -- Этот тип данных также допускает некоторые специфические не числовые значения:
@@ -71,7 +71,7 @@ CREATE DOMAIN ValDistanceVerticalBaseType AS VARCHAR(14)
 CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|UNL|GND|FLOOR|CEILING');
 CREATE TYPE ValDistanceVerticalType AS (
   value ValDistanceVerticalBaseType,
-  unit UomDistanceVerticalType
+  unit  UomDistanceVerticalType
 );
 
 -- Вообще в AIXM приведены три используемых датума: EGM_96, AHD (Australian Height Datum), NAVD88 (North American Vertical Datum of 1988), но я думаю что, возможно гораздо больше вариантов
@@ -84,14 +84,14 @@ CREATE DOMAIN CodeVerticalDatumType AS VARCHAR;
 -- Отрицательное значение показывает, что магнитный север западнее географического.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationType
-CREATE DOMAIN ValMagneticVariationType AS DECIMAL(3,10)
+CREATE DOMAIN ValMagneticVariationType AS DECIMAL(3, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- Значение угла.
 -- предлагаю объединить этот тип с предыдущим и сделать один, так как они одинаковые
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValAngleType
-CREATE DOMAIN ValAngleType AS DECIMAL(3,10)
+CREATE DOMAIN ValAngleType AS DECIMAL(3, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- Дата, в которой значимым является только год.
@@ -104,7 +104,7 @@ CHECK (VALUE ~ '[1-9][0-9][0-9][0-9]');
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationChangeType
-CREATE DOMAIN ValMagneticVariationChangeType AS DECIMAL(3,10)
+CREATE DOMAIN ValMagneticVariationChangeType AS DECIMAL(3, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- A unit of measurement for temperature.
@@ -113,14 +113,14 @@ CHECK (VALUE >= -180 AND VALUE <= 180);
 -- K - degrees Kelvin
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
-CREATE TYPE  UomTemperatureType AS ENUM ('C', 'F', 'K', 'OTHER');
+CREATE TYPE UomTemperatureType AS ENUM ('C', 'F', 'K', 'OTHER');
 
 -- Значение температуры.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValTemperatureType
 CREATE TYPE ValTemperatureType AS (
-  value DECIMAL(3,10),
-  unit UomTemperatureType
+  value DECIMAL(3, 10),
+  unit  UomTemperatureType
 );
 
 
@@ -129,13 +129,13 @@ CREATE TYPE ValTemperatureType AS (
 -- SM - standard meters (tens of meters)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFLType
-CREATE TYPE  UomFLType AS ENUM ('FL', 'SM', 'OTHER');
+CREATE TYPE UomFLType AS ENUM ('FL', 'SM', 'OTHER');
 
 -- A value expressed in flight levels (FL).
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
 CREATE DOMAIN ValFLBaseType AS SMALLINT
-CHECK (VALUE <999);
+CHECK (VALUE < 999);
 CREATE TYPE ValFLType AS (
   value ValFLBaseType,
   unit  UomFLType
@@ -156,24 +156,24 @@ CREATE DOMAIN DateType AS DATE;
 -- CM - сантиметры
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceType
-CREATE TYPE  UomDistanceType AS ENUM ('NM', 'KM', 'M', 'FT', 'MI', 'CM', 'OTHER');
+CREATE TYPE UomDistanceType AS ENUM ('NM', 'KM', 'M', 'FT', 'MI', 'CM', 'OTHER');
 
 -- A signed distance.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
 CREATE TYPE ValDistanceSignedType AS (
-  value DECIMAL(10,20),
-  unit UomDistanceType
+  value DECIMAL(10, 20),
+  unit  UomDistanceType
 );
 
 -- A (positive) distance.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
-CREATE DOMAIN ValDistanceBaseType AS DECIMAL(10,20)
-CHECK (VALUE >0);
+CREATE DOMAIN ValDistanceBaseType AS DECIMAL(10, 20)
+CHECK (VALUE > 0);
 CREATE TYPE ValDistanceType AS (
   value ValDistanceBaseType,
-  unit UomDistanceType
+  unit  UomDistanceType
 );
 
 -- Code indicating operational status:
@@ -228,20 +228,20 @@ CREATE DOMAIN DateTimeType AS TIMESTAMP WITH TIME ZONE;
 -- FT - футы
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDepthType
-CREATE TYPE  UomDepthType AS ENUM ('MM', 'CM', 'IN', 'FT', 'OTHER');
+CREATE TYPE UomDepthType AS ENUM ('MM', 'CM', 'IN', 'FT', 'OTHER');
 
 -- The value of a depth.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
 CREATE TYPE ValDepthType AS (
-  value DECIMAL(10,20),
-  unit UomDepthType
+  value DECIMAL(10, 20),
+  unit  UomDepthType
 );
 
 -- Значение коэффициента трения.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
-CREATE DOMAIN ValFrictionType AS DECIMAL(0,2)
+CREATE DOMAIN ValFrictionType AS DECIMAL(0, 2)
 CHECK ( VALUE ~ '0\.[0-9]{2}');
 
 -- Качественная оценка трения на ВВП:
@@ -273,13 +273,13 @@ CREATE TYPE CodeFrictionDeviceType AS ENUM ('BRD', 'GRT', 'MUM', 'RFT', 'SFH', '
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
 CREATE DOMAIN TimeType AS CHAR(5)
-CHECK (VALUE  ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
+CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 
 -- A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
-CREATE DOMAIN ValPercentType AS DECIMAL(3,4)
-CHECK (VALUE >=0 AND VALUE =< 100);
+CREATE DOMAIN ValPercentType AS DECIMAL(3, 4)
+CHECK (VALUE >= 0 AND VALUE =< 100);
 
 
 -- Table: AirportHeliport
@@ -404,25 +404,25 @@ CREATE TABLE City
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  uuid id PRIMARY KEY ,
+  uuid                id PRIMARY KEY,
 -- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и ElevatedPoint
-  uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
 -- расстояние по вертикали от уровня моря до измеряемой точки
-  elevation          ValDistanceVerticalType,
+  elevation           ValDistanceVerticalType,
 
 -- расстояние до геоида сверху (положительное) или снизу (отрицательное) от математического референц-эллипсоида в данной точке
-  geoidUndulation    ValDistanceSignedType,
+  geoidUndulation     ValDistanceSignedType,
 
 -- набор опорных точек или математическая модель поверхности Земли (датум)
-  verticalDatum      CodeVerticalDatumType,
+  verticalDatum       CodeVerticalDatumType,
 
 -- разница между записанной высотой точки и ее реальным значением, отнесенным к тому же вертикальному датуму, выражается как линейное отклонение с вероятностью 95%
-  verticalAccuracy   ValDistanceType,
+  verticalAccuracy    ValDistanceType,
 
 -- разница между записанными горизонтальными координатами объекта и его реальным положением, отнесенным к тому же геодезическому датуму, выражается как круговое отклонение с вероятностью 95%
 -- этот атрибут наследуется из табл.Point
-  horizontalAccuracy ValDistanceType
+  horizontalAccuracy  ValDistanceType
 );
 
 
@@ -434,21 +434,20 @@ CREATE TABLE ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
-  uuid id PRIMARY KEY ,
+  uuid                id PRIMARY KEY,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid) ,
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
-  elevation ValDistanceVerticalType,
+  elevation           ValDistanceVerticalType,
 
-  geoidUndulation ValDistanceSignedType,
+  geoidUndulation     ValDistanceSignedType,
 
-  verticalDatum CodeVerticalDatumType,
+  verticalDatum       CodeVerticalDatumType,
 
-  verticalAccuracy ValDistanceType,
+  verticalAccuracy    ValDistanceType,
 
-  horizontalAccuracy ValDistanceType
+  horizontalAccuracy  ValDistanceType
 );
-
 
 
 -- Table: AirportHotSpot
@@ -460,21 +459,20 @@ CREATE TABLE ElevatedSurface
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
 CREATE TABLE AirportHotSpot
 (
-  uuid id PRIMARY KEY ,
+  uuid                id PRIMARY KEY,
 
 -- ссылка на то, к какому Elevated Surface относится
-  uuidElevatedSurface id REFERENCES ElevatedSurface (uuid) ,
+  uuidElevatedSurface id REFERENCES ElevatedSurface (uuid),
 
 -- на какой аэропорт влияет
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
 -- закодированный идентификатор, которым горячая точка (hot spot) помечена на картах аэропорта
-  designator TextDesignatorType,
+  designator          TextDesignatorType,
 
 -- действие, которое должен предпринять экипаж и/или водитель транспортного средства при приближении к горячей точке
-  instruction TextInstructionType
+  instruction         TextInstructionType
 );
-
 
 
 -- Table: AltimeterSourceStatus
@@ -486,10 +484,10 @@ CREATE TABLE AltimeterSourceStatus
 (
 -- Это будет таблица источников альтиметрии
 -- порядковый номер прибора альтиметрии:
-  uuid                id PRIMARY KEY,
+  uuid              id PRIMARY KEY,
 
 -- рабочий статус
-  operationalStatus   CodeStatusOperationsType
+  operationalStatus CodeStatusOperationsType
 );
 
 
@@ -502,7 +500,7 @@ CREATE TABLE AltimeterSourceStatus
 CREATE TABLE AltimeterSource
 (
 -- порядковый номер прибора альтиметрии
-  uuidAltimeterSource  id REFERENCES AltimeterSourceStatus (uuid),
+  uuidAltimeterSource id REFERENCES AltimeterSourceStatus (uuid),
 
 -- порядковый номер аэродрома/вертодрома
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
@@ -514,11 +512,8 @@ CREATE TABLE AltimeterSource
   isPrimary           CodeYesNoType,
 
 -- связь теперь должна быть многие ко многим - у любой AltimeterSource могут быть любые AirportHeliport, комбинация всегда будет уникальна
-  PRIMARY KEY ( uuidAltimeterSource, uuidAirportHeliport)
+  PRIMARY KEY (uuidAltimeterSource, uuidAirportHeliport)
 );
-
-
-
 
 
 -- Table: OrganisationAuthority
@@ -555,19 +550,18 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  uuid                id PRIMARY KEY,
+  uuid                  id PRIMARY KEY,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuidAirportHeliport   id REFERENCES AirportHeliport (uuid),
 
   uuidAirportHeliportid id REFERENCES OrganisationAuthority (uuid),
 
 -- официальное имя контакте
-  name TextNameType,
+  name                  TextNameType,
 
 -- официальное название контаки
-  title TextNameType
+  title                 TextNameType
 );
-
 
 
 -- Table: AirportHeliportContamination
@@ -579,39 +573,39 @@ CREATE TABLE ContactInformation
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
-  uuid id PRIMARY KEY,
+  uuid                  id PRIMARY KEY,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuidAirportHeliport   id REFERENCES AirportHeliport (uuid),
 
 -- дата и время произведения измерений (UTC)
-  observationTime DateTimeType,
+  observationTime       DateTimeType,
 
-  -- глубина загрязнения на поверхности
-  depth ValDepthType,
+-- глубина загрязнения на поверхности
+  depth                 ValDepthType,
 
-  -- средний коэффициент трения
-  frictionCoefficient ValFrictionType,
+-- средний коэффициент трения
+  frictionCoefficient   ValFrictionType,
 
-  -- качественная оценка трения
-  frictionEstimation CodeFrictionEstimateType,
+-- качественная оценка трения
+  frictionEstimation    CodeFrictionEstimateType,
 
-  -- тип оборудования, использованного для определения объявленного коэффициента трения
-  frictionDevice CodeFrictionDeviceType,
+-- тип оборудования, использованного для определения объявленного коэффициента трения
+  frictionDevice        CodeFrictionDeviceType,
 
-  -- неясное освещение поверхности
-  obscuredLights CodeYesNoType,
+-- неясное освещение поверхности
+  obscuredLights        CodeYesNoType,
 
-  -- дата и время (UTC), когда ожидается
-  furtherClearanceTime TimeType,
+-- дата и время (UTC), когда ожидается
+  furtherClearanceTime  TimeType,
 
-  -- показывает, что ожидается общая очистка территории
+-- показывает, что ожидается общая очистка территории
   furtherTotalClearance CodeYesNoType,
 
-  -- дата и время следующего планируемого отчета по измерениям (UTC)
-  nextObservationTime DateTimeType,
+-- дата и время следующего планируемого отчета по измерениям (UTC)
+  nextObservationTime   DateTimeType,
 
-  -- процент загрязнённой площади от всей территории
-  proportion ValPercentType
+-- процент загрязнённой площади от всей территории
+  proportion            ValPercentType
 );
 
 -- Table: SurveyControlPoint
@@ -622,12 +616,12 @@ CREATE TABLE AirportHeliportContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
 (
-  uuid id PRIMARY KEY,
+  uuid                id PRIMARY KEY,
 
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
-  uuidElevatedPoint id REFERENCES ElevatedPoint (uuid),
+  uuidElevatedPoint   id REFERENCES ElevatedPoint (uuid),
 
-  -- идентификатор опорной точки
-  designator TextNameType
+-- идентификатор опорной точки
+  designator          TextNameType
 );
