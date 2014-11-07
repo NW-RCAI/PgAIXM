@@ -50,6 +50,15 @@ CREATE TYPE CodeYesNoType AS ENUM ('YES', 'NO', 'OTHER');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
 CREATE TYPE CodeMilitaryOperationsType AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER');
 
+-- A unit of measurement for a vertical distance:
+-- FT - feet
+-- M - meters
+-- FL - flight level in hundreds of feet
+-- SM - standard meters (tens of meters)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceVerticalType
+CREATE TYPE  UomDistanceVerticalType AS ENUM ('FT', 'M', 'FL', 'SM', 'OTHER');
+
 -- Значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства).
 -- Этот тип данных также допускает некоторые специфические не числовые значения:
 -- GND - значение "Поверхность Земли"
@@ -58,10 +67,11 @@ CREATE TYPE CodeMilitaryOperationsType AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER'
 -- CEILING - значение "верх воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной верхней границей
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
-CREATE TYPE  UomDistanceVerticalType AS ENUM ('UNL', 'GND', 'FLOOR', 'CEILING', 'OTHER');
+CREATE DOMAIN ValDistanceVerticalBaseType AS VARCHAR(14)
+CHECK (VALUE ~ '((\+|\-){0,1}[0-9]{1,8}(\.[0-9]{1,4}){0,1})|UNL|GND|FLOOR|CEILING');
 CREATE TYPE ValDistanceVerticalType AS (
- ValDistanceVertical REAL,
-  units UomDistanceVerticalType
+  value ValDistanceVerticalBaseType,
+  unit UomDistanceVerticalType
 );
 
 -- Вообще в AIXM приведены три используемых датума: EGM_96, AHD (Australian Height Datum), NAVD88 (North American Vertical Datum of 1988), но я думаю что, возможно гораздо больше вариантов
@@ -74,63 +84,70 @@ CREATE DOMAIN CodeVerticalDatumType AS VARCHAR;
 -- Отрицательное значение показывает, что магнитный север западнее географического.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationType
-CREATE DOMAIN ValMagneticVariationType AS REAL
+CREATE DOMAIN ValMagneticVariationType AS DECIMAL(3,10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- Значение угла.
 -- предлагаю объединить этот тип с предыдущим и сделать один, так как они одинаковые
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValAngleType
-CREATE DOMAIN ValAngleType AS REAL
+CREATE DOMAIN ValAngleType AS DECIMAL(3,10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- Дата, в которой значимым является только год.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
-CREATE DOMAIN DateYearType AS INTEGER
+CREATE DOMAIN DateYearType AS SMALLINT
 CHECK (VALUE ~ '[1-9][0-9][0-9][0-9]');
 
 -- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationChangeType
-CREATE DOMAIN ValMagneticVariationChangeType AS REAL
+CREATE DOMAIN ValMagneticVariationChangeType AS DECIMAL(3,10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
--- Значение температуры + единицы измерения: 
--- С - градусы Цельсия
--- F - Фаренгейта
--- К - Кельвина
+-- A unit of measurement for temperature.
+-- C - degrees Celsius
+-- F - degrees Fahrenheit
+-- K - degrees Kelvin
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
+CREATE TYPE  UomTemperatureType AS ENUM ('C', 'F', 'K', 'OTHER');
+
+-- Значение температуры.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValTemperatureType
-CREATE TYPE  UomTemperatureType AS ENUM ('C', 'F', 'K', 'OTHER');
 CREATE TYPE ValTemperatureType AS (
-  ValTemperature REAL,
-  units UomTemperatureType
+  value DECIMAL(3,10),
+  unit UomTemperatureType
 );
 
--- Единицы измерения: 
--- FL - эшелон
--- SM - стандратные метры (десятки метров)
--- ставить ли здесь единицы измерения? не очень корректно получится, так как есть ограничение 999 (FL), а как сравнивать не числовое значение с числом?
+
+-- Unit of measurement for flight levels
+-- FL - flight level in hundreds of feet
+-- SM - standard meters (tens of meters)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFLType
+CREATE TYPE  UomFLType AS ENUM ('FL', 'SM', 'OTHER');
+
+-- A value expressed in flight levels (FL).
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
-CREATE TYPE  UomFLType AS ENUM ('FL', 'SM', 'OTHER');
-CREATE DOMAIN ValFLBaseType AS REAL
-  CHECK (VALUE >999);
+CREATE DOMAIN ValFLBaseType AS SMALLINT
+CHECK (VALUE <999);
 CREATE TYPE ValFLType AS (
-  valueFL ValFLBaseType,
-  units  UomFLType
-    )
-;
+  value ValFLBaseType,
+  unit  UomFLType
+);
 
 -- Дата по календарю.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateType
 CREATE DOMAIN DateType AS DATE;
 
-
--- Единицы измерения: 
+-- A unit of measurement for a horizontal distance.
+-- For example, metres, feet, nautical miles, kilometres, etc...
 -- NM - морские мили
 -- KM - километры
 -- М - метры
@@ -138,22 +155,28 @@ CREATE DOMAIN DateType AS DATE;
 -- MI - мили
 -- CM - сантиметры
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceType
 CREATE TYPE  UomDistanceType AS ENUM ('NM', 'KM', 'M', 'FT', 'MI', 'CM', 'OTHER');
+
+-- A signed distance.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
 CREATE TYPE ValDistanceSignedType AS (
-  ValDistanceSigned REAL,
-  units UomDistanceType
-);
---
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
-CREATE DOMAIN  ValDistanceBaseType AS REAL
-  CHECK (VALUE >0);
-CREATE TYPE ValDistanceType AS (
-  ValDistance  ValDistanceBaseType,
-  units UomDistanceType
+  value DECIMAL(10,20),
+  unit UomDistanceType
 );
 
+-- A (positive) distance.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
+CREATE DOMAIN ValDistanceBaseType AS DECIMAL(10,20)
+CHECK (VALUE >0);
+CREATE TYPE ValDistanceType AS (
+  value ValDistanceBaseType,
+  unit UomDistanceType
+);
+
+-- Code indicating operational status:
 -- NORMAL - стандартные операции
 -- DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
 -- UNSERVICEABLE - не пригодна для эксплуатации
@@ -162,54 +185,66 @@ CREATE TYPE ValDistanceType AS (
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusOperationsType
 CREATE TYPE CodeStatusOperationsType AS ENUM ('NORMAL', 'DOWNGRADED', 'UNSERVICEABLE', 'WORK_IN_PROGRESS', 'OTHER');
 
--- закодированный идентификатор организации, департамента, агенства или объединения
--- Максимальная длина = 12, минимальная = 1
+-- Закодированный идентификатор организации, департамента, агенства или объединения.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
 CREATE DOMAIN CodeOrganisationDesignatorType AS VARCHAR(12)
-CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*' AND length(VALUE) >= 1);
+CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*');
 
--- код, указывающий на тип организации
--- STATE - область, STATE_GROUP - группа областей, ORG - организация в области,
--- INTL_ORG - международная организация, ACFT_OPR - авиационное агентство, HANDLING_AGENCY - транспортное агентство (или логистическое)
--- NTL_AUTH - национальный департамент, ATS - постащик услуг авиаперевозок, COMMERCIAL - другая коммерческая организация
+-- Код, указывающий на тип организации:
+-- STATE - область
+-- STATE_GROUP - группа областей
+-- ORG - организация в области
+-- INTL_ORG - международная организация
+-- ACFT_OPR - авиационное агентство
+-- HANDLING_AGENCY - транспортное агентство (или логистическое)
+-- NTL_AUTH - национальный департамент
+-- ATS - постащик услуг авиаперевозок
+-- COMMERCIAL - другая коммерческая организация
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationType
 CREATE TYPE CodeOrganisationType AS ENUM ('STATE', 'STATE_GROUP', 'ORG', 'INTL_ORG', 'ACFT_OPR', 'HANDLING_AGENCY', 'NTL_AUTH', 'ATS', 'COMMERCIAL', 'OTHER');
 
--- текстовое обозначение
+-- Текстовое обозначение.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextDesignatorType
 CREATE DOMAIN TextDesignatorType AS VARCHAR(16)
-CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*' AND length(VALUE) >= 1);
+CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*');
 
-CREATE DOMAIN TextInstructionType AS VARCHAR(10000)
-CHECK (length(VALUE) >= 1);
+-- A textual description of a sequence of elementary steps.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextInstructionType
+CREATE DOMAIN TextInstructionType AS VARCHAR(10000);
 
+-- A full date and time value.
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateTimeType
-CREATE DOMAIN DateTimeType AS TIMESTAMP WITHOUT TIME ZONE;
+CREATE DOMAIN DateTimeType AS TIMESTAMP WITH TIME ZONE;
 
--- единицы измерения глубины:
+-- Единицы измерения глубины:
 -- MM - миллиметры
 -- СМ - сантиметры
 -- IN - дюймы
 -- FT - футы
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDepthType
 CREATE TYPE  UomDepthType AS ENUM ('MM', 'CM', 'IN', 'FT', 'OTHER');
+
+-- The value of a depth.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
 CREATE TYPE ValDepthType AS (
-  ValDepthBaseType REAL,
-  units UomDepthType
+  value DECIMAL(10,20),
+  unit UomDepthType
 );
 
--- значение коэффициента трения, не уверена что правильно поставила его начальную границу,
--- может легчу напиать просто CHECK (VALUE >0), оно же и так с плавающей запятой...
+-- Значение коэффициента трения.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
-CREATE DOMAIN ValFrictionType AS REAL
-  CHECK ( VALUE > '0\.[0-9]{2}');
+CREATE DOMAIN ValFrictionType AS DECIMAL(0,2)
+CHECK ( VALUE ~ '0\.[0-9]{2}');
 
--- качественная оценка трения на ВВП:
+-- Качественная оценка трения на ВВП:
 -- GOOD - хорошее
 -- MEDIUM_GOOD - среднее ближе к хорошему
 -- MEDIUM - среднее
@@ -220,7 +255,7 @@ CREATE DOMAIN ValFrictionType AS REAL
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionEstimateType
 CREATE TYPE CodeFrictionEstimateType AS ENUM ('GOOD', 'MEDIUM_GOOD', 'MEDIUM', 'MEDIUM_POOR', 'POOR', 'UNRELIABLE', 'OTHER');
 
--- типы оборудования, использованного для определения коэффициента трения на ВПП
+-- Типы оборудования, использованного для определения коэффициента трения на ВПП:
 -- BRD - Brakemeter-Dynometer
 -- GRT - Grip tester
 -- MUM - Mu-meter
@@ -234,12 +269,17 @@ CREATE TYPE CodeFrictionEstimateType AS ENUM ('GOOD', 'MEDIUM_GOOD', 'MEDIUM', '
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionDeviceType
 CREATE TYPE CodeFrictionDeviceType AS ENUM ('BRD', 'GRT', 'MUM', 'RFT', 'SFH', 'SFL', 'SKH', 'SKL', 'TAP', 'OTHER');
 
--- время с точностью до 1 мин., правда я взяла тип который дает время до 1 секунды
+-- время с точностью до 1 мин.
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
-CREATE DOMAIN TimeType AS TIME WITHOUT TIME ZONE;
+CREATE DOMAIN TimeType AS CHAR(5)
+CHECK (VALUE  ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 
-CREATE DOMAIN ValPercentType AS REAL
-CHECK (VALUE >=0 AND VALUE =<100);
+-- A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
+CREATE DOMAIN ValPercentType AS DECIMAL(3,4)
+CHECK (VALUE >=0 AND VALUE =< 100);
 
 
 -- Table: AirportHeliport
