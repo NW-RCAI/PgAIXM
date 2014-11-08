@@ -103,7 +103,7 @@ AirportHeliport содержится в:
 
 0..1 ~~AirportHeliportCollocation dependentAirport~~
 
-0..1 ~~AirportHotSpot~~
+0..1 AirportHotSpot
 
 0..* ~~RulesProcedures~~
 
