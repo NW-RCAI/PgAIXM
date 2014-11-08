@@ -1,4 +1,4 @@
-﻿--Домены:
+﻿ --Домены:
 
 -- В качестве id используем UUID Type
 --
@@ -283,7 +283,6 @@ CHECK (VALUE >= 0 AND VALUE =< 100);
 
 
 -- Table: AirportHeliport
--- все столбцы кроме uuid могут содержать значение NilReason
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
@@ -372,20 +371,11 @@ CREATE TABLE AirportHeliport
   certificationExpirationDate DateType
 );
 
-
---    Лётные ассоциации от таблицы AiportHeliport
-
-
--- Table:  City
--- Наименование связи между таблицами AirportHeliport и City - "служит" (serves), связь - один ко многим: один аэропорт может обслуживать несколько городов
--- У таблицы AirportHeliport есть свойство - обслуживаемый аэропортом город
--- при удалении табл. AirportHeliport табл. City автоматически удаляется, также с отдельными строками
--- от табл.City идет ссылка к классу Note, насколько я поняла, это просто список всех таблиц
+-- A city or location that may be served by an airport/heliport.
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
--- не знаю, что будем брать за первичный ключ, поэтому пока везде так буду писать
   uuid                id PRIMARY KEY,
 
 -- полное название города
@@ -396,15 +386,15 @@ CREATE TABLE City
 );
 
 
--- Table: ElevatedPoint
--- Наименование связи между таблицами AirportHeliport и ElevatedPoint - "имеет контрольную (?) точку" (hasReferencePoint), связь - один к одному: у каждого аэродрома/вертодрома своя одна контрольная точка
--- У табл. AirportHeliport есть свойство - контрольная точка аэродрома/вертодрома (ARP - airport point)
--- при удалении табл. AirportHeliport табл. ElevatedPoint автоматически удаляется, также с отдельными строками
+-- An AIXM Point derived from GM_Point that includes properties for
+-- describing a point with elevation and vertical extent. Used in
+-- obstacles, navaids, etc.
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
   uuid                id PRIMARY KEY,
+
 -- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и ElevatedPoint
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
@@ -426,10 +416,8 @@ CREATE TABLE ElevatedPoint
 );
 
 
--- Table: ElevatedSurface
--- Наименование связи между таблицами AirportHeliport и ElevatedSurface - "границы, предназначенные для авиации" (hasBoundaryForAviationPurposes), связь - один к одному
--- У табл. AirportHeliport есть свойство - авиационные границы (aviationBoundary)
--- ElevatedSurface - это поверхность со свойствами, которые описывают вертикальное положение (высота, датум, точность)
+--An AIXM elevated surface derived from, which extends Surface with
+-- properties that represent the vertical position (elevation, datum, accuracy).
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
@@ -450,18 +438,16 @@ CREATE TABLE ElevatedSurface
 );
 
 
--- Table: AirportHotSpot
--- Наименование связи между таблицами AirportHeliport и AirportHotSpot - "расположена на" (isLocatedAt), связь - один ко многим: один аэропорт - много горячих точек может быть, но одна горячая точка может принадлежать только одному аэропорту.
--- Наименование связи между таблицами ElevatedSurface и AirportHotSpot - "имеет форму" (hasShape), , связь - один к одному:
--- AirportHotSpot - это место на взлетной части аэродрома, где имеется потенциальный риск или когда-либо в историческое время случалось столкновение или нападение на ВПП (?), и где требуется повышенное внимание пилотов/водителей.
--- Свойство таблицы AirportHotSpot - занимаемая территория (area) и за этим свойством AirportHotSpot ссылается на табл.ElevatedSurface
+-- A location on aerodrome movement area with a history or potential risk of
+-- сcollision or runway incursion, and where heightened attention by
+-- pilots/drivers is necessary.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
 CREATE TABLE AirportHotSpot
 (
   uuid                id PRIMARY KEY,
 
--- ссылка на то, к какому Elevated Surface относится
+-- ссылка на геометрию объекта
   uuidElevatedSurface id REFERENCES ElevatedSurface (uuid),
 
 -- на какой аэропорт влияет
@@ -475,9 +461,7 @@ CREATE TABLE AirportHotSpot
 );
 
 
--- Table: AltimeterSourceStatus
--- Наименование связи между таблицами  AltimeterSource и AltimeterSourceStatus - "доступен на" (isAvailableOn), связь - один ко многим: у одного прибора может быть один статус, но один и тот же статус может быть у многих приборов
--- AltimeterSourceStatus - информация о рабочем статусе прибора альтиметрии (AltimeterSource)
+--Information about the operational status of an Altimeter Source.
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
@@ -490,10 +474,6 @@ CREATE TABLE AltimeterSourceStatus
   operationalStatus CodeStatusOperationsType
 );
 
-
--- Table: AltimeterSource
--- Наименование связи между таблицами AirportHeliport и AltimeterSource - "использует" (utilizes), связь - многие ко многим: один аэродром может использовать несколько источников и один источник может использоваться несколькими аэродромами
--- У табл. AirportHeliport есть свойство - источник альтиметрии (AltimeterSource)
 -- AltimeterSource - это прибор, который измеряет и показывает высоту, на которой расположен объект (например, самолет)
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
@@ -516,10 +496,9 @@ CREATE TABLE AltimeterSource
 );
 
 
--- Table: OrganisationAuthority
--- Наименование связи между таблицами AirportHeliport и OrganisationAuthority - "под ответственностью" (isUnderResponsibilityOf), связь - многие ко многим: одна организация может обслуживать несколько аэропортов, но у одного аэропорта может быть только одна ответственная организация (кажется так)
--- ??? - не уверена что здесь связь многие ко многим, разве за один арп м.б.ответственны неск организаций?
---  OrganisationAuthority - это организация, ответственная за управление аэропортом. Концепция "управления аэропортом" не обязательно действует по всему миру, в таком случае аэродром/вертодром относят к ответственной за его операции области (штату)
+-- A feature used to model various Organisations and Authorities.
+-- For example: ATS Organisations, Aircraft Operating Agencies, States,
+-- Groups of States, etc.
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -544,9 +523,10 @@ CREATE TABLE OrganisationAuthority
 );
 
 
--- Table: ContactInformation
--- Связана с двумя таблицами - AirportHeliport и OrganisationAuthority, в обоих случаях наименование связи - "контактная информация" (isContactedAt), связь - один ко многим: один аэропорт/одна организация - много контактов
---
+-- Information required to enable contact with the responsible person and/or
+-- organisation. This model is derived from ISO19115-2003:Geographic
+-- Information- Metadata
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
@@ -564,11 +544,8 @@ CREATE TABLE ContactInformation
 );
 
 
--- Table: AirportHeliportContamination
--- Связана с таблицей AirportHeliport, наименование связи - "загрязняется" (isContaminated), тип связи - один ко многим
--- Свойство таблицы AirportHeliport - загрязняющее вещество
--- AirportHeliportContamination - наличие или перемещение опасной обстановки (из-за снега, льда, грязи, воды и т.д.) на терриотрии аэродрома/вертодрома
---  Вся таблица наследуется от таблицы SurfaceContamination
+-- The presence or removal of hazardous conditions due to snow, ice, slush, water,
+-- etc. on the airport surfaces.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
@@ -608,10 +585,7 @@ CREATE TABLE AirportHeliportContamination
   proportion            ValPercentType
 );
 
--- Table: SurveyControlPoint
 --  Таблица опорных геодезических пунктов
--- Связана с таблицей  AirportHeliport, наименование связи - "расположена на" (isSituatedAt), связь - один к одному
--- Связана с таблицей  ElevatedPoint, наименование связи - "имеет расположение" (hasPosition), связь - один к одному
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
