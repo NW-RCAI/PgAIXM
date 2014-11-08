@@ -95,7 +95,7 @@ AirportHeliport содержится в:
 
 0..1 ~~NonMovementArea~~
 
-0..1 SurveyControlPoint~~
+0..1 SurveyControlPoint
 
 0..1 ~~WorkArea~~
 
