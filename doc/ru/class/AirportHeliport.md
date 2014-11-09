@@ -4,60 +4,68 @@ AirportHeliport
 Определенный участок земной или водной поверхности (включая любые здания, сооружения и оборудование)
 предназначеный для прибытия, отправления и движение по этой поверхности воздушных судов/вертолетов.
 
-Атрибуты:
----------
+## Атрибуты
 
-designator
+##### uuid
 
-name
+##### designator
+Тип данных: CodeAirportHeliportDesignatorType
 
-locationIndicatorICAO
+Кодированный индекс для аэродрома/вертодрома. Данный идекс формируется по следующим правилам:
 
-designatorIATA
+1. Если аэродром/вертодром имеет четырехбуквенный код ICAO, то данный код становится индексом;
+2. Если аэродром/вертодром не имеет четырехбуквенный код ICAO, но имеет трехбуквенный код IATA, то данный код становится индексом;
+3. Если аэродром/вертодром не имеет ни четырехбуквенного кода ICAO, ни трехбуквенного кода IATA, то в качестве кода используется искуственно сгенерированный код, который содержит две буквы и 4 цифры: две буквы это код государства, которому принадлежит аэродром/вертодром и числом от 0001 до 9999. 
 
-type
+##### name
 
-certifiedICAO
+##### locationIndicatorICAO
 
-privateUse
+##### designatorIATA
 
-controlType
+##### type
 
-fieldElevation
+##### certifiedICAO
 
-fieldElevationAccuracy
+##### privateUse
 
-verticalDatum
+##### controlType
 
-magneticVariation
+##### fieldElevation
 
-magneticVariationAccuracy
+##### fieldElevationAccuracy
 
-dateMagneticVariation
+##### verticalDatum
 
-magneticVariationChange
+##### magneticVariation
 
-referenceTemperature
+##### magneticVariationAccuracy
 
-altimeterCheckLocation
+##### dateMagneticVariation
 
-secondaryPowerSupply
+##### magneticVariationChange
 
-windDirectionIndicator
+##### referenceTemperature
 
-landingDirectionIndicator
+##### altimeterCheckLocation
 
-transitionAltitude
+##### secondaryPowerSupply
 
-transitionLevel
+##### windDirectionIndicator
 
-lowestTemperature
+##### landingDirectionIndicator
 
-abandoned
+##### transitionAltitude
 
-certificationDate
+##### transitionLevel
 
-certificationExpirationDate
+##### lowestTemperature
+
+##### abandoned
+
+##### certificationDate
+
+##### certificationExpirationDate
 
 ## Связи
 
