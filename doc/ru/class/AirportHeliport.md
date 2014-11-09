@@ -63,49 +63,49 @@ certificationExpirationDate
 
 ### Один к одному:
 
-- ElevatedPoint
-- ElevatedSurface
+- O ElevatedPoint
+- O ElevatedSurface
 
 ### Один ко многим:
 
-- City
-- AirportHeliportContamination
-- ContactInformation
-- ~~AirportHeliportAvailability~~
-- ~~Runway~~
-- ~~Taxiway~~
-- ~~Apron~~
-- ~~Road~~
-- ~~TouchDownLiftOff~~
-- ~~NonMovementArea~~
-- ~~WorkArea~~
-- SurveyControlPoint
-- ~~AirportHeliportCollocation hostAirport~~
-- ~~AirportHeliportCollocation dependentAirport~~
-- AirportHotSpot
-- ~~RadarSystem~~
-- ~~GroundTrafficControlService~~
-- ~~NavigationSystemCheckpoint~~
-- ~~DesignatedPoint~~
-- ~~SignificantPoint~~
-- ~~AeronauticalGroundLight~~
-- ~~Unit~~
-- ~~ObstacleAreaOrigin~~
-- ~~FlightConditionElementChoice~~
-- ~~FlightRoutingElementChoice~~
-- ~~Note~~
+- O City
+- O AirportHeliportContamination
+- O ContactInformation
+- O ~~AirportHeliportAvailability~~
+- F ~~Runway~~
+- F ~~Taxiway~~
+- F ~~Apron~~
+- F ~~Road~~
+- F ~~TouchDownLiftOff~~
+- F ~~NonMovementArea~~
+- F ~~WorkArea~~
+- F SurveyControlPoint
+- F ~~AirportHeliportCollocation hostAirport~~
+- F ~~AirportHeliportCollocation dependentAirport~~
+- F AirportHotSpot
+- F ~~RadarSystem~~
+- F ~~GroundTrafficControlService~~
+- F ~~NavigationSystemCheckpoint~~
+- F ~~DesignatedPoint~~
+- C ~~SignificantPoint~~
+- F ~~AeronauticalGroundLight~~
+- F ~~Unit~~
+- C ~~ObstacleAreaOrigin~~
+- C ~~FlightConditionElementChoice~~
+- C ~~FlightRoutingElementChoice~~
+- O ~~Note~~
 
 ### Многие ко многим:
 
-- AltimeterSource
-- ~~RulesProcedures~~
-- ~~AirportGroundService~~
-- ~~InformationService~~
-- ~~AirTrafficControlService~~
-- ~~Procedure~~
-- ~~Navaid~~
-- ~~SafeAltitudeArea~~
+- F AltimeterSource
+- F ~~RulesProcedures~~
+- F ~~AirportGroundService~~
+- F ~~InformationService~~
+- F ~~AirTrafficControlService~~
+- F ~~Procedure~~
+- F ~~Navaid~~
+- F ~~SafeAltitudeArea~~
 
 ### Многие к одному:
 
-- OrganisationAuthority
+- F OrganisationAuthority
