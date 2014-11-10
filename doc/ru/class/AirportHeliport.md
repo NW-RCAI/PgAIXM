@@ -85,10 +85,11 @@ AirportHeliport
 ##### magneticVariationChange
 Тип даных: ValMagneticVariationChangeType
 
-Dеличина годового изменения магнитного склонения.
+Величина годового изменения магнитного склонения.
 
 ##### referenceTemperature
 Тип данных: ValTemperatureType
+
 Среднемесячная величина максимальной дневной температуры самого теплого месяца в году на аэродроме/вертодроме.
 
 ##### altimeterCheckLocation
