@@ -281,6 +281,29 @@ CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 CREATE DOMAIN ValPercentType AS DECIMAL(3, 4)
 CHECK (VALUE >= 0 AND VALUE =< 100);
 
+-- NORMAL - условия имеют формальные ограничения
+-- LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
+-- CLOSED - не рабочее состояние
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirportType
+CREATE TYPE CodeStatusAirportType AS ENUM ('NORMAL', 'LIMITED', 'CLOSED', 'OTHER');
+
+-- WIP - идут работы
+-- EQUIP - люди и оборудование
+-- BIRD - опасность в виде птиц
+-- ANIMAL - опасность в виде животных
+-- RUBBER_REMOVAL - уборка резиновых осадков с DGG (или каких-то резиновых отложений)
+-- PARKED_ACFT - на площадке расположен припаркованный или вышедший из строя летательный аппарат
+-- RESURFACING - работы по асфальтированию
+-- PAVING - покрытие ВПП
+-- PAINTING - разметка ВПП
+-- INSPECTION - присутствие людей или оборудования из-за работ по обследованию наземного оборудования
+-- GRASS_CUTTING - присутствие людей или оборудования из-за работ по стрижке газона
+-- CALIBRATION - присутствие людей или оборудования из-за работ с наземным оборудованием
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
+CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'RUBBER_REMOVAL', 'PARKED_ACFT', 'RESURFACING', 'PAVING', 'PAINTING', 'INSPECTION', 'GRASS_CUTTING', 'CALIBRATION');
+
 
 -- Table: AirportHeliport
 --
@@ -368,7 +391,9 @@ CREATE TABLE AirportHeliport
   certificationDate           DateType,
 
 -- дата, когда сертификат аэропорта заканчивает свое действие
-  certificationExpirationDate DateType
+  certificationExpirationDate DateType,
+
+   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
 -- A city or location that may be served by an airport/heliport.
@@ -386,6 +411,17 @@ CREATE TABLE City
 );
 
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
+CREATE TABLE POINT
+(
+  uuid id PRIMARY KEY ,
+
+   --точность измерения горизонтальных координат
+   -- так раз здесь есть точность мзерения горизонтальных координат, то может и они сами здесь хранятся?
+  horizontalAccuracy ValDistanceType
+);
+
+
 -- An AIXM Point derived from GM_Point that includes properties for
 -- describing a point with elevation and vertical extent. Used in
 -- obstacles, navaids, etc.
@@ -393,12 +429,12 @@ CREATE TABLE City
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  uuid                id PRIMARY KEY,
+  uuidPoint id REFERENCES POINT(uuid) PRIMARY KEY ,
 
 -- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и ElevatedPoint
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
--- расстояние по вертикали от уровня моря до измеряемой точки
+  -- расстояние по вертикали от уровня моря до измеряемой точки
   elevation           ValDistanceVerticalType,
 
 -- расстояние до геоида сверху (положительное) или снизу (отрицательное) от математического референц-эллипсоида в данной точке
@@ -413,6 +449,21 @@ CREATE TABLE ElevatedPoint
 -- разница между записанными горизонтальными координатами объекта и его реальным положением, отнесенным к тому же геодезическому датуму, выражается как круговое отклонение с вероятностью 95%
 -- этот атрибут наследуется из табл.Point
   horizontalAccuracy  ValDistanceType
+);
+
+--  Таблица опорных геодезических пунктов
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
+CREATE TABLE SurveyControlPoint
+(
+  uuid                id PRIMARY KEY,
+
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+
+  uuidElevatedPoint   id REFERENCES ElevatedPoint (uuid),
+
+-- идентификатор опорной точки
+  designator          TextNameType
 );
 
 
@@ -460,40 +511,41 @@ CREATE TABLE AirportHotSpot
   instruction         TextInstructionType
 );
 
-
---Information about the operational status of an Altimeter Source.
---
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
-CREATE TABLE AltimeterSourceStatus
+CREATE TABLE AltimeterSourceAirportHeliport
 (
--- Это будет таблица источников альтиметрии
--- порядковый номер прибора альтиметрии:
-  uuid              id PRIMARY KEY,
-
--- рабочий статус
-  operationalStatus CodeStatusOperationsType
+  uuid id PRIMARY KEY,
+  uuidAltimeterSource id,
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
+
 
 -- AltimeterSource - это прибор, который измеряет и показывает высоту, на которой расположен объект (например, самолет)
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
 CREATE TABLE AltimeterSource
 (
--- порядковый номер прибора альтиметрии
-  uuidAltimeterSource id REFERENCES AltimeterSourceStatus (uuid),
-
--- порядковый номер аэродрома/вертодрома
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuidAltimeterSourceAirportHeliport id REFERENCES AltimeterSourceAirportHeliport PRIMARY KEY ,
 
 -- далеко или близко расположен альтиметр
   isRemote            CodeYesNoType,
 
 -- первичный или вторичный альтиметр
-  isPrimary           CodeYesNoType,
-
--- связь теперь должна быть многие ко многим - у любой AltimeterSource могут быть любые AirportHeliport, комбинация всегда будет уникальна
-  PRIMARY KEY (uuidAltimeterSource, uuidAirportHeliport)
+  isPrimary           CodeYesNoType
 );
+
+
+--Information about the operational status of an Altimeter Source.
+--
+--  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
+CREATE TABLE AltimeterSourceStatus
+(
+   uuid              id PRIMARY KEY,
+   uuidAltimeterSource id REFERENCES AltimeterSourceAirportHeliport,
+
+-- рабочий статус
+  operationalStatus CodeStatusOperationsType
+);
+
 
 
 -- A feature used to model various Organisations and Authorities.
@@ -504,8 +556,6 @@ CREATE TABLE AltimeterSource
 CREATE TABLE OrganisationAuthority
 (
   uuid                id PRIMARY KEY,
-
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
 -- полное официальное название штата, области, организации, департамента, авиационного агентства (aircraft operating agency)
   name                TextNameType,
@@ -585,17 +635,17 @@ CREATE TABLE AirportHeliportContamination
   proportion            ValPercentType
 );
 
---  Таблица опорных геодезических пунктов
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
-CREATE TABLE SurveyControlPoint
-(
-  uuid                id PRIMARY KEY,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
 
-  uuidElevatedPoint   id REFERENCES ElevatedPoint (uuid),
+ -- Информация о рабочем состоянии аэродрома/вертодрома
+ --
+ -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
+ CREATE TABLE AirportHeliportAvailability
+ (
+   uuidAirportHeliport id REFERENCES AirportHeliport (uuid) PRIMARY KEY,
+   -- показывает годность оборудования для специфических летных операций
+   operationalStatus CodeStatusAirportType,
 
--- идентификатор опорной точки
-  designator          TextNameType
-);
+   -- причина предосторожности при работе
+   warning	CodeAirportWarningType
+ );
