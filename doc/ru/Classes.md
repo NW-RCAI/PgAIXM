@@ -30,7 +30,7 @@
 
 - **AirportHeliport**
 
-- AirportHeliportAvailability
+- **AirportHeliportAvailability**
 
 - AirportHeliportCollocation
 
