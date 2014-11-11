@@ -1,4 +1,4 @@
-﻿ --Домены:
+﻿--Домены:
 
 -- В качестве id используем UUID Type
 --
@@ -305,108 +305,46 @@ CREATE TYPE CodeStatusAirportType AS ENUM ('NORMAL', 'LIMITED', 'CLOSED', 'OTHER
 CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'RUBBER_REMOVAL', 'PARKED_ACFT', 'RESURFACING', 'PAVING', 'PAINTING', 'INSPECTION', 'GRASS_CUTTING', 'CALIBRATION');
 
 
--- Table: AirportHeliport
---
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
 (
   uuid                        id NOT NULL PRIMARY KEY,
-
--- Что мы задаём в designator:
--- 1)4х буквенник ИКАО, если таковой имеется
--- 2)3х буквенник IATA, 
--- 3)код Государства + порядковый номер (UU0001)
   designator                  CodeAirportHeliportDesignatorType,
-
--- Первое официальное название аэродрома, назначенное соответствующисм органом
   name                        TextNameType,
-
---индекс аэропорта ИКАО (ICAO DOC 7910)
   locationIndicatorICAO       CodeICAOType,
-
--- коды ИАТА
   designatorIATA              CodeIATAType,
-
--- код, указывающий на тип аэродрома, например: только аэродром, аэродром/ветродром и т.д.
   type                        CodeAirportHeliportType,
-
--- сертифицирован ли аэропорт по правилам ИКАО:
   certifiedICAO               CodeYesNoType,
-
--- аэродром или вертодром закрыт для общего пользования, только для владельцев
   privateUse                  CodeYesNoType,
-
--- тип организации (гражданская/военная), которая контролирует аэропорт
   controlType                 CodeMilitaryOperationsType,
-
--- высота над уровнем моря высшей точки района посадки (посадочной площадки)
   fieldElevation              ValDistanceVerticalType,
-
--- расстояние по вертикали от установленной высоты, которое определяет точность истинного значения (?)
   fieldElevationAccuracy      ValDistanceVerticalType,
-
--- поверхность относимости с указанием для каких высот и/или глубин установлена
   verticalDatum               CodeVerticalDatumType,
-
--- угловая разница между истинным направление на север и магнитным, измеренными в данной точке и на данное время
   magneticVariation           ValMagneticVariationType,
-
--- точность магнитного склонения в градусах
   magneticVariationAccuracy   ValAngleType,
-
--- год, на который измерено значение магнитного склонения
   dateMagneticVariation       DateYearType,
-
--- величина годового изменения магнитного склонения
   magneticVariationChange     ValMagneticVariationChangeType,
-
--- среднемесячная величина максимальной дневной температуры самого теплого месяца в году на аэродроме
   referenceTemperature        ValTemperatureType,
-
--- наличие точки или площади, указывающей на аэродром, где можно совершить контроль системы альтиметра
   altimeterCheckLocation      CodeYesNoType,
-
--- наличие аварийного блока питания (электроснабжения) у аэродрома/вертодрома
   secondaryPowerSupply        CodeYesNoType,
-
--- наличие прибора, показывающего направление и скорость ветра
   windDirectionIndicator      CodeYesNoType,
-
--- наличие прибора, наглядно показывающего современное направление взлёта и посадки
   landingDirectionIndicator   CodeYesNoType,
-
--- высота перемещений - высота, на которой или ниже которой вертикальное положение воздушного судна контролируется высотами (? - by reference to altitudes)
   transitionAltitude          ValDistanceVerticalType,
-
--- самый низкий полётный уровень, разрешённый для использования над высотой перемещений (transitionAltitude)
   transitionLevel             ValFLType,
-
--- значение самой низкой температуры самого холодного месяца в году
   lowestTemperature           ValTemperatureType,
-
--- показывает, что аэропорт больше не эксплуатируется, но его инфраструктура всё ещё существует и видна с воздуха
   abandoned                   CodeYesNoType,
-
--- дата, когда был сертифицирован надзирающим департаментом
   certificationDate           DateType,
-
--- дата, когда сертификат аэропорта заканчивает свое действие
   certificationExpirationDate DateType,
-
-   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
+  uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
+  uuidElevatedPoint           id REFERENCES ElevatedPoint (uuid),
+  uuidElevatedSurface         id REFERENCES ElevatedSurface (uuid)
 );
 
--- A city or location that may be served by an airport/heliport.
---
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
   uuid                id PRIMARY KEY,
-
--- полное название города
   name                TextNameType,
-
--- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и City
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -414,41 +352,33 @@ CREATE TABLE City
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE POINT
 (
-  uuid id PRIMARY KEY ,
+  uuid               id PRIMARY KEY,
 
-   --точность измерения горизонтальных координат
-   -- так раз здесь есть точность мзерения горизонтальных координат, то может и они сами здесь хранятся?
+-- точность измерения горизонтальных координат
+-- так раз здесь есть точность мзерения горизонтальных координат, то может и они сами здесь хранятся?
   horizontalAccuracy ValDistanceType
 );
 
-
--- An AIXM Point derived from GM_Point that includes properties for
--- describing a point with elevation and vertical extent. Used in
--- obstacles, navaids, etc.
---
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  uuidPoint id REFERENCES POINT(uuid) PRIMARY KEY ,
+  uuidPoint          id REFERENCES POINT (uuid) PRIMARY KEY,
 
--- внешний ключ (FOREIGN KEY), по которому связаны таблицы AirportHeliport и ElevatedPoint
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-
-  -- расстояние по вертикали от уровня моря до измеряемой точки
-  elevation           ValDistanceVerticalType,
+-- расстояние по вертикали от уровня моря до измеряемой точки
+  elevation          ValDistanceVerticalType,
 
 -- расстояние до геоида сверху (положительное) или снизу (отрицательное) от математического референц-эллипсоида в данной точке
-  geoidUndulation     ValDistanceSignedType,
+  geoidUndulation    ValDistanceSignedType,
 
 -- набор опорных точек или математическая модель поверхности Земли (датум)
-  verticalDatum       CodeVerticalDatumType,
+  verticalDatum      CodeVerticalDatumType,
 
 -- разница между записанной высотой точки и ее реальным значением, отнесенным к тому же вертикальному датуму, выражается как линейное отклонение с вероятностью 95%
-  verticalAccuracy    ValDistanceType,
+  verticalAccuracy   ValDistanceType,
 
 -- разница между записанными горизонтальными координатами объекта и его реальным положением, отнесенным к тому же геодезическому датуму, выражается как круговое отклонение с вероятностью 95%
 -- этот атрибут наследуется из табл.Point
-  horizontalAccuracy  ValDistanceType
+  horizontalAccuracy ValDistanceType
 );
 
 --  Таблица опорных геодезических пунктов
@@ -473,19 +403,17 @@ CREATE TABLE SurveyControlPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
-  uuid                id PRIMARY KEY,
+  uuid               id PRIMARY KEY,
 
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  elevation          ValDistanceVerticalType,
 
-  elevation           ValDistanceVerticalType,
+  geoidUndulation    ValDistanceSignedType,
 
-  geoidUndulation     ValDistanceSignedType,
+  verticalDatum      CodeVerticalDatumType,
 
-  verticalDatum       CodeVerticalDatumType,
+  verticalAccuracy   ValDistanceType,
 
-  verticalAccuracy    ValDistanceType,
-
-  horizontalAccuracy  ValDistanceType
+  horizontalAccuracy ValDistanceType
 );
 
 
@@ -513,8 +441,7 @@ CREATE TABLE AirportHotSpot
 
 CREATE TABLE AltimeterSourceAirportHeliport
 (
-  uuid id PRIMARY KEY,
-  uuidAltimeterSource id,
+  uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -524,13 +451,13 @@ CREATE TABLE AltimeterSourceAirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
 CREATE TABLE AltimeterSource
 (
-  uuidAltimeterSourceAirportHeliport id REFERENCES AltimeterSourceAirportHeliport PRIMARY KEY ,
+  uuid      id PRIMARY KEY,
 
 -- далеко или близко расположен альтиметр
-  isRemote            CodeYesNoType,
+  isRemote  CodeYesNoType,
 
 -- первичный или вторичный альтиметр
-  isPrimary           CodeYesNoType
+  isPrimary CodeYesNoType
 );
 
 
@@ -539,13 +466,12 @@ CREATE TABLE AltimeterSource
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
-   uuid              id PRIMARY KEY,
-   uuidAltimeterSource id REFERENCES AltimeterSourceAirportHeliport,
+  uuid                id PRIMARY KEY,
+  uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
 
 -- рабочий статус
-  operationalStatus CodeStatusOperationsType
+  operationalStatus   CodeStatusOperationsType
 );
-
 
 
 -- A feature used to model various Organisations and Authorities.
@@ -555,21 +481,21 @@ CREATE TABLE AltimeterSourceStatus
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
-  uuid                id PRIMARY KEY,
+  uuid       id PRIMARY KEY,
 
 -- полное официальное название штата, области, организации, департамента, авиационного агентства (aircraft operating agency)
-  name                TextNameType,
+  name       TextNameType,
 
 -- закодированный идентификатор организации, департамента, агентства или объединения
 -- например: СА = Canada, FAA = Federal Aviation Administration, UK = United Kingdom, ICAO = International Civil Aviation Organization
-  designator          CodeOrganisationDesignatorType,
+  designator CodeOrganisationDesignatorType,
 
 -- код, указывающий на происхождение ответственной организации в соответствии с его статусом или бизнесс-ролью в ATM (?).
 -- Например: штат, группа штатов, организация в штате, авиационное агентство и т.д.
-  type                CodeOrganisationType,
+  type       CodeOrganisationType,
 
 -- информация о том, какого типа операции разрешены
-  military            CodeMilitaryOperationsType
+  military   CodeMilitaryOperationsType
 );
 
 
@@ -636,16 +562,16 @@ CREATE TABLE AirportHeliportContamination
 );
 
 
+-- Информация о рабочем состоянии аэродрома/вертодрома
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
+CREATE TABLE AirportHeliportAvailability
+(
+  uuid id PRIMARY KEY,
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+-- показывает годность оборудования для специфических летных операций
+  operationalStatus   CodeStatusAirportType,
 
- -- Информация о рабочем состоянии аэродрома/вертодрома
- --
- -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
- CREATE TABLE AirportHeliportAvailability
- (
-   uuidAirportHeliport id REFERENCES AirportHeliport (uuid) PRIMARY KEY,
-   -- показывает годность оборудования для специфических летных операций
-   operationalStatus CodeStatusAirportType,
-
-   -- причина предосторожности при работе
-   warning	CodeAirportWarningType
- );
+-- причина предосторожности при работе
+  warning             CodeAirportWarningType
+);

@@ -155,7 +155,7 @@ The altitude at or below which the vertical position of an aircraft is controlle
 - O City
 - O AirportHeliportContamination
 - O ContactInformation
-- O ~~AirportHeliportAvailability~~
+- O AirportHeliportAvailability
 - F ~~Runway~~
 - F ~~Taxiway~~
 - F ~~Apron~~
