@@ -5,7 +5,7 @@
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
 CREATE DOMAIN id AS UUID;
 
--- Уникальный индификатор для аэродрома/вертодрома
+-- Уникальный индификатор для аэродрома/вертодрома5
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(6)
@@ -67,12 +67,12 @@ CREATE TYPE UomDistanceVerticalType AS ENUM ('FT', 'M', 'FL', 'SM', 'OTHER');
 -- CEILING - значение "верх воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной верхней границей
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
-CREATE DOMAIN ValDistanceVerticalBaseType AS DECIMAL(12,4);
+CREATE DOMAIN ValDistanceVerticalBaseType AS DECIMAL(12, 4);
 CREATE TYPE ValDistanceVerticalBaseTypeNonNumeric AS ENUM ('UNL', 'GND', 'FLOOR', 'CEILING');
 CREATE TYPE ValDistanceVerticalType AS (
-  value ValDistanceVerticalBaseType,
+  value      ValDistanceVerticalBaseType,
   nonNumeric ValDistanceVerticalBaseTypeNonNumeric,
-  unit  UomDistanceVerticalType
+  unit       UomDistanceVerticalType
 );
 
 -- Вообще в AIXM приведены три используемых датума: EGM_96, AHD (Australian Height Datum), NAVD88 (North American Vertical Datum of 1988), но я думаю что, возможно гораздо больше вариантов
@@ -305,8 +305,8 @@ CREATE TYPE CodeStatusAirportType AS ENUM ('NORMAL', 'LIMITED', 'CLOSED', 'OTHER
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
 CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'RUBBER_REMOVAL', 'PARKED_ACFT', 'RESURFACING', 'PAVING', 'PAINTING', 'INSPECTION', 'GRASS_CUTTING', 'CALIBRATION');
 
-CREATE DOMAIN geoLat AS DECIMAL (9,6);
-CREATE DOMAIN geoLong AS DECIMAL (18,15);
+CREATE DOMAIN latitude AS DECIMAL(17, 15);
+CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
@@ -338,9 +338,9 @@ CREATE TABLE AirportHeliport
   abandoned                   CodeYesNoType,
   certificationDate           DateType,
   certificationExpirationDate DateType,
-  uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
-  uuidElevatedPoint           id REFERENCES ElevatedPoint (uuid),
-  uuidElevatedSurface         id REFERENCES ElevatedSurface (uuid)
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  uuidElevatedPoint         id REFERENCES ElevatedPoint (uuid),
+  uuidElevatedSurface       id REFERENCES ElevatedSurface (uuid)
 );
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
@@ -356,32 +356,31 @@ CREATE TABLE City
 CREATE TABLE Point
 (
   uuid               id PRIMARY KEY,
-  geoLat geoLat,
-  geoLong geoLong,
+  latitude           latitude,
+  longtitude         longitude,
   horizontalAccuracy ValDistanceType
 );
-SELECT AddGeometryColumn('Point', 'point_geom', -1, 'POINT', 2 );
+SELECT AddGeometryColumn('Point', 'geom', 4326, 'POINT', 2);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
   uuid               id PRIMARY KEY,
-  geoLat geoLat,
-  geoLong geoLong,
   horizontalAccuracy ValDistanceType
 );
-SELECT AddGeometryColumn('Surface', 'surface_geom', -1, 'POLYGON', 2 );
+SELECT AddGeometryColumn('Surface', 'geom', 4326, 'POLYGON', 2);
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  elevation          ValDistanceVerticalType,
-  geoidUndulation    ValDistanceSignedType,
-  verticalDatum      CodeVerticalDatumType,
-  verticalAccuracy   ValDistanceType
-) INHERITS (Point);
+  elevation        ValDistanceVerticalType,
+  geoidUndulation  ValDistanceSignedType,
+  verticalDatum    CodeVerticalDatumType,
+  verticalAccuracy ValDistanceType
+)
+  INHERITS (Point);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
@@ -397,11 +396,12 @@ CREATE TABLE SurveyControlPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
-  elevation          ValDistanceVerticalType,
-  geoidUndulation    ValDistanceSignedType,
-  verticalDatum      CodeVerticalDatumType,
-  verticalAccuracy   ValDistanceType
-) INHERITS (Surface);
+  elevation        ValDistanceVerticalType,
+  geoidUndulation  ValDistanceSignedType,
+  verticalDatum    CodeVerticalDatumType,
+  verticalAccuracy ValDistanceType
+)
+  INHERITS (Surface);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
@@ -454,11 +454,11 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  uuid                  id PRIMARY KEY,
-  uuidAirportHeliport   id REFERENCES AirportHeliport (uuid),
+  uuid                      id PRIMARY KEY,
+  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  name                  TextNameType,
-  title                 TextNameType
+  name                      TextNameType,
+  title                     TextNameType
 );
 
 
@@ -466,30 +466,31 @@ CREATE TABLE ContactInformation
 CREATE TABLE SurfaceContamination
 (
   uuid                  id PRIMARY KEY,
-  observationTime DateTimeType,
-  depth ValDepthType,
-  frictionCoefficient ValFrictionType,
-  frictionEstimation CodeFrictionEstimateType,
-  frictionDevice CodeFrictionDeviceType,
-  obscuredLights CodeYesNoType,
+  observationTime       DateTimeType,
+  depth                 ValDepthType,
+  frictionCoefficient   ValFrictionType,
+  frictionEstimation    CodeFrictionEstimateType,
+  frictionDevice        CodeFrictionDeviceType,
+  obscuredLights        CodeYesNoType,
   furtherClearanceTime  TimeType,
-  furtherTotalClearance	CodeYesNoType,
-  nextObservationTime	DateTimeType,
-  proportion	ValPercentType
+  furtherTotalClearance CodeYesNoType,
+  nextObservationTime   DateTimeType,
+  proportion            ValPercentType
 );
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
-  uuidAirportHeliport   id REFERENCES AirportHeliport (uuid)
-)INHERITS (SurfaceContamination);
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
+)
+  INHERITS (SurfaceContamination);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
-  uuid id PRIMARY KEY,
+  uuid                id PRIMARY KEY,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
