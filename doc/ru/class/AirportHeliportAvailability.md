@@ -4,25 +4,30 @@ AirportHeliportAvailability
 
 Информация о рабочем состоянии аэродрома/вертодрома.
 
+## Наследование
+
+#### Наследуется от класса:
+
+- O ~~PropertiesWithSchedule~~
+
 ## Атрибуты
 
 ##### uuid
 
 ##### uuidAirportHeliport
-Тип данных: id
+Ссылка на: AirportHeliport (uuid)
 
-Внешний ключ для связи с таблицей AirportHeliport.
+Ссылка на аэродром/вертодром, которому принадлежит информация об аэродроме/вертодроме.
 
 ##### operationalStatus
 Тип данных: CodeStatusAirportType
 
-Годность оборудования для специфических летных операций.
+Указывает на статус аэродрома/вертодрома для выполнения полетов.
 
 ##### warning
 Тип данных: CodeAirportWarningType
 
-Причина предосторожности при работе.
-
+Причина установки статуса.
 
 ## Связи
 
@@ -33,7 +38,7 @@ AirportHeliportAvailability
 ### Один ко многим:
 
 - O ~~AirportHeliportUsage~~
-- O ~~Timesheet~~ - наследуется из класса PropertiesWithSchedule
+- O ~~Timesheet~~
 - O ~~Note~~
 
 
@@ -44,9 +49,3 @@ AirportHeliportAvailability
 ### Многие к одному:
 
 - F AirportHeliport
-
-
-## Наследование:
-
-#### Наследуется из класса PropertiesWithSchedule
-

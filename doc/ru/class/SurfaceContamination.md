@@ -4,6 +4,19 @@ SurfaceContamination
 
 Наличие неблагоприятных условий в виде снега, льда, грязи, воды.
 
+## Наследования:
+
+#### Родительский класс для:
+
+- ~~AircraftStandContamination~~
+- AirportHeliportContamination
+- ~~ApronContamination~~
+- ~~RunwayContamination~~
+- ~~RunwaySectionContamination~~
+- ~~TaxiwayContamination~~
+- ~~TouchDownLiftOffContamination~~
+
+
 ## Атрибуты
 
 ##### uuid
@@ -77,5 +90,3 @@ SurfaceContamination
 ### Многие к одному:
 
 - отсутствуют
-
-## Наследования: Родительский класс для таблиц AircraftStandContamination, AirportHeliportContamination, ApronContamination, RunwayContamination, RunwaySectionContamination, TaxiwayContamination, TouchDownLiftOffContamination

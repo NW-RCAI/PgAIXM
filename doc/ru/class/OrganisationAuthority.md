@@ -2,7 +2,7 @@ OrganisationAuthority
 ====
 Тип: Feature
 
-Набор свойств, моделирующих различные организации и департаменты.
+Различные организации, органов власти, департаменты, агентства или объединения.
 
 ## Атрибуты
 
@@ -11,7 +11,7 @@ OrganisationAuthority
 ##### name
 Тип данных: TextNameType
 
-Полное официальное название штата, области, организации, департамента, авиационного агентства (aircraft operating agency)/
+Полное официальное название организации.
 
 ##### designator
 Тип данных: CodeOrganisationDesignatorType
@@ -34,27 +34,27 @@ OrganisationAuthority
 
 ### Один к одному:
 
-- F AuthorityForAirspace
-- F SpecialDate
-- C ~~ObstacleAreaOrigin~~
-
+- отсутствуют
 
 ### Один ко многим:
 
 - O ContactInformation
 - F AirportHeliport
-- O ~~AirspaceActivation~~
-- O ~~Note~~
+- F ~~AuthorityForAirspace~~
 - F ~~SpecialNavigationStation~~
 - F ~~SpecialNavigationSystem~~
+- - C ~~ObstacleAreaOrigin~~
+- F ~~SpecialDate~~
 - F ~~Unit~~
 - C ~~FlightConditionElementChoice~~
 - F ~~Route~~
+- O ~~Note~~
 
 
 ### Многие ко многим:
 
-- F OrganisationAuthority
+- O ~~AirspaceActivation~~
+- F ~~OrganisationAuthority~~
 - F ~~RadarSystem~~
 - O ~~PropertiesWithSchedule~~
 - F ~~NavaidEquipment~~

@@ -4,6 +4,11 @@ AirportHeliportContamination
 
 Наличие неблагоприятных условий в виде снега, льда, грязи, воды на территории аэродрома.
 
+## Наследование
+
+#### Наследуется от класса:
+- O SurfaceContamination
+
 ## Атрибуты
 
 ##### uuid
@@ -11,9 +16,9 @@ AirportHeliportContamination
 Наследуется из таблицы SurfaceContamination.
 
 ##### uuidAirportHeliport
-Тип данных: id
+Ссылка на: AirportHeliport (uuid)
 
-Внешний ключ для связи с таблицей AirportHeliport.
+Ссылка на аэродром/вертодром на котором действуют эти неблагоприятные условия.
 
 ##### observationTime
 
@@ -74,8 +79,3 @@ AirportHeliportContamination
 ### Многие к одному:
 
 - F AirportHeliport
-
-
-## Наследование
-
-#### Наследуется из класса Point
