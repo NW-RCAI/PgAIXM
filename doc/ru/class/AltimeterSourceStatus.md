@@ -2,25 +2,26 @@ AltimeterSourceStatus
 ====
 Тип: Object
 
-Информация о рабочем состоянии прибора альтиметрии.
+Информация о рабочем состоянии высотомера.
+
+## Наследование
+
+#### Наследуется от класса:
+- O ~~PropertiesWithSchedule~~
 
 ## Атрибуты
 
 ##### uuid
-Тип данных: id
-
-Наследуетcя из таблицы Point.
 
 ##### uuidAltimeterSource
-Тип данных: id
+Ссылка на: AltimeterSource (uuid)
 
-Внешний ключ для связи с источником альтиметри (таблица AltimeterSource)
+Ссылка на высотомер которому принедлежит текущее состояние.
 
 ##### operationalStatus
 Тип данных: CodeStatusOperationsType
 
-Рабочее состояни прибора альтиметрии.
-
+Рабочее состояни высотомера.
 
 ## Связи
 
@@ -31,12 +32,11 @@ AltimeterSourceStatus
 ### Один ко многим:
 
 - O ~~Timesheet~~
-- F OrganisationAuthority
 - O ~~Note~~
 
 ### Многие ко многим:
 
-- отсутствуют
+- F ~~OrganisationAuthority~~
 
 ### Многие к одному:
 
