@@ -1,45 +1,22 @@
-﻿--DROP SCHEMA public CASCADE ;
+﻿DROP TABLE IF EXISTS AirportHeliport CASCADE;
+DROP TABLE IF EXISTS City CASCADE;
+DROP TABLE IF EXISTS Surface CASCADE;
+DROP TABLE IF EXISTS Point CASCADE;
+DROP TABLE IF EXISTS ElevatedPoint CASCADE;
+DROP TABLE IF EXISTS SurveyControlPoint CASCADE;
+DROP TABLE IF EXISTS ElevatedSurface CASCADE;
+DROP TABLE IF EXISTS AirportHotSpot CASCADE;
+DROP TABLE IF EXISTS AltimeterSourceAirportHeliport CASCADE;
+DROP TABLE IF EXISTS AltimeterSource CASCADE;
+DROP TABLE IF EXISTS AltimeterSourceStatus CASCADE;
+DROP TABLE IF EXISTS OrganisationAuthority CASCADE;
+DROP TABLE IF EXISTS ContactInformation CASCADE;
+DROP TABLE IF EXISTS SurfaceContamination CASCADE;
+DROP TABLE IF EXISTS AirportHeliportContamination CASCADE;
+DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE;
+DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, TimeType, ValPercentType, latitude, longitude CASCADE;
+DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype, uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType CASCADE;
 
-
-
-DROP TABLE IF EXISTS AirportHeliport CASCADE ;
-DROP TABLE IF EXISTS City CASCADE ;
-DROP TABLE IF EXISTS Surface CASCADE ;
-DROP TABLE IF EXISTS Point CASCADE ;
-DROP TABLE IF EXISTS ElevatedPoint CASCADE ;
-DROP TABLE IF EXISTS SurveyControlPoint CASCADE ;
-DROP TABLE IF EXISTS ElevatedSurface CASCADE ;
-DROP TABLE IF EXISTS AirportHotSpot CASCADE ;
-DROP TABLE IF EXISTS AltimeterSourceAirportHeliport CASCADE ;
-DROP TABLE IF EXISTS AltimeterSource CASCADE ;
-DROP TABLE IF EXISTS AltimeterSourceStatus CASCADE ;
-DROP TABLE IF EXISTS OrganisationAuthority CASCADE ;
-DROP TABLE IF EXISTS ContactInformation CASCADE ;
-DROP TABLE IF EXISTS SurfaceContamination CASCADE ;
-DROP TABLE IF EXISTS AirportHeliportContamination CASCADE ;
-DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE ;
-
---SELECT 'drop table if exists "City" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "Point" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "Surface" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "ElevatedPoint" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "SurveyControlPoint" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "ElevatedSurface" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "AirportHotSpot" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "AltimeterSourceAirportHeliport" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "AltimeterSource" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "AltimeterSourceStatus" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "OrganisationAuthority" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "ContactInformation" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "SurfaceContamination" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "AirportHeliportContamination" cascade ' from pg_tables CASCADE;
---SELECT 'drop table if exists "AirportHeliportAvailability" cascade ' from pg_tables CASCADE;
-
---Домены:
-
-
-DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, TimeType, ValPercentType, latitude,longitude  CASCADE ;
-DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype,uomfltype,valflbasetype,uomdistancetype,valdistancebasetype,uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType CASCADE ;
 -- В качестве id используем UUID Type
 --
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
@@ -139,7 +116,7 @@ CHECK (VALUE >= -180 AND VALUE <= 180);
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
 CREATE DOMAIN DateYearType AS SMALLINT
-CHECK (VALUE > 1000 and VALUE <= 1999);
+CHECK (VALUE > 1000 AND VALUE <= 1999);
 
 -- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
@@ -283,7 +260,7 @@ CREATE TYPE ValDepthType AS (
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
 CREATE DOMAIN ValFrictionType AS DECIMAL(3, 2)
-CHECK ( VALUE >= 0 and VALUE <= 1);
+CHECK ( VALUE >= 0 AND VALUE <= 1);
 
 -- Качественная оценка трения на ВВП:
 -- GOOD - хорошее
@@ -350,8 +327,6 @@ CREATE DOMAIN latitude AS DECIMAL(17, 15);
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
 
-
-
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -369,15 +344,15 @@ CREATE TABLE Point
   uuid               id PRIMARY KEY,
   latitude           latitude,
   longtitude         longitude,
-  horizontalAccuracy ValDistanceType
+  horizontalAccuracy ValDistanceType,
+  geom               GEOMETRY(POINT, 4326)
 );
-SELECT AddGeometryColumn('Point', 'geom', 4326, 'POINT', 2);
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  uuid id REFERENCES Point(uuid),
+  uuid             id PRIMARY KEY REFERENCES Point (uuid),
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -389,15 +364,15 @@ CREATE TABLE ElevatedPoint
 CREATE TABLE Surface
 (
   uuid               id PRIMARY KEY,
-  horizontalAccuracy ValDistanceType
+  horizontalAccuracy ValDistanceType,
+  geom               GEOMETRY(POLYGON, 4326)
 );
-SELECT AddGeometryColumn('Surface', 'geom', 4326, 'POLYGON', 2);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
-  uuid id REFERENCES Surface(uuid),
+  uuid             id PRIMARY KEY REFERENCES Surface (uuid),
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -435,9 +410,9 @@ CREATE TABLE AirportHeliport
   abandoned                   CodeYesNoType,
   certificationDate           DateType,
   certificationExpirationDate DateType,
-  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  uuidElevatedPoint         id REFERENCES Point (uuid),
-  uuidElevatedSurface       id REFERENCES Surface (uuid)
+  uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
+  uuidElevatedPoint           id REFERENCES ElevatedPoint (uuid),
+  uuidElevatedSurface         id REFERENCES ElevatedSurface (uuid)
 );
 
 
