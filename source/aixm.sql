@@ -138,8 +138,8 @@ CHECK (VALUE >= -180 AND VALUE <= 180);
 -- Дата, в которой значимым является только год.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
-CREATE DOMAIN DateYearType AS VARCHAR(4)
-CHECK (VALUE ~ '[1-9][0-9][0-9][0-9]');
+CREATE DOMAIN DateYearType AS SMALLINT
+CHECK (VALUE > 1000 and VALUE <= 1999);
 
 -- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
@@ -282,8 +282,8 @@ CREATE TYPE ValDepthType AS (
 -- Значение коэффициента трения.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
-CREATE DOMAIN ValFrictionType AS VARCHAR(4)
-CHECK ( VALUE ~ '0\.[0-9]{2}');
+CREATE DOMAIN ValFrictionType AS DECIMAL(3, 2)
+CHECK ( VALUE >= 0 and VALUE <= 1);
 
 -- Качественная оценка трения на ВВП:
 -- GOOD - хорошее
@@ -320,7 +320,7 @@ CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
 CREATE DOMAIN ValPercentType AS DECIMAL(7, 4)
-CHECK (VALUE > 0 AND VALUE < 100);
+CHECK (VALUE >= 0 AND VALUE <= 100);
 
 
 -- NORMAL - условия имеют формальные ограничения
