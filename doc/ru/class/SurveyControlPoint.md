@@ -8,15 +8,15 @@ SurveyControlPoint
 
 ##### uuid
 
-##### uuidAirportHeliport
-Тип данных: id
+#### uuidAirportHeliport
+Ссылка на: AirportHeliport (uuid)
 
-Внешний ключ для связи с таблицей AirportHeliport.
+Ссылка на обслуживающий аэродром.
 
 ##### uuidElevatedPoint
-Тип данных: id
+Ссылка на: ElevatedPoint (uuid)
 
-Внешний ключ для связи с таблицей ElevatedPoint.
+Ссылка на высотную отметку.
 
 ##### designator
 Тип данных: TextNameType
@@ -28,8 +28,7 @@ SurveyControlPoint
 
 ### Один к одному:
 
-- F ~~DesignatedPoint~~
-- C ~~SignificantPoint~~
+- O ElevatedPoint~~
 
 ### Один ко многим:
 
@@ -41,7 +40,7 @@ SurveyControlPoint
 
 ### Многие к одному:
 
-- отсутствуют
+- F AirportHeliport
 
 
 ## Наследование
