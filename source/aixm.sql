@@ -1,5 +1,45 @@
-﻿--Домены:
+﻿--DROP SCHEMA public CASCADE ;
 
+
+
+DROP TABLE IF EXISTS AirportHeliport CASCADE ;
+DROP TABLE IF EXISTS City CASCADE ;
+DROP TABLE IF EXISTS Surface CASCADE ;
+DROP TABLE IF EXISTS Point CASCADE ;
+DROP TABLE IF EXISTS ElevatedPoint CASCADE ;
+DROP TABLE IF EXISTS SurveyControlPoint CASCADE ;
+DROP TABLE IF EXISTS ElevatedSurface CASCADE ;
+DROP TABLE IF EXISTS AirportHotSpot CASCADE ;
+DROP TABLE IF EXISTS AltimeterSourceAirportHeliport CASCADE ;
+DROP TABLE IF EXISTS AltimeterSource CASCADE ;
+DROP TABLE IF EXISTS AltimeterSourceStatus CASCADE ;
+DROP TABLE IF EXISTS OrganisationAuthority CASCADE ;
+DROP TABLE IF EXISTS ContactInformation CASCADE ;
+DROP TABLE IF EXISTS SurfaceContamination CASCADE ;
+DROP TABLE IF EXISTS AirportHeliportContamination CASCADE ;
+DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE ;
+
+--SELECT 'drop table if exists "City" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "Point" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "Surface" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "ElevatedPoint" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "SurveyControlPoint" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "ElevatedSurface" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "AirportHotSpot" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "AltimeterSourceAirportHeliport" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "AltimeterSource" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "AltimeterSourceStatus" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "OrganisationAuthority" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "ContactInformation" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "SurfaceContamination" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "AirportHeliportContamination" cascade ' from pg_tables CASCADE;
+--SELECT 'drop table if exists "AirportHeliportAvailability" cascade ' from pg_tables CASCADE;
+
+--Домены:
+
+
+DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, TimeType, ValPercentType, latitude,longitude  CASCADE ;
+DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype,uomfltype,valflbasetype,uomdistancetype,valdistancebasetype,uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType CASCADE ;
 -- В качестве id используем UUID Type
 --
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
@@ -98,7 +138,7 @@ CHECK (VALUE >= -180 AND VALUE <= 180);
 -- Дата, в которой значимым является только год.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
-CREATE DOMAIN DateYearType AS SMALLINT
+CREATE DOMAIN DateYearType AS VARCHAR(4)
 CHECK (VALUE ~ '[1-9][0-9][0-9][0-9]');
 
 -- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
@@ -242,7 +282,7 @@ CREATE TYPE ValDepthType AS (
 -- Значение коэффициента трения.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
-CREATE DOMAIN ValFrictionType AS DECIMAL(3, 2)
+CREATE DOMAIN ValFrictionType AS VARCHAR(4)
 CHECK ( VALUE ~ '0\.[0-9]{2}');
 
 -- Качественная оценка трения на ВВП:
@@ -280,7 +320,8 @@ CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
 CREATE DOMAIN ValPercentType AS DECIMAL(7, 4)
-CHECK (VALUE >= 0 AND VALUE =< 100);
+CHECK (VALUE > 0 AND VALUE < 100);
+
 
 -- NORMAL - условия имеют формальные ограничения
 -- LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
@@ -308,10 +349,66 @@ CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'R
 CREATE DOMAIN latitude AS DECIMAL(17, 15);
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
+
+
+
+--  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
+CREATE TABLE OrganisationAuthority
+(
+  uuid       id PRIMARY KEY,
+  name       TextNameType,
+  designator CodeOrganisationDesignatorType,
+  type       CodeOrganisationType,
+  military   CodeMilitaryOperationsType
+);
+
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
+CREATE TABLE Point
+(
+  uuid               id PRIMARY KEY,
+  latitude           latitude,
+  longtitude         longitude,
+  horizontalAccuracy ValDistanceType
+);
+SELECT AddGeometryColumn('Point', 'geom', 4326, 'POINT', 2);
+
+
+--  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
+CREATE TABLE ElevatedPoint
+(
+  uuid id REFERENCES Point(uuid),
+  elevation        ValDistanceVerticalType,
+  geoidUndulation  ValDistanceSignedType,
+  verticalDatum    CodeVerticalDatumType,
+  verticalAccuracy ValDistanceType
+);
+
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
+CREATE TABLE Surface
+(
+  uuid               id PRIMARY KEY,
+  horizontalAccuracy ValDistanceType
+);
+SELECT AddGeometryColumn('Surface', 'geom', 4326, 'POLYGON', 2);
+
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
+CREATE TABLE ElevatedSurface
+(
+  uuid id REFERENCES Surface(uuid),
+  elevation        ValDistanceVerticalType,
+  geoidUndulation  ValDistanceSignedType,
+  verticalDatum    CodeVerticalDatumType,
+  verticalAccuracy ValDistanceType
+);
+
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
 (
-  uuid                        id NOT NULL PRIMARY KEY,
+  uuid                        id PRIMARY KEY,
   designator                  CodeAirportHeliportDesignatorType,
   name                        TextNameType,
   locationIndicatorICAO       CodeICAOType,
@@ -339,9 +436,10 @@ CREATE TABLE AirportHeliport
   certificationDate           DateType,
   certificationExpirationDate DateType,
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  uuidElevatedPoint         id REFERENCES ElevatedPoint (uuid),
-  uuidElevatedSurface       id REFERENCES ElevatedSurface (uuid)
+  uuidElevatedPoint         id REFERENCES Point (uuid),
+  uuidElevatedSurface       id REFERENCES Surface (uuid)
 );
+
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
@@ -352,73 +450,24 @@ CREATE TABLE City
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
-CREATE TABLE Point
-(
-  uuid               id PRIMARY KEY,
-  latitude           latitude,
-  longtitude         longitude,
-  horizontalAccuracy ValDistanceType
-);
-SELECT AddGeometryColumn('Point', 'geom', 4326, 'POINT', 2);
-
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
-CREATE TABLE Surface
-(
-  uuid               id PRIMARY KEY,
-  horizontalAccuracy ValDistanceType
-);
-SELECT AddGeometryColumn('Surface', 'geom', 4326, 'POLYGON', 2);
-
-
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
-CREATE TABLE ElevatedPoint
-(
-  elevation        ValDistanceVerticalType,
-  geoidUndulation  ValDistanceSignedType,
-  verticalDatum    CodeVerticalDatumType,
-  verticalAccuracy ValDistanceType
-)
-  INHERITS (Point);
-
-
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
 (
   uuid                id PRIMARY KEY,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-  uuidElevatedPoint   id REFERENCES ElevatedPoint (uuid),
+  uuidElevatedPoint   id REFERENCES Point (uuid),
   designator          TextNameType
 );
-
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
-CREATE TABLE ElevatedSurface
-(
-  elevation        ValDistanceVerticalType,
-  geoidUndulation  ValDistanceSignedType,
-  verticalDatum    CodeVerticalDatumType,
-  verticalAccuracy ValDistanceType
-)
-  INHERITS (Surface);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
 CREATE TABLE AirportHotSpot
 (
   uuid                id PRIMARY KEY,
-  uuidElevatedSurface id REFERENCES ElevatedSurface (uuid),
+  uuidElevatedSurface id REFERENCES Surface (uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   designator          TextDesignatorType,
   instruction         TextInstructionType
-);
-
-
-CREATE TABLE AltimeterSourceAirportHeliport
-(
-  uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
 
@@ -431,23 +480,19 @@ CREATE TABLE AltimeterSource
 );
 
 
+CREATE TABLE AltimeterSourceAirportHeliport
+(
+  uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
+);
+
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
   uuid                id PRIMARY KEY,
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
-);
-
-
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
-CREATE TABLE OrganisationAuthority
-(
-  uuid       id PRIMARY KEY,
-  name       TextNameType,
-  designator CodeOrganisationDesignatorType,
-  type       CodeOrganisationType,
-  military   CodeMilitaryOperationsType
 );
 
 
@@ -483,8 +528,7 @@ CREATE TABLE SurfaceContamination
 CREATE TABLE AirportHeliportContamination
 (
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
-)
-  INHERITS (SurfaceContamination);
+);
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
