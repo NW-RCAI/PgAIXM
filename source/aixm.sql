@@ -20,13 +20,13 @@ DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valf
 -- В качестве id используем UUID Type
 --
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
-CREATE DOMAIN id AS UUID;
+CREATE DOMAIN id AS INTEGER;
 
 -- Уникальный индификатор для аэродрома/вертодрома5
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
-CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(6)
-CHECK (VALUE ~ '[:upper:]{3,4}|[:upper:]{2}[0-9]{4}');
+CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(10)
+CHECK (VALUE ~ '[A-Z]{3,4}|[A-Z]{2}[0-9]{4}');
 
 -- Используется для названий с максимальной длинной в 60 символов
 --
@@ -37,13 +37,13 @@ CREATE DOMAIN TextNameType AS VARCHAR(60);
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
 CREATE DOMAIN CodeICAOType AS CHAR(4)
-CHECK (VALUE ~ '[:upper:]{4}');
+CHECK (VALUE ~ '[A-Z]{4}');
 
 -- Трехбуквенный индекс аэродрома IATA (http://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
 CREATE DOMAIN CodeIATAType AS CHAR(3)
-CHECK (VALUE ~ '[:upper:]{3}');
+CHECK (VALUE ~ '[A-Z]{3}');
 
 -- Тип объекта AirportHeliport:
 -- AD - только аэродром
@@ -57,7 +57,7 @@ CREATE TYPE CodeAirportHeliportType AS ENUM ('AD', 'AH', 'HP', 'LS', 'OTHER');
 --  Тип данных для хранения значений: Да или Нет
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
-CREATE TYPE CodeYesNoType AS ENUM ('YES', 'NO', 'OTHER');
+CREATE TYPE CodeYesNoType AS ENUM ('Yes', 'No', 'Other');
 
 -- Признак принадлежности к военным:
 -- CIVIL - только гражданская авиация
@@ -116,7 +116,7 @@ CHECK (VALUE >= -180 AND VALUE <= 180);
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
 CREATE DOMAIN DateYearType AS SMALLINT
-CHECK (VALUE > 1000 AND VALUE <= 1999);
+CHECK (VALUE > 1000 AND VALUE <= 2999);
 
 -- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
@@ -514,3 +514,19 @@ CREATE TABLE AirportHeliportAvailability
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
 );
+
+INSERT INTO Point (uuid, latitude, longtitude, horizontalAccuracy, geom)
+    VALUES (1,45.060316,7.432044,'(0.28,"M")', ST_GeomFromText('POINT(45.060316 7.432044)', 4326)),
+      (2,49.146315,9.546787,'(0.25,"M")', ST_GeomFromText('POINT(49.146315 9.546787)', 4326)),
+      (3,49.563768,12.678744,'(0.20,"M")', ST_GeomFromText('POINT(49.563768 12.678744)', 4326));
+
+INSERT INTO ElevatedPoint (uuid, elevation, geoidUndulation, verticalDatum, verticalAccuracy)
+  VALUES (1, '(12.2,"UNL","M")', '(1.3,"M")','AHD','(0.11,"M")'),
+    (2, '(14.5,"UNL","M")', '(1.3,"M")','AHD','(0.14,"M")'),
+    (3, '(14.7,"UNL","M")', '(1.3,"M")','AHD','(0.08,"M")');
+
+INSERT INTO OrganisationAuthority (uuid, name)
+VALUES (1,'name');
+
+INSERT INTO AirportHeliport (uuid,designator,name,locationIndicatorICAO,designatorIATA,type,certifiedICAO,privateUse,controlType,fieldElevation,fieldElevationAccuracy,verticalDatum,magneticVariation,magneticVariationAccuracy,dateMagneticVariation,magneticVariationChange,referenceTemperature,altimeterCheckLocation,secondaryPowerSupply,windDirectionIndicator,landingDirectionIndicator,transitionAltitude,transitionLevel,lowestTemperature,abandoned,certificationDate,certificationExpirationDate, uuidOrganisationAuthority, uuidElevatedPoint)
+VALUES (12,'IKAO','IGLOM','ICAO','IAT','AD','Yes','Yes', 'JOINT','(12.2,"UNL","M")','(0.1,"UNL","M")', 'AHD',20,2,2014,1.5,(8,'C'),'No','Yes','Other','No',(24.8,'UNL','M'), (100,'SM'),(-10,'C'),'Other','1999-01-03', '2015-01-03', 1, 1);
