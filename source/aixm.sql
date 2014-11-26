@@ -344,8 +344,10 @@ CREATE TABLE Point
   uuid               id PRIMARY KEY,
   latitude           latitude,
   longtitude         longitude,
+  srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POINT, 4326)
+
 );
 
 
@@ -420,7 +422,7 @@ CREATE TABLE AirportHeliport
 CREATE TABLE City
 (
   uuid                id PRIMARY KEY,
-  name                TextNameType,
+  nameCity                TextNameType,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -515,18 +517,70 @@ CREATE TABLE AirportHeliportAvailability
   warning             CodeAirportWarningType
 );
 
-INSERT INTO Point (uuid, latitude, longtitude, horizontalAccuracy, geom)
-    VALUES (1,45.060316,7.432044,'(0.28,"M")', ST_GeomFromText('POINT(45.060316 7.432044)', 4326)),
-      (2,49.146315,9.546787,'(0.25,"M")', ST_GeomFromText('POINT(49.146315 9.546787)', 4326)),
-      (3,49.563768,12.678744,'(0.20,"M")', ST_GeomFromText('POINT(49.563768 12.678744)', 4326));
 
+DROP FUNCTION IF EXISTS trigger_insert();
+
+CREATE FUNCTION trigger_insert()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' OR
+      (TG_OP = 'UPDATE' AND (NEW.longtitude <> OLD.longtitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
+  THEN
+    IF (NEW.srid = 4326)
+    THEN
+      NEW.geom = st_setsrid(st_makepoint(NEW.longtitude, NEW.latitude), NEW.srid);
+    ELSE
+      NEW.geom = st_transform(st_setsrid(st_makepoint(NEW.longtitude, NEW.latitude), NEW.srid), 4326);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER inserting
+BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
+EXECUTE PROCEDURE trigger_insert();
+
+
+INSERT INTO Point (uuid, latitude, longtitude, horizontalAccuracy, srid)
+VALUES (1, 12, 12, '(0.28,"M")', 4326),
+  (2, 50, 6, '(0.25,"M")', 4326),
+  (3, 10, 42, '(0.20,"M")', 4326);
+
+
+UPDATE Point set srid = 4284;
 INSERT INTO ElevatedPoint (uuid, elevation, geoidUndulation, verticalDatum, verticalAccuracy)
-  VALUES (1, '(12.2,"UNL","M")', '(1.3,"M")','AHD','(0.11,"M")'),
-    (2, '(14.5,"UNL","M")', '(1.3,"M")','AHD','(0.14,"M")'),
-    (3, '(14.7,"UNL","M")', '(1.3,"M")','AHD','(0.08,"M")');
+VALUES (1, '(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
+  (2, '(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
+  (3, '(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
+
 
 INSERT INTO OrganisationAuthority (uuid, name)
-VALUES (1,'name');
+VALUES (1, 'name');
 
-INSERT INTO AirportHeliport (uuid,designator,name,locationIndicatorICAO,designatorIATA,type,certifiedICAO,privateUse,controlType,fieldElevation,fieldElevationAccuracy,verticalDatum,magneticVariation,magneticVariationAccuracy,dateMagneticVariation,magneticVariationChange,referenceTemperature,altimeterCheckLocation,secondaryPowerSupply,windDirectionIndicator,landingDirectionIndicator,transitionAltitude,transitionLevel,lowestTemperature,abandoned,certificationDate,certificationExpirationDate, uuidOrganisationAuthority, uuidElevatedPoint)
-VALUES (12,'IKAO','IGLOM','ICAO','IAT','AD','Yes','Yes', 'JOINT','(12.2,"UNL","M")','(0.1,"UNL","M")', 'AHD',20,2,2014,1.5,(8,'C'),'No','Yes','Other','No',(24.8,'UNL','M'), (100,'SM'),(-10,'C'),'Other','1999-01-03', '2015-01-03', 1, 1);
+INSERT INTO AirportHeliport (uuid, designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate, uuidOrganisationAuthority, uuidElevatedPoint)
+VALUES
+  (12, 'IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
+   2014, 1.5, (8, 'C'), 'No', 'Yes', 'Other', 'No', (24.8, 'UNL', 'M'), (100, 'SM'), (-10, 'C'), 'Other', '1999-01-03',
+   '2015-01-03', 1, 1),
+  (13, 'IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
+   2014, 1.5, (22, 'C'), 'Yes', 'Yes', 'No', 'No', (26.8, 'UNL', 'M'), (90, 'SM'), (0, 'C'), 'Yes', '1999-10-03',
+   '2012-10-03', 1, 2),
+  (15, 'IKAC', 'IGLOC', 'ICAC', 'IAC', 'AD', 'No', 'No', 'JOINT', '(11.1,"UNL","M")', '(0.15,"UNL","M")', 'AHD', 21, 2,
+   2014, 1.5, (30, 'C'), 'No', 'No', 'Yes', 'No', (20.2, 'UNL', 'M'), (150, 'SM'), (-30, 'C'), 'No', '2001-01-06',
+   '2018-01-06', 1, 3);
+
+DROP VIEW IF EXISTS airports;
+CREATE VIEW airports
+  AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom, ElevatedPoint.elevation
+     FROM AirportHeliport, Point, ElevatedPoint
+  WHERE ElevatedPoint.uuid = Point.uuid
+AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
+ORDER BY AirportHeliport.name;
+
+
+
+--CREATE VIEW airports
+  -- SELECT (type)
+ -- FROM AirportHeliport;
