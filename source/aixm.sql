@@ -422,7 +422,7 @@ CREATE TABLE AirportHeliport
 CREATE TABLE City
 (
   uuid                id PRIMARY KEY,
-  nameCity                TextNameType,
+  name                TextNameType,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
