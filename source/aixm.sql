@@ -20,7 +20,7 @@ DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valf
 -- В качестве id используем UUID Type
 --
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
-CREATE DOMAIN id AS INTEGER;
+CREATE DOMAIN id AS UUID;
 
 -- Уникальный индификатор для аэродрома/вертодрома5
 --
@@ -330,7 +330,7 @@ CREATE DOMAIN longitude AS DECIMAL(18, 15);
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
-  uuid       id PRIMARY KEY,
+  uuid       id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   name       TextNameType,
   designator CodeOrganisationDesignatorType,
   type       CodeOrganisationType,
@@ -341,7 +341,7 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
-  uuid               id PRIMARY KEY,
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   latitude           latitude,
   longtitude         longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
@@ -365,7 +365,7 @@ CREATE TABLE ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
-  uuid               id PRIMARY KEY,
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POLYGON, 4326)
 );
@@ -385,7 +385,7 @@ CREATE TABLE ElevatedSurface
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
 (
-  uuid                        id PRIMARY KEY,
+  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   designator                  CodeAirportHeliportDesignatorType,
   name                        TextNameType,
   locationIndicatorICAO       CodeICAOType,
@@ -421,7 +421,7 @@ CREATE TABLE AirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  uuid                id PRIMARY KEY,
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   name                TextNameType,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
@@ -430,7 +430,7 @@ CREATE TABLE City
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
 (
-  uuid                id PRIMARY KEY,
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   uuidElevatedPoint   id REFERENCES Point (uuid),
   designator          TextNameType
@@ -440,7 +440,7 @@ CREATE TABLE SurveyControlPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
 CREATE TABLE AirportHotSpot
 (
-  uuid                id PRIMARY KEY,
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   uuidElevatedSurface id REFERENCES Surface (uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   designator          TextDesignatorType,
@@ -451,7 +451,7 @@ CREATE TABLE AirportHotSpot
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
 CREATE TABLE AltimeterSource
 (
-  uuid      id PRIMARY KEY,
+  uuid      id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   isRemote  CodeYesNoType,
   isPrimary CodeYesNoType
 );
@@ -467,7 +467,7 @@ CREATE TABLE AltimeterSourceAirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
-  uuid                id PRIMARY KEY,
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
 );
@@ -476,7 +476,7 @@ CREATE TABLE AltimeterSourceStatus
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  uuid                      id PRIMARY KEY,
+  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   name                      TextNameType,
@@ -487,7 +487,7 @@ CREATE TABLE ContactInformation
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
-  uuid                  id PRIMARY KEY,
+  uuid                  id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   observationTime       DateTimeType,
   depth                 ValDepthType,
   frictionCoefficient   ValFrictionType,
@@ -511,7 +511,7 @@ CREATE TABLE AirportHeliportContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
-  uuid                id PRIMARY KEY,
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
