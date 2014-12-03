@@ -326,6 +326,9 @@ CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'R
 CREATE DOMAIN latitude AS DECIMAL(17, 15);
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
+-- RWY - ВПП для самолетов
+-- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
+CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -518,6 +521,28 @@ CREATE TABLE AirportHeliportAvailability
 );
 
 
+--https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Runway
+CREATE TABLE Runway
+(
+  designator TextDesignatorType,
+  type CodeRunwayType,
+  nominalLength ValDistanceType,
+  lengthAccuracy ValDistanceType,
+  nominalWidth ValDistanceType,
+  widthAccuracy ValDistanceType,
+  widthShoulder ValDistanceType,
+  lengthStrip ValDistanceType,
+  widthStrip ValDistanceType,
+  lengthOffset ValDistanceSignedType,
+  widthOffset ValDistanceSignedType,
+  abandoned CodeYesNoType
+);
+
+
+
+
+
+
 DROP FUNCTION IF EXISTS trigger_insert();
 
 CREATE FUNCTION trigger_insert()
@@ -581,6 +606,3 @@ ORDER BY AirportHeliport.name;
 
 
 
---CREATE VIEW airports
-  -- SELECT (type)
- -- FROM AirportHeliport;
