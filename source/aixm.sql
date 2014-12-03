@@ -603,12 +603,3 @@ CREATE VIEW airports
   WHERE ElevatedPoint.uuid = Point.uuid
 AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
 ORDER BY AirportHeliport.name;
-
-
-
-<<<<<<< HEAD
-=======
---CREATE VIEW airports
-  -- SELECT (type)
- -- FROM AirportHeliport;
->>>>>>> e08458de14c2e32a21157db4577ecb1e8450788f
