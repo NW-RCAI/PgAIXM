@@ -326,9 +326,126 @@ CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'R
 CREATE DOMAIN latitude AS DECIMAL(17, 15);
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
+DROP TYPE IF EXISTS CodeRunwayType;
 -- RWY - ВПП для самолетов
 -- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
 CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
+
+DROP TYPE IF EXISTS CodeSurfaceCompositionType;
+-- ASPH - асфальт
+-- ASPH_GRASS - асфальт и трава
+-- CONC - бетон
+-- CONC_ASPH - бетон и асфальт
+-- CONC_GRS - бетон и трава
+-- GRASS - трава с дерном или голой землей
+-- SAND - песок
+-- WATER - вода
+-- BITUM - битумная смола (Bituminous tar) или асфальт и/или масло или смесь битума с песком, замешанные на месте поверхности (часто относимые к "цементу земли" .Чтобы приготовить битумную смолу или асфальт нужно раскопать поверхность, смешать материал с битумным или масляным связующим веществом и покрыть поверхность получившейся смесью. Битум - это смола, полученная из масла или асфальта, который получен из масла.
+-- BRICK - кирпич
+-- MACADAM - поверхность из щебня или дёгтебетона, состоящая из связанных водой раздробленных камней
+-- STONE - камень
+-- CORAL - кораллы
+-- CLAY - глина
+-- LATERITE -латерит
+-- GRAVEL - гравий
+-- EARTH - преимущественно земля
+-- ICE - лед
+-- SNOW - снег
+-- MEMBRANE - защищающий слоистый материал, обычно из резины
+-- METAL - металл: сталь, аллюминий
+-- MATS - настил для посадки, обычно из аллюминия
+-- PIERCED_STEEL - перфорированная металлическая плита
+-- WOOD - дерево
+-- NON_BITUM_MIX - смесь без битума
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
+CREATE TYPE CodeSurfaceCompositionType AS ENUM ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'GRASS', 'SAND', 'WATER', 'BITUM', 'BRICK', 'MACADAM', 'STONE', 'CORAL', 'CLAY', 'LATERITE', 'GRAVEL', 'EARTH', 'ICE', 'SNOW', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'WOOD', 'NON_BITUM_MIX', 'OTHER');
+
+DROP TYPE IF EXISTS CodeSurfacePreparationType;
+-- NATURAL - естественная поверхность, без обработки
+-- ROLLED - обкатанная
+-- COMPACTED - сжатая (уплотненная)
+-- GRADED - выположенная
+-- GROOVED - бороздчатая
+-- OILED - масляная
+-- PAVED - мощёная
+-- PFC - пористое фрикционное покрытие
+-- AFSC - спресованное уплотненное фрикционное покрытие
+-- RFSC - гуммированное уплотненное фрикционное покрытие
+-- NON_GROOVED - не бороздчатый асфальт
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
+CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL','ROLLED','COMPACTED','GRADED','GROOVED','OILED','PAVED','PFC','AFSC', 'RFSC', 'NON_GROOVED', 'OTHER');
+
+
+DROP TYPE IF EXISTS CodeSurfaceConditionType;
+-- GOOD - хорошее
+-- FAIR - чистое (?)
+-- POOR - плохое
+-- UNSAFE - ненадежное
+-- DEFORMED - деформированное
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
+CREATE TYPE CodeSurfaceConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'UNSAFE', 'DEFORMED', 'OTHER');
+
+DROP DOMAIN IF EXISTS ValPCNType;
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
+CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
+
+
+DROP TYPE IF EXISTS CodePCNPavementType;
+-- RIGID - прочное покрытие
+-- FLEXIBLE - не прочное покрытие
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
+CREATE TYPE CodePCNPavementType AS ENUM ('RIGID','FLEXIBLE', 'OTHER');
+
+DROP TYPE IF EXISTS CodePCNSubgradeType;
+-- A - поверхность высокой прочности
+-- B - поверхность средней прочности
+-- C - поверхность низкой прочности
+-- D - поверхность  низкой прочности
+--https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
+CREATE TYPE CodePCNSubgradeType AS ENUM ('A', 'B', 'C', 'D', 'OTHER');
+
+DROP TYPE IF EXISTS CodePCNTyrePressureType;
+-- W - высокий: нет ограничений давления (pressure)
+-- X - средний: давление до 1.5 МПа (217 psi)
+-- Y - низкий: давление до 1.0 МПа (145 psi)
+-- Z - очень низкий: давление до 0.5 МПа (73 psi)
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
+CREATE TYPE CodePCNTyrePressureType AS ENUM ('W','X','Y','Z','OTHER');
+
+
+DROP TYPE IF EXISTS CodePCNPavementType;
+-- TECH - техническая оценка
+-- ACFT - основанная на опыте воздушного судна
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
+CREATE TYPE CodePCNMethodType AS ENUM ('TECH','ACFT','OTHER');
+
+DROP DOMAIN IF EXISTS ValLCNType;
+CREATE DOMAIN ValLCNType AS DECIMAL;
+
+DROP TYPE IF EXISTS UomWeightType, ValWeightType, ValWeightBaseType;
+-- T - тонны
+-- LB - фунты
+--  TON - не метрические американские тонны (2000 ob или 907.18474 кг)
+CREATE TYPE UomWeightType AS ENUM ('KG','T','LB','TON','OTHER');
+
+CREATE DOMAIN ValWeightBaseType AS DECIMAL
+CHECK (VALUE > 0);
+CREATE TYPE ValWeightType AS (
+  value ValWeightBaseType,
+  unit  UomWeightType
+);
+
+-- PSI - Фунт на квадратный дюйм
+-- BAR - 100000 Па
+-- TORR - Миллиметр ртутного столба
+-- ATM - Физическая атмосфера
+-- HPA - гектопаскали
+CREATE TYPE UomPressureType AS ENUM ('PA','MPA','PSI','BAR','TORR','ATM','HPA','OTHER');
+
+CREATE TYPE ValPressureType AS (
+  value DECIMAL,
+  unit  UomPressureType
+);
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -520,10 +637,13 @@ CREATE TABLE AirportHeliportAvailability
   warning             CodeAirportWarningType
 );
 
-
+DROP TABLE IF EXISTS Runway;
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Runway
 CREATE TABLE Runway
 (
+  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuidSurfaceCharacteristics id REFERENCES SurfaceCharacteristics (uuid),
   designator TextDesignatorType,
   type CodeRunwayType,
   nominalLength ValDistanceType,
@@ -538,8 +658,24 @@ CREATE TABLE Runway
   abandoned CodeYesNoType
 );
 
-
-
+DROP TABLE IF EXISTS SurfaceCharacteristics;
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
+CREATE TABLE SurfaceCharacteristics
+(
+  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  composition CodeSurfaceCompositionType,
+  preparation CodeSurfacePreparationType,
+  surfaceCondition CodeSurfaceConditionType,
+  classPCN ValPCNType,
+  pavementTypePCN CodePCNPavementType,
+  pavementSubgradePCN CodePCNSubgradeType,
+  maxTyrePressurePCN CodePCNTyrePressureType,
+  evaluationMethodPCN CodePCNMethodType,
+  classLCN ValLCNType,
+  weightSIWL ValWeightType,
+  tyrePressureSIWL ValPressureType,
+  weightAUW ValWeightType
+);
 
 
 
