@@ -333,6 +333,7 @@ CREATE DOMAIN latitude AS DECIMAL(17, 15);
 DROP TYPE IF EXISTS longitude;
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
+-- Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
 -- RWY - ВПП для самолетов
 -- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
 --
@@ -340,7 +341,7 @@ CREATE DOMAIN longitude AS DECIMAL(18, 15);
 DROP TYPE IF EXISTS CodeRunwayType;
 CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
 
-DROP TYPE IF EXISTS CodeSurfaceCompositionType;
+-- Код указывающий на материал ВПП.
 -- ASPH - асфальт
 -- ASPH_GRASS - асфальт и трава
 -- CONC - бетон
@@ -366,10 +367,12 @@ DROP TYPE IF EXISTS CodeSurfaceCompositionType;
 -- PIERCED_STEEL - перфорированная металлическая плита
 -- WOOD - дерево
 -- NON_BITUM_MIX - смесь без битума
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
+DROP TYPE IF EXISTS CodeSurfaceCompositionType;
 CREATE TYPE CodeSurfaceCompositionType AS ENUM ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'GRASS', 'SAND', 'WATER', 'BITUM', 'BRICK', 'MACADAM', 'STONE', 'CORAL', 'CLAY', 'LATERITE', 'GRAVEL', 'EARTH', 'ICE', 'SNOW', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'WOOD', 'NON_BITUM_MIX', 'OTHER');
 
-DROP TYPE IF EXISTS CodeSurfacePreparationType;
+-- Код указывающий на технику подотовки ВПП.
 -- NATURAL - естественная поверхность, без обработки
 -- ROLLED - обкатанная
 -- COMPACTED - сжатая (уплотненная)
@@ -381,36 +384,46 @@ DROP TYPE IF EXISTS CodeSurfacePreparationType;
 -- AFSC - спресованное уплотненное фрикционное покрытие
 -- RFSC - гуммированное уплотненное фрикционное покрытие
 -- NON_GROOVED - не бороздчатый асфальт
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
+DROP TYPE IF EXISTS CodeSurfacePreparationType;
 CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL','ROLLED','COMPACTED','GRADED','GROOVED','OILED','PAVED','PFC','AFSC', 'RFSC', 'NON_GROOVED', 'OTHER');
 
-
-DROP TYPE IF EXISTS CodeSurfaceConditionType;
+-- Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
 -- GOOD - хорошее
 -- FAIR - чистое (?)
 -- POOR - плохое
 -- UNSAFE - ненадежное
 -- DEFORMED - деформированное
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
+DROP TYPE IF EXISTS CodeSurfaceConditionType;
 CREATE TYPE CodeSurfaceConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'UNSAFE', 'DEFORMED', 'OTHER');
 
-DROP DOMAIN IF EXISTS ValPCNType;
+-- Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость) 
+-- покрытия взлётно-посадочной полосы аэродрома для эксплуатации без ограничений, используемый 
+-- совместно с классификационным числом воздушного судна.
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
+DROP DOMAIN IF EXISTS ValPCNType;
 CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
 
-
-DROP TYPE IF EXISTS CodePCNPavementType;
--- RIGID - прочное покрытие
--- FLEXIBLE - не прочное покрытие
+-- Код, обозначающий упругие свойства покрытия (жесткое или гибкое), используемого для определения ACN.
+-- RIGID - жесткое покрытие
+-- FLEXIBLE - гибкое покрытие
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
+DROP TYPE IF EXISTS CodePCNPavementType;
 CREATE TYPE CodePCNPavementType AS ENUM ('RIGID','FLEXIBLE', 'OTHER');
 
-DROP TYPE IF EXISTS CodePCNSubgradeType;
+-- Код, указывающий на класс прочности покрытия, связанный с PCN числа.
 -- A - поверхность высокой прочности
 -- B - поверхность средней прочности
 -- C - поверхность низкой прочности
 -- D - поверхность  низкой прочности
+--
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
+DROP TYPE IF EXISTS CodePCNSubgradeType;
 CREATE TYPE CodePCNSubgradeType AS ENUM ('A', 'B', 'C', 'D', 'OTHER');
 
 DROP TYPE IF EXISTS CodePCNTyrePressureType;
