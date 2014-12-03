@@ -323,12 +323,21 @@ CREATE TYPE CodeStatusAirportType AS ENUM ('NORMAL', 'LIMITED', 'CLOSED', 'OTHER
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
 CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'RUBBER_REMOVAL', 'PARKED_ACFT', 'RESURFACING', 'PAVING', 'PAINTING', 'INSPECTION', 'GRASS_CUTTING', 'CALIBRATION');
 
+-- Широта
+--
+DROP TYPE IF EXISTS latitude;
 CREATE DOMAIN latitude AS DECIMAL(17, 15);
+
+-- Долгота
+-- 
+DROP TYPE IF EXISTS longitude;
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
-DROP TYPE IF EXISTS CodeRunwayType;
 -- RWY - ВПП для самолетов
 -- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayType
+DROP TYPE IF EXISTS CodeRunwayType;
 CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
 
 DROP TYPE IF EXISTS CodeSurfaceCompositionType;
