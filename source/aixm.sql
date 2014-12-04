@@ -1,4 +1,4 @@
-﻿DROP TABLE IF EXISTS AirportHeliport CASCADE;
+DROP TABLE IF EXISTS AirportHeliport CASCADE;
 DROP TABLE IF EXISTS City CASCADE;
 DROP TABLE IF EXISTS Surface CASCADE;
 DROP TABLE IF EXISTS Point CASCADE;
@@ -14,8 +14,28 @@ DROP TABLE IF EXISTS ContactInformation CASCADE;
 DROP TABLE IF EXISTS SurfaceContamination CASCADE;
 DROP TABLE IF EXISTS AirportHeliportContamination CASCADE;
 DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE;
-DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, TimeType, ValPercentType, latitude, longitude CASCADE;
-DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype, uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType CASCADE;
+
+DROP TABLE IF EXISTS Runway CASCADE;
+DROP TABLE IF EXISTS SurfaceCharacteristics;
+
+DROP DOMAIN IF EXISTS 
+  id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, 
+  ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, 
+  CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, 
+  TimeType, ValPercentType, latitude, longitude, CodePCNPavementType, ValLCNType, ValWeightBaseType CASCADE;
+  
+DROP TYPE IF EXISTS 
+  CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype, 
+  uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType, 
+  valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, 
+  ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, 
+  CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType, 
+  UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType, 
+  CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType CASCADE;
+
+DROP FUNCTION IF EXISTS trigger_insert();
+
+DROP VIEW IF EXISTS airports;
 
 -- В качестве id используем UUID Type
 --
@@ -184,11 +204,15 @@ CREATE TYPE ValDistanceSignedType AS (
   unit  UomDistanceType
 );
 
+-- A type for (positive) distance.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceBase
+CREATE DOMAIN ValDistanceBaseType AS DECIMAL(30, 20)
+CHECK (VALUE > 0);
+
 -- A (positive) distance.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
-CREATE DOMAIN ValDistanceBaseType AS DECIMAL(30, 20)
-CHECK (VALUE > 0);
 CREATE TYPE ValDistanceType AS (
   value ValDistanceBaseType,
   unit  UomDistanceType
@@ -287,7 +311,7 @@ CREATE TYPE CodeFrictionEstimateType AS ENUM ('GOOD', 'MEDIUM_GOOD', 'MEDIUM', '
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionDeviceType
 CREATE TYPE CodeFrictionDeviceType AS ENUM ('BRD', 'GRT', 'MUM', 'RFT', 'SFH', 'SFL', 'SKH', 'SKL', 'TAP', 'OTHER');
 
--- время с точностью до 1 мин.
+-- Время с точностью до 1 мин.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
 CREATE DOMAIN TimeType AS CHAR(5)
@@ -296,10 +320,11 @@ CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 -- A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
-CREATE DOMAIN ValPercentType AS DECIMAL(7, 4)
+CREATE DOMAIN ValPercentType AS DECIMAL(4, 1)
 CHECK (VALUE >= 0 AND VALUE <= 100);
 
 
+-- A coded list of values that indicates the availability of an airport/heliport facility for specific flight operations.
 -- NORMAL - условия имеют формальные ограничения
 -- LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
 -- CLOSED - не рабочее состояние
@@ -307,6 +332,7 @@ CHECK (VALUE >= 0 AND VALUE <= 100);
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirportType
 CREATE TYPE CodeStatusAirportType AS ENUM ('NORMAL', 'LIMITED', 'CLOSED', 'OTHER');
 
+-- A code indicating a reason for caution in airport operations. For example, work in progress on a runway.
 -- WIP - идут работы
 -- EQUIP - люди и оборудование
 -- BIRD - опасность в виде птиц
@@ -325,12 +351,10 @@ CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'R
 
 -- Широта
 --
-DROP TYPE IF EXISTS latitude;
 CREATE DOMAIN latitude AS DECIMAL(17, 15);
 
 -- Долгота
 -- 
-DROP TYPE IF EXISTS longitude;
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
 -- Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
@@ -338,7 +362,6 @@ CREATE DOMAIN longitude AS DECIMAL(18, 15);
 -- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayType
-DROP TYPE IF EXISTS CodeRunwayType;
 CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
 
 -- Код указывающий на материал ВПП.
@@ -369,7 +392,6 @@ CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
 -- NON_BITUM_MIX - смесь без битума
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
-DROP TYPE IF EXISTS CodeSurfaceCompositionType;
 CREATE TYPE CodeSurfaceCompositionType AS ENUM ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'GRASS', 'SAND', 'WATER', 'BITUM', 'BRICK', 'MACADAM', 'STONE', 'CORAL', 'CLAY', 'LATERITE', 'GRAVEL', 'EARTH', 'ICE', 'SNOW', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'WOOD', 'NON_BITUM_MIX', 'OTHER');
 
 -- Код указывающий на технику подотовки ВПП.
@@ -386,7 +408,6 @@ CREATE TYPE CodeSurfaceCompositionType AS ENUM ('ASPH', 'ASPH_GRASS', 'CONC', 'C
 -- NON_GROOVED - не бороздчатый асфальт
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
-DROP TYPE IF EXISTS CodeSurfacePreparationType;
 CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL','ROLLED','COMPACTED','GRADED','GROOVED','OILED','PAVED','PFC','AFSC', 'RFSC', 'NON_GROOVED', 'OTHER');
 
 -- Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
@@ -397,7 +418,6 @@ CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL','ROLLED','COMPACTED','
 -- DEFORMED - деформированное
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
-DROP TYPE IF EXISTS CodeSurfaceConditionType;
 CREATE TYPE CodeSurfaceConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'UNSAFE', 'DEFORMED', 'OTHER');
 
 -- Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость) 
@@ -405,7 +425,6 @@ CREATE TYPE CodeSurfaceConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'UNSAFE', 
 -- совместно с классификационным числом воздушного судна.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
-DROP DOMAIN IF EXISTS ValPCNType;
 CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
 
 -- Код, обозначающий упругие свойства покрытия (жесткое или гибкое), используемого для определения ACN.
@@ -413,7 +432,6 @@ CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
 -- FLEXIBLE - гибкое покрытие
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
-DROP TYPE IF EXISTS CodePCNPavementType;
 CREATE TYPE CodePCNPavementType AS ENUM ('RIGID','FLEXIBLE', 'OTHER');
 
 -- Код, указывающий на класс прочности покрытия, связанный с PCN числа.
@@ -423,33 +441,41 @@ CREATE TYPE CodePCNPavementType AS ENUM ('RIGID','FLEXIBLE', 'OTHER');
 -- D - поверхность  низкой прочности
 --
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
-DROP TYPE IF EXISTS CodePCNSubgradeType;
 CREATE TYPE CodePCNSubgradeType AS ENUM ('A', 'B', 'C', 'D', 'OTHER');
 
-DROP TYPE IF EXISTS CodePCNTyrePressureType;
+
+-- Код, указывающий максимально допустимое давление в шинах, относящуюся. Используется в PCN.
 -- W - высокий: нет ограничений давления (pressure)
 -- X - средний: давление до 1.5 МПа (217 psi)
 -- Y - низкий: давление до 1.0 МПа (145 psi)
 -- Z - очень низкий: давление до 0.5 МПа (73 psi)
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
 CREATE TYPE CodePCNTyrePressureType AS ENUM ('W','X','Y','Z','OTHER');
 
-
-DROP TYPE IF EXISTS CodePCNPavementType;
+-- Код, указывающий на метод, используемый при оценке PCN.
 -- TECH - техническая оценка
 -- ACFT - основанная на опыте воздушного судна
+--
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
 CREATE TYPE CodePCNMethodType AS ENUM ('TECH','ACFT','OTHER');
 
-DROP DOMAIN IF EXISTS ValLCNType;
+-- The value of a load classification number (LCN) for a surface.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValLCNBaseType
 CREATE DOMAIN ValLCNType AS DECIMAL;
 
-DROP TYPE IF EXISTS UomWeightType, ValWeightType, ValWeightBaseType;
+-- Единицы измерения веса.
 -- T - тонны
 -- LB - фунты
---  TON - не метрические американские тонны (2000 ob или 907.18474 кг)
+-- TON - не метрические американские тонны (2000 ob или 907.18474 кг)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
 CREATE TYPE UomWeightType AS ENUM ('KG','T','LB','TON','OTHER');
 
+-- Значение веса.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
 CREATE DOMAIN ValWeightBaseType AS DECIMAL
 CHECK (VALUE > 0);
 CREATE TYPE ValWeightType AS (
@@ -457,13 +483,19 @@ CREATE TYPE ValWeightType AS (
   unit  UomWeightType
 );
 
+-- Единицы измерения давления.
 -- PSI - Фунт на квадратный дюйм
 -- BAR - 100000 Па
 -- TORR - Миллиметр ртутного столба
 -- ATM - Физическая атмосфера
 -- HPA - гектопаскали
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomPressureType
 CREATE TYPE UomPressureType AS ENUM ('PA','MPA','PSI','BAR','TORR','ATM','HPA','OTHER');
 
+-- Значение давления.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPressureType
 CREATE TYPE ValPressureType AS (
   value DECIMAL,
   unit  UomPressureType
@@ -659,7 +691,6 @@ CREATE TABLE AirportHeliportAvailability
   warning             CodeAirportWarningType
 );
 
-DROP TABLE IF EXISTS Runway;
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Runway
 CREATE TABLE Runway
 (
@@ -680,7 +711,6 @@ CREATE TABLE Runway
   abandoned CodeYesNoType
 );
 
-DROP TABLE IF EXISTS SurfaceCharacteristics;
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
 CREATE TABLE SurfaceCharacteristics
 (
@@ -701,7 +731,7 @@ CREATE TABLE SurfaceCharacteristics
 
 
 
-DROP FUNCTION IF EXISTS trigger_insert();
+
 
 CREATE FUNCTION trigger_insert()
   RETURNS TRIGGER AS $$
@@ -754,7 +784,7 @@ VALUES
    2014, 1.5, (30, 'C'), 'No', 'No', 'Yes', 'No', (20.2, 'UNL', 'M'), (150, 'SM'), (-30, 'C'), 'No', '2001-01-06',
    '2018-01-06', 1, 3);
 
-DROP VIEW IF EXISTS airports;
+
 CREATE VIEW airports
   AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom, ElevatedPoint.elevation
      FROM AirportHeliport, Point, ElevatedPoint
