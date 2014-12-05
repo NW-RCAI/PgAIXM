@@ -96,7 +96,7 @@ Runway
 ### Один ко многим:
 
 - O RunwayContamination
-- O ~~RunwaySectionContamination~~
+- O RunwaySectionContamination
 - F ~~RunwayDirection~~
 - F ~~TouchDownLiftOff~~
 - F ~~RunwayMarking~~
