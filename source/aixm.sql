@@ -501,6 +501,29 @@ CREATE TYPE ValPressureType AS (
   unit  UomPressureType
 );
 
+-- LEFT - на левой стороне оси
+-- RIGHT - на правой стороне оси
+-- BOTH - распределено по двум сторонам оси
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
+CREATE TYPE CodeSideType AS ENUM ('LEFT','RIGHT','BOTH','OTHER');
+
+-- TDZ - зона приземления
+-- AIM - точка назначения
+-- CL - осевая линия
+-- EDGE - край
+-- THR - начало
+-- DESIG - обозначение ВПП
+-- AFT_THR - после начала (фиксированное метками расстояние)
+-- DTHR - перемещённое начало
+-- END - конец ВПП
+-- TWY_INT - пересечение рулежных дорожек
+-- RPD_TWY_INT - частое (или резкое) пересечение рулежных дорожек
+-- 1_THIRD - первая треть ВПП, считая от начала с наименьшим номером определителя (designation number)
+-- 2_THIRD - вторая треть ВПП, считая от начала с наименьшим номером определителя
+-- 3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
+CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT', 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -678,6 +701,7 @@ CREATE TABLE SurfaceContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
+  uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -730,8 +754,27 @@ CREATE TABLE SurfaceCharacteristics
 );
 
 
+DROP TABLE IF EXISTS RunwayContamination ;
+CREATE TABLE RunwayContamination
+(
+  uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
+  clearedLength ValDistanceType,
+  clearedWidth ValDistanceType,
+  clearedSide CodeSideType,
+  furtherClearanceLength ValDistanceType,
+  furtherClearanceWidth ValDistanceType,
+  obscuredLightsSide CodeSideType,
+  clearedLengthBegin ValDistanceType,
+  taxiwayAvailable CodeYesNoType,
+  apronAvailable CodeYesNoType
+);
 
-
+DROP TABLE IF EXISTS RunwaySectionContamination ;
+CREATE TABLE RunwaySectionContamination
+(
+  uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
+  section CodeRunwaySectionType
+);
 
 CREATE FUNCTION trigger_insert()
   RETURNS TRIGGER AS $$

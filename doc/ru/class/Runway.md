@@ -95,7 +95,7 @@ Runway
 
 ### Один ко многим:
 
-- O ~~RunwayContamination~~
+- O RunwayContamination
 - O ~~RunwaySectionContamination~~
 - F ~~RunwayDirection~~
 - F ~~TouchDownLiftOff~~
