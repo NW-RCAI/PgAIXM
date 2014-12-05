@@ -13,6 +13,13 @@ RunwayContamination
 
 ##### uuid
 
+Наследуется из таблицы SurfaceContamination.
+
+##### uuidRunway
+Ссылка на: Runway (uuid)
+
+Ссылка на аэродром/вертодром на котором действуют эти неблагоприятные условия.
+
 ##### clearedLength
 Тип данных: ValDistanceType
 
@@ -26,22 +33,22 @@ RunwayContamination
 ##### clearedSide
 Тип данных: CodeSideType
 
-Показывает, что очищенная полоса расположена справа, слева или по центру линии.
+Показывает, что очищенная полоса расположена справа, слева или по центру осевой линии.
 
 ##### furtherClearanceLength
 Тип данных: ValDistanceType
 
-Длина ВПП, которая будет очищеена от загрязнения (в случае, если она меньше общей длины).
+Длина ВПП, которая будет очищена от загрязнения (в случае, если она меньше общей длины).
 
 ##### furtherClearanceWidth
 Тип данных: ValDistanceType
 
-Ширина ВПП, которая будет очищеена от загрязнения (в случае, если она меньше общей ширины).
+Ширина ВПП, которая будет очищена от загрязнения (в случае, если она меньше общей ширины).
 
 ##### obscuredLightsSide
 Тип данных: CodeSideType
 
-Показывает сторону, на которой свет тусклый.
+Указывает сторону, на которой огни затемнены.
 
 ##### clearedLengthBegin
 Тип данных: ValDistanceType
@@ -51,62 +58,62 @@ RunwayContamination
 ##### taxiwayAvailable
 Тип данных: CodeYesNoType
 
-Показывает, есть ли очищенные границы рулежной дорожки (taxiway), обслуживающие данную ВПП.
+Показывает, есть ли очищенные границы рулежной дорожки, обслуживающей данную ВПП.
 
 ##### apronAvailable
 Тип данных: CodeYesNoType
 
-Показывает, есть ли очищенное полотно (apron), обслуживающие данную ВПП.
+Показывает, есть ли очищенный пирон, обслуживающий данную ВПП.
 
 ##### observationTime
 Тип данных: DateTimeType
 
-Дата и время произведения измерений (UTC).
+Наследуется из таблицы SurfaceContamination.
 
 ##### depth
 Тип данных: ValDepthType
 
-Глубина загрязнений поверхности.
+Наследуется из таблицы SurfaceContamination.
 
 ##### frictionCoefficient
 Тип данных: ValFrictionType
 
-Средний коэффициент трения
+Наследуется из таблицы SurfaceContamination.
 
 ##### frictionEstimation
 Тип данных: CodeFrictionEstimateType
 
-Качественная оценка трения.
+Наследуется из таблицы SurfaceContamination.
 
 ##### frictionDevice
 Тип данных: CodeFrictionDeviceType
 
-Тип оборудования, используемый, чтобы определить объявляемый коэффициент трения.
+Наследуется из таблицы SurfaceContamination.
 
 ##### obscuredLights
 Тип данных: CodeYesNoType
 
-Показывает, что свет на поверхности тусклый.
+Наследуется из таблицы SurfaceContamination.
 
 ##### furtherClearanceTime
 Тип данных: TimeType
 
-Дата и время (UTC), когда ожидается ближайшая чистка (уборка).
+Наследуется из таблицы SurfaceContamination.
 
 ##### furtherTotalClearance
 Тип данных: CodeYesNoType
 
-Показывает, что ожидается полная уборка.
+Наследуется из таблицы SurfaceContamination.
 
 ##### nextObservationTime
 Тип данных: DateTimeType
 
-Дата и время объявления планируемых измерений (UTC).
+Наследуется из таблицы SurfaceContamination.
 
 ##### proportion
 Тип данных: ValPercentType
 
-Процент загрязненноё территории от всей поверхности.
+Наследуется из таблицы SurfaceContamination.
 
 ## Связи
 
