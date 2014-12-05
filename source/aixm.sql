@@ -758,6 +758,7 @@ DROP TABLE IF EXISTS RunwayContamination ;
 CREATE TABLE RunwayContamination
 (
   uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
+  uuidRunway id REFERENCES Runway (uuid),
   clearedLength ValDistanceType,
   clearedWidth ValDistanceType,
   clearedSide CodeSideType,
@@ -773,6 +774,7 @@ DROP TABLE IF EXISTS RunwaySectionContamination ;
 CREATE TABLE RunwaySectionContamination
 (
   uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
+  uuidRunway id REFERENCES Runway (uuid),
   section CodeRunwaySectionType
 );
 
