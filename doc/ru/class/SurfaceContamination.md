@@ -11,7 +11,7 @@ SurfaceContamination
 - ~~AircraftStandContamination~~
 - AirportHeliportContamination
 - ~~ApronContamination~~
-- ~~RunwayContamination~~
+- RunwayContamination
 - ~~RunwaySectionContamination~~
 - ~~TaxiwayContamination~~
 - ~~TouchDownLiftOffContamination~~
