@@ -16,13 +16,13 @@ DROP TABLE IF EXISTS AirportHeliportContamination CASCADE;
 DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE;
 
 DROP TABLE IF EXISTS Runway CASCADE;
-DROP TABLE IF EXISTS SurfaceCharacteristics;
+DROP TABLE IF EXISTS SurfaceCharacteristics CASCADE ;
 
 DROP DOMAIN IF EXISTS 
   id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, 
   ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, 
   CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, 
-  TimeType, ValPercentType, latitude, longitude, CodePCNPavementType, ValLCNType, ValWeightBaseType CASCADE;
+  TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType CASCADE;
   
 DROP TYPE IF EXISTS 
   CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype, 
@@ -31,7 +31,9 @@ DROP TYPE IF EXISTS
   ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, 
   CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType, 
   UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType, 
-  CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType CASCADE;
+  CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
+  codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
+  valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 
@@ -739,6 +741,7 @@ CREATE TABLE Runway
 CREATE TABLE SurfaceCharacteristics
 (
   uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuidRunway id REFERENCES Runway (uuid),
   composition CodeSurfaceCompositionType,
   preparation CodeSurfacePreparationType,
   surfaceCondition CodeSurfaceConditionType,
@@ -802,16 +805,16 @@ EXECUTE PROCEDURE trigger_insert();
 
 
 INSERT INTO Point (uuid, latitude, longtitude, horizontalAccuracy, srid)
-VALUES (1, 12, 12, '(0.28,"M")', 4326),
-  (2, 50, 6, '(0.25,"M")', 4326),
-  (3, 10, 42, '(0.20,"M")', 4326);
+VALUES (NULL, 12, 12, '(0.28,"M")', 4326),
+  (NULL, 50, 6, '(0.25,"M")', 4326),
+  (NULL, 10, 42, '(0.20,"M")', 4326);
 
 
 UPDATE Point set srid = 4284;
 INSERT INTO ElevatedPoint (uuid, elevation, geoidUndulation, verticalDatum, verticalAccuracy)
-VALUES (1, '(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
-  (2, '(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
-  (3, '(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
+VALUES (NULL, '(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
+  (NULL, '(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
+  (NULL, '(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
 
 
 INSERT INTO OrganisationAuthority (uuid, name)
@@ -819,20 +822,22 @@ VALUES (1, 'name');
 
 INSERT INTO AirportHeliport (uuid, designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate, uuidOrganisationAuthority, uuidElevatedPoint)
 VALUES
-  (12, 'IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
+  (NULL, 'IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
    2014, 1.5, (8, 'C'), 'No', 'Yes', 'Other', 'No', (24.8, 'UNL', 'M'), (100, 'SM'), (-10, 'C'), 'Other', '1999-01-03',
    '2015-01-03', 1, 1),
-  (13, 'IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
+  (NULL, 'IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
    2014, 1.5, (22, 'C'), 'Yes', 'Yes', 'No', 'No', (26.8, 'UNL', 'M'), (90, 'SM'), (0, 'C'), 'Yes', '1999-10-03',
    '2012-10-03', 1, 2),
-  (15, 'IKAC', 'IGLOC', 'ICAC', 'IAC', 'AD', 'No', 'No', 'JOINT', '(11.1,"UNL","M")', '(0.15,"UNL","M")', 'AHD', 21, 2,
+  (NULL, 'IKAC', 'IGLOC', 'ICAC', 'IAC', 'AD', 'No', 'No', 'JOINT', '(11.1,"UNL","M")', '(0.15,"UNL","M")', 'AHD', 21, 2,
    2014, 1.5, (30, 'C'), 'No', 'No', 'Yes', 'No', (20.2, 'UNL', 'M'), (150, 'SM'), (-30, 'C'), 'No', '2001-01-06',
    '2018-01-06', 1, 3);
 
 
 CREATE VIEW airports
-  AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom, ElevatedPoint.elevation
-     FROM AirportHeliport, Point, ElevatedPoint
+  AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom, ElevatedPoint.elevation, Runway.nominalLength, SurfaceCharacteristics.pavementTypePCN
+     FROM AirportHeliport, Point, ElevatedPoint, Runway, SurfaceCharacteristics
   WHERE ElevatedPoint.uuid = Point.uuid
 AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
+  AND  Runway.uuidAirportHeliport = AirportHeliport.uuid
+  AND SurfaceCharacteristics.uuidRunway = Runway.uuid
 ORDER BY AirportHeliport.name;
