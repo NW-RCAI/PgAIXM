@@ -22,7 +22,7 @@ DROP DOMAIN IF EXISTS
   id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, 
   ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, 
   CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, 
-  TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType CASCADE;
+  TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType CASCADE;
   
 DROP TYPE IF EXISTS 
   CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype, 
@@ -33,7 +33,8 @@ DROP TYPE IF EXISTS
   UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType, 
   CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
   codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
-  valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype CASCADE;
+  valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype,CodeLightingJARType,
+  CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 
@@ -526,6 +527,72 @@ CREATE TYPE CodeSideType AS ENUM ('LEFT','RIGHT','BOTH','OTHER');
 -- 3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
 CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT', 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
 
+-- Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
+-- Угол измеряется по часовой стрелке от 0 до 360 градусов. Значение может быть радиалом всенаправленного азимутального радиомаяка (РМА, VHF). Например, направление на запад выражается как 270 градусов.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValBearingType
+CREATE DOMAIN ValBearingType AS DECIMAL
+  CHECK ( VALUE >= 0 AND VALUE <= 360);
+
+-- Идентификатор направления поворота
+-- LEFT - налево
+-- RIGHT - направо
+-- EITHER	- любое левое или правое направление
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDirectionTurnType
+CREATE TYPE CodeDirectionTurnType AS ENUM ('LEFT', 'RIGHT', 'EITHER', 'OTHER');
+
+-- Значение наклона или градиента восхождения/спуска, выраженное в процентах
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValSlopeType
+CREATE DOMAIN ValSlopeType AS DECIMAL
+  CHECK ( VALUE >= -100 AND VALUE <= 100);
+
+-- Код маркировки ВПП, связанный с посадочными категориями, такими как точность, не точность и базовые категории.
+-- PRECISION - маркировка соответствует заходу на посадку с точностью: используется и поперечная информация (локализатор), и вертикальная (наклон глиссады).
+-- Маркировка захода на посадку с точностью включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала, пункта назначения, зоны посадки, боковых полос
+-- NONPRECISION - маркировка соответствует заходу на посадку без точности: используется только поперечная информация (боковая)
+-- Маркировка захода на посадку без точности включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала и пункта назначения
+-- BASIC - базовые или визуальные элементы маркировки ВПП включают маркировки для обозначения ВПП (Runway Designation), для геометрической оси, начала (на ВПП, которые намереваются использовать международные торговые самолеты) и пункта назначения (на ВПП в 4000 футов (1200 метров) или длиннее, используемых реактивными самолетами)
+-- NONE - у ВПП нет маркировки
+-- RUNWAY_NUMBERS - единственный элемент маркировки ВПП - обозначение ВПП (Runway Designation)
+-- NON_STANDARD - такие элементы маркировк, как обозначение ВПП, геометрическая ось, начало и пункт назначения могут быть представлены, но они не являются стандартной маркировкой
+-- HELIPORT - специфичная маркировка для вертолетов
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
+ CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION','NONPRECISION','BASIC','NONE','RUNWAY_NUMBERS','NON_STANDARD', 'HELIPORT','OTHER');
+
+-- Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
+-- GOOD - маркировка в хорошем состоянии
+-- FAIR - маркировка в порядочном состоянии
+-- POOR - маркировка в плохом состоянии
+-- EXCELLENT - маркировка в прекрасном состоянии
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
+CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD','FAIR','POOR','EXCELLENT','OTHER');
+
+-- Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
+-- FALS - полныое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
+-- IALS - среднее световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - от 420 до 720 м, огни по краям ВПП, в начале ВПП и в конце ВПП
+-- BALS - базовое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - менее 420 м (или низкая интенсивность посадочной световой системы любой длины), огни по краям ВПП, в начале ВПП и в конце ВПП
+-- NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
+CREATE TYPE CodeLightingJARType AS ENUM ('FALS','IALS','BALS','NALS','OTHER');
+
+-- Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
+-- NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
+-- ILS_PRECISION_CAT_I - ВПП с заходом на посадку с точностью: категория I
+-- ILS_PRECISION_CAT_II - ВПП с заходом на посадку с точностью: категория II
+-- ILS_PRECISION_CAT_IIIA - ВПП с заходом на посадку с точностью: категория III A
+-- ILS_PRECISION_CAT_IIIB - ВПП с заходом на посадку с точностью: категория III B
+-- ILS_PRECISION_CAT_IIIC - ВПП с заходом на посадку с точностью: категория III C
+-- ILS_PRECISION_CAT_IIID - ВПП с заходом на посадку с точностью: категория III D
+-- MLS_PRECISION - микроволновая точностная система захода на посадки
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
+CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION','ILS_PRECISION_CAT_I','ILS_PRECISION_CAT_II','ILS_PRECISION_CAT_IIIA','ILS_PRECISION_CAT_IIIB','ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -780,6 +847,26 @@ CREATE TABLE RunwaySectionContamination
   uuidRunway id REFERENCES Runway (uuid),
   section CodeRunwaySectionType
 );
+
+DROP TABLE IF EXISTS RunwayDirection;
+CREATE TABLE RunwayDirection
+(
+  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuidRunway id REFERENCES Runway (uuid),
+  designator TextDesignatorType,
+  trueBearing ValBearingType,
+  trueBearingAccuracy ValAngleType,
+  magneticBearing ValBearingType,
+  patternVFR CodeDirectionTurnType,
+  slopeTDZ ValSlopeType,
+  elevationTDZ ValDistanceVerticalType,
+  elevationTDZAccuracy ValDistanceType,
+  approachMarkingType CodeRunwayMarkingType,
+  approachMarkingCondition CodeMarkingConditionType,
+  classLightingJAR CodeLightingJARType,
+  precisionApproachGuidance CodeApproachGuidanceType
+);
+
 
 CREATE FUNCTION trigger_insert()
   RETURNS TRIGGER AS $$
