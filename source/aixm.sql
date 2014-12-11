@@ -504,6 +504,7 @@ CREATE TYPE ValPressureType AS (
   unit  UomPressureType
 );
 
+-- Код, описывающий положение по отношению к оси ВВП. Например: слева / справа от осевой линии ВПП.
 -- LEFT - на левой стороне оси
 -- RIGHT - на правой стороне оси
 -- BOTH - распределено по двум сторонам оси
@@ -511,6 +512,7 @@ CREATE TYPE ValPressureType AS (
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
 CREATE TYPE CodeSideType AS ENUM ('LEFT','RIGHT','BOTH','OTHER');
 
+-- Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
 -- TDZ - зона приземления
 -- AIM - точка назначения
 -- CL - осевая линия
@@ -525,6 +527,8 @@ CREATE TYPE CodeSideType AS ENUM ('LEFT','RIGHT','BOTH','OTHER');
 -- 1_THIRD - первая треть ВПП, считая от начала с наименьшим номером определителя (designation number)
 -- 2_THIRD - вторая треть ВПП, считая от начала с наименьшим номером определителя
 -- 3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
 CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT', 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
 
 -- Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
