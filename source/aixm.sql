@@ -16,7 +16,12 @@ DROP TABLE IF EXISTS AirportHeliportContamination CASCADE;
 DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE;
 
 DROP TABLE IF EXISTS Runway CASCADE;
-DROP TABLE IF EXISTS SurfaceCharacteristics CASCADE ;
+DROP TABLE IF EXISTS SurfaceCharacteristics CASCADE;
+DROP TABLE IF EXISTS RunwayContamination CASCADE;
+DROP TABLE IF EXISTS RunwaySectionContamination CASCADE;
+DROP TABLE IF EXISTS RunwayDirection CASCADE;
+DROP TABLE IF EXISTS GroundLightSystem CASCADE;
+DROP TABLE IF EXISTS RunwayDirectionLightSystem;
 
 DROP DOMAIN IF EXISTS 
   id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, 
@@ -844,7 +849,7 @@ CREATE TABLE SurfaceCharacteristics
 );
 
 
-DROP TABLE IF EXISTS RunwayContamination ;
+--https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayContamination
 CREATE TABLE RunwayContamination
 (
   uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
@@ -860,7 +865,7 @@ CREATE TABLE RunwayContamination
   apronAvailable CodeYesNoType
 );
 
-DROP TABLE IF EXISTS RunwaySectionContamination ;
+--https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwaySectionContamination
 CREATE TABLE RunwaySectionContamination
 (
   uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
@@ -868,7 +873,7 @@ CREATE TABLE RunwaySectionContamination
   section CodeRunwaySectionType
 );
 
-DROP TABLE IF EXISTS RunwayDirection;
+--https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirection
 CREATE TABLE RunwayDirection
 (
   uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
@@ -887,7 +892,7 @@ CREATE TABLE RunwayDirection
   precisionApproachGuidance CodeApproachGuidanceType
 );
 
-DROP TABLE IF EXISTS GroundLightSystem;
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystemhttps://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystem
 CREATE TABLE GroundLightSystem
 (
   uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
@@ -896,7 +901,7 @@ CREATE TABLE GroundLightSystem
   colour CodeColourType
 );
 
-DROP TABLE IF EXISTS RunwayDirectionLightSystem;
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
   uuid id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
