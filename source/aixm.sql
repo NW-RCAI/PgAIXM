@@ -34,7 +34,7 @@ DROP TYPE IF EXISTS
   CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
   codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
   valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype,CodeLightingJARType,
-  CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType CASCADE;
+  CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 
@@ -597,6 +597,22 @@ CREATE TYPE CodeLightingJARType AS ENUM ('FALS','IALS','BALS','NALS','OTHER');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
 CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION','ILS_PRECISION_CAT_I','ILS_PRECISION_CAT_II','ILS_PRECISION_CAT_IIIA','ILS_PRECISION_CAT_IIIB','ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
 
+-- Код, идентифицирующий уровень интенсивности источника света
+-- LIL - низкая интенсивность света
+-- LIM - средняя интенсивность света
+-- LIH - высокая интенсивность света
+-- LIL_LIH - низкая интенсивность для ночного использования, высокая интенсивность для дневного использования, определяется фотоэлементом
+-- PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
+CREATE TYPE CodeLightIntensityType AS ENUM ('LIL','LIM','LIH','LIL_LIH','PREDETERMINED','OTHER');
+
+-- Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
+CREATE TYPE CodeColourType AS ENUM ('YELLOW','RED','WHITE','BLUE','GREEN','PURPLE','ORANGE','AMBER','BLACK','BROWN','GREY','LIGHT_GREY','MAGENTA','PINK','VIOLET','OTHER');
+
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -871,6 +887,23 @@ CREATE TABLE RunwayDirection
   precisionApproachGuidance CodeApproachGuidanceType
 );
 
+DROP TABLE IF EXISTS GroundLightSystem;
+CREATE TABLE GroundLightSystem
+(
+  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  emergencyLighting CodeYesNoType,
+  intensityLevel CodeLightIntensityType,
+  colour CodeColourType
+);
+
+DROP TABLE IF EXISTS RunwayDirectionLightSystem;
+CREATE TABLE RunwayDirectionLightSystem
+(
+  uuid id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
+  uuidRunwayDirection id REFERENCES RunwayDirection (uuid),
+  position CodeRunwaySectionType
+);
+
 
 CREATE FUNCTION trigger_insert()
   RETURNS TRIGGER AS $$
@@ -895,40 +928,43 @@ BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert();
 
 
-INSERT INTO Point (uuid, latitude, longtitude, horizontalAccuracy, srid)
-VALUES (NULL, 12, 12, '(0.28,"M")', 4326),
-  (NULL, 50, 6, '(0.25,"M")', 4326),
-  (NULL, 10, 42, '(0.20,"M")', 4326);
+INSERT INTO Point (latitude, longtitude, horizontalAccuracy, srid)
+VALUES (12, 12, '(0.28,"M")', 4326),
+  (50, 6, '(0.25,"M")', 4326),
+  (10, 42, '(0.20,"M")', 4326);
 
 
 UPDATE Point set srid = 4284;
-INSERT INTO ElevatedPoint (uuid, elevation, geoidUndulation, verticalDatum, verticalAccuracy)
-VALUES (NULL, '(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
-  (NULL, '(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
-  (NULL, '(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
+INSERT INTO ElevatedPoint (elevation, geoidUndulation, verticalDatum, verticalAccuracy)
+VALUES ('530be26e-9146-4a2f-944f-5c1b7efe6a25', '(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
+  ('41e75b2f-2a3c-4000-b123-20d17e748ba3','(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
+  ('d406c3cc-558c-43e4-821d-338bbd0aa2a9','(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
 
 
 INSERT INTO OrganisationAuthority (uuid, name)
 VALUES (1, 'name');
 
-INSERT INTO AirportHeliport (uuid, designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate, uuidOrganisationAuthority, uuidElevatedPoint)
+INSERT INTO AirportHeliport (designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate)
 VALUES
-  (NULL, 'IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
+  ( 'IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
    2014, 1.5, (8, 'C'), 'No', 'Yes', 'Other', 'No', (24.8, 'UNL', 'M'), (100, 'SM'), (-10, 'C'), 'Other', '1999-01-03',
-   '2015-01-03', 1, 1),
-  (NULL, 'IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
+   '2015-01-03'),
+  ('IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
    2014, 1.5, (22, 'C'), 'Yes', 'Yes', 'No', 'No', (26.8, 'UNL', 'M'), (90, 'SM'), (0, 'C'), 'Yes', '1999-10-03',
-   '2012-10-03', 1, 2),
-  (NULL, 'IKAC', 'IGLOC', 'ICAC', 'IAC', 'AD', 'No', 'No', 'JOINT', '(11.1,"UNL","M")', '(0.15,"UNL","M")', 'AHD', 21, 2,
+   '2012-10-03'),
+  ('IKAC', 'IGLOC', 'ICAC', 'IAC', 'AD', 'No', 'No', 'JOINT', '(11.1,"UNL","M")', '(0.15,"UNL","M")', 'AHD', 21, 2,
    2014, 1.5, (30, 'C'), 'No', 'No', 'Yes', 'No', (20.2, 'UNL', 'M'), (150, 'SM'), (-30, 'C'), 'No', '2001-01-06',
-   '2018-01-06', 1, 3);
+   '2018-01-06');
 
 
 CREATE VIEW airports
-  AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom, ElevatedPoint.elevation, Runway.nominalLength, SurfaceCharacteristics.pavementTypePCN
-     FROM AirportHeliport, Point, ElevatedPoint, Runway, SurfaceCharacteristics
+  AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom,
+       ElevatedPoint.elevation, Runway.nominalLength, SurfaceCharacteristics.pavementTypePCN, RunwayDirectionLightSystem.uuid
+     FROM AirportHeliport, Point, ElevatedPoint, Runway, SurfaceCharacteristics, RunwayDirectionLightSystem
   WHERE ElevatedPoint.uuid = Point.uuid
 AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
   AND  Runway.uuidAirportHeliport = AirportHeliport.uuid
   AND SurfaceCharacteristics.uuidRunway = Runway.uuid
+  AND RunwayDirection.uuidRunway = Runway.uuid
+  AND RunwayDirectionLightSystem.uuidRunwayDirection = RunwayDirection.uuid
 ORDER BY AirportHeliport.name;
