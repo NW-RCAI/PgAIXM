@@ -35,11 +35,10 @@ RunwayDirectionLightSystem
 
 ### Один к одному:
 
-- F RunwayDirection
-
 ### Один ко многим:
 
 ### Многие ко многим:
 
 ### Многие к одному:
 
+- F RunwayDirection
