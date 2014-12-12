@@ -77,10 +77,10 @@ RunwayDirection
 - F ~~RunwayCentrelinePoint~~
 - F ~~RunwayBlastPad~~
 - C ~~ObstacleAreaOrigin~~
-- F RunwayDirectionLightSystem
 
 ### Один ко многим:
 
+- F RunwayDirectionLightSystem
 - O ~~ManoeuvringAreaAvailability~~
 - O ~~Note~~
 
