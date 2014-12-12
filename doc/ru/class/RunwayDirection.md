@@ -74,14 +74,17 @@ RunwayDirection
 ### Один к одному:
 
 - F ~~RunwayElement~~
-- F ~~RunwayCentrelinePoint~~
 - F ~~RunwayBlastPad~~
 - C ~~ObstacleAreaOrigin~~
 
 ### Один ко многим:
 
 - F RunwayDirectionLightSystem
+- F ~~VisualGlideSlopeIndicator~~
+- F ~~RunwayCentrelinePoint~~
+- F ~~ApproachLightingSystem~~
 - O ~~ManoeuvringAreaAvailability~~
+- F ~~RunwayProtectArea~~
 - O ~~Note~~
 
 ### Многие ко многим:
@@ -94,6 +97,3 @@ RunwayDirection
 ### Многие к одному:
 
 - F Runway
-- F ~~RunwayProtectArea~~
-- F ~~ApproachLightingSystem~~
-- F ~~VisualGlideSlopeIndicator~~
