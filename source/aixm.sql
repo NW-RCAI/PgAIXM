@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS AirportHeliport CASCADE;
+﻿DROP TABLE IF EXISTS AirportHeliport CASCADE;
 DROP TABLE IF EXISTS City CASCADE;
 DROP TABLE IF EXISTS Surface CASCADE;
 DROP TABLE IF EXISTS Point CASCADE;
@@ -23,23 +23,23 @@ DROP TABLE IF EXISTS RunwayDirection CASCADE;
 DROP TABLE IF EXISTS GroundLightSystem CASCADE;
 DROP TABLE IF EXISTS RunwayDirectionLightSystem;
 
-DROP DOMAIN IF EXISTS 
-  id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType, 
-  ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, 
-  CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, 
-  TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType CASCADE;
-  
-DROP TYPE IF EXISTS 
-  CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype, 
-  uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType, 
-  valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, 
-  ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType, 
-  CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType, 
-  UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType, 
-  CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
-  codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
-  valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype,CodeLightingJARType,
-  CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType CASCADE;
+DROP DOMAIN IF EXISTS
+id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
+ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
+CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
+TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType CASCADE;
+
+DROP TYPE IF EXISTS
+CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
+uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType,
+valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType,
+ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType,
+CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType,
+UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
+CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
+codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
+valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype, CodeLightingJARType,
+CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 
@@ -416,7 +416,7 @@ CREATE TYPE CodeSurfaceCompositionType AS ENUM ('ASPH', 'ASPH_GRASS', 'CONC', 'C
 -- NON_GROOVED - не бороздчатый асфальт
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
-CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL','ROLLED','COMPACTED','GRADED','GROOVED','OILED','PAVED','PFC','AFSC', 'RFSC', 'NON_GROOVED', 'OTHER');
+CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL', 'ROLLED', 'COMPACTED', 'GRADED', 'GROOVED', 'OILED', 'PAVED', 'PFC', 'AFSC', 'RFSC', 'NON_GROOVED', 'OTHER');
 
 -- Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
 -- GOOD - хорошее
@@ -440,7 +440,7 @@ CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
 -- FLEXIBLE - гибкое покрытие
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
-CREATE TYPE CodePCNPavementType AS ENUM ('RIGID','FLEXIBLE', 'OTHER');
+CREATE TYPE CodePCNPavementType AS ENUM ('RIGID', 'FLEXIBLE', 'OTHER');
 
 -- Код, указывающий на класс прочности покрытия, связанный с PCN числа.
 -- A - поверхность высокой прочности
@@ -459,14 +459,14 @@ CREATE TYPE CodePCNSubgradeType AS ENUM ('A', 'B', 'C', 'D', 'OTHER');
 -- Z - очень низкий: давление до 0.5 МПа (73 psi)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
-CREATE TYPE CodePCNTyrePressureType AS ENUM ('W','X','Y','Z','OTHER');
+CREATE TYPE CodePCNTyrePressureType AS ENUM ('W', 'X', 'Y', 'Z', 'OTHER');
 
 -- Код, указывающий на метод, используемый при оценке PCN.
 -- TECH - техническая оценка
 -- ACFT - основанная на опыте воздушного судна
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
-CREATE TYPE CodePCNMethodType AS ENUM ('TECH','ACFT','OTHER');
+CREATE TYPE CodePCNMethodType AS ENUM ('TECH', 'ACFT', 'OTHER');
 
 -- The value of a load classification number (LCN) for a surface.
 --
@@ -479,7 +479,7 @@ CREATE DOMAIN ValLCNType AS DECIMAL;
 -- TON - не метрические американские тонны (2000 ob или 907.18474 кг)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
-CREATE TYPE UomWeightType AS ENUM ('KG','T','LB','TON','OTHER');
+CREATE TYPE UomWeightType AS ENUM ('KG', 'T', 'LB', 'TON', 'OTHER');
 
 -- Значение веса.
 --
@@ -499,7 +499,7 @@ CREATE TYPE ValWeightType AS (
 -- HPA - гектопаскали
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomPressureType
-CREATE TYPE UomPressureType AS ENUM ('PA','MPA','PSI','BAR','TORR','ATM','HPA','OTHER');
+CREATE TYPE UomPressureType AS ENUM ('PA', 'MPA', 'PSI', 'BAR', 'TORR', 'ATM', 'HPA', 'OTHER');
 
 -- Значение давления.
 --
@@ -515,7 +515,7 @@ CREATE TYPE ValPressureType AS (
 -- BOTH - распределено по двум сторонам оси
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
-CREATE TYPE CodeSideType AS ENUM ('LEFT','RIGHT','BOTH','OTHER');
+CREATE TYPE CodeSideType AS ENUM ('LEFT', 'RIGHT', 'BOTH', 'OTHER');
 
 -- Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
 -- TDZ - зона приземления
@@ -541,7 +541,7 @@ CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'D
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValBearingType
 CREATE DOMAIN ValBearingType AS DECIMAL
-  CHECK ( VALUE >= 0 AND VALUE <= 360);
+CHECK ( VALUE >= 0 AND VALUE <= 360);
 
 -- Идентификатор направления поворота
 -- LEFT - налево
@@ -555,7 +555,7 @@ CREATE TYPE CodeDirectionTurnType AS ENUM ('LEFT', 'RIGHT', 'EITHER', 'OTHER');
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValSlopeType
 CREATE DOMAIN ValSlopeType AS DECIMAL
-  CHECK ( VALUE >= -100 AND VALUE <= 100);
+CHECK ( VALUE >= -100 AND VALUE <= 100);
 
 -- Код маркировки ВПП, связанный с посадочными категориями, такими как точность, не точность и базовые категории.
 -- PRECISION - маркировка соответствует заходу на посадку с точностью: используется и поперечная информация (локализатор), и вертикальная (наклон глиссады).
@@ -569,7 +569,7 @@ CREATE DOMAIN ValSlopeType AS DECIMAL
 -- HELIPORT - специфичная маркировка для вертолетов
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
- CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION','NONPRECISION','BASIC','NONE','RUNWAY_NUMBERS','NON_STANDARD', 'HELIPORT','OTHER');
+CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION', 'NONPRECISION', 'BASIC', 'NONE', 'RUNWAY_NUMBERS', 'NON_STANDARD', 'HELIPORT', 'OTHER');
 
 -- Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
 -- GOOD - маркировка в хорошем состоянии
@@ -578,7 +578,7 @@ CREATE DOMAIN ValSlopeType AS DECIMAL
 -- EXCELLENT - маркировка в прекрасном состоянии
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
-CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD','FAIR','POOR','EXCELLENT','OTHER');
+CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'EXCELLENT', 'OTHER');
 
 -- Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
 -- FALS - полныое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
@@ -587,7 +587,7 @@ CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD','FAIR','POOR','EXCELLENT','
 -- NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
-CREATE TYPE CodeLightingJARType AS ENUM ('FALS','IALS','BALS','NALS','OTHER');
+CREATE TYPE CodeLightingJARType AS ENUM ('FALS', 'IALS', 'BALS', 'NALS', 'OTHER');
 
 -- Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
 -- NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
@@ -600,7 +600,7 @@ CREATE TYPE CodeLightingJARType AS ENUM ('FALS','IALS','BALS','NALS','OTHER');
 -- MLS_PRECISION - микроволновая точностная система захода на посадки
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
-CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION','ILS_PRECISION_CAT_I','ILS_PRECISION_CAT_II','ILS_PRECISION_CAT_IIIA','ILS_PRECISION_CAT_IIIB','ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
+CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION', 'ILS_PRECISION_CAT_I', 'ILS_PRECISION_CAT_II', 'ILS_PRECISION_CAT_IIIA', 'ILS_PRECISION_CAT_IIIB', 'ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
 
 -- Код, идентифицирующий уровень интенсивности источника света
 -- LIL - низкая интенсивность света
@@ -610,18 +610,18 @@ CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION','ILS_PRECISION_CAT
 -- PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
-CREATE TYPE CodeLightIntensityType AS ENUM ('LIL','LIM','LIH','LIL_LIH','PREDETERMINED','OTHER');
+CREATE TYPE CodeLightIntensityType AS ENUM ('LIL', 'LIM', 'LIH', 'LIL_LIH', 'PREDETERMINED', 'OTHER');
 
 -- Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
-CREATE TYPE CodeColourType AS ENUM ('YELLOW','RED','WHITE','BLUE','GREEN','PURPLE','ORANGE','AMBER','BLACK','BROWN','GREY','LIGHT_GREY','MAGENTA','PINK','VIOLET','OTHER');
+CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', 'PURPLE', 'ORANGE', 'AMBER', 'BLACK', 'BROWN', 'GREY', 'LIGHT_GREY', 'MAGENTA', 'PINK', 'VIOLET', 'OTHER');
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
-  uuid       id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid       id PRIMARY KEY DEFAULT uuid_generate_v4(),
   name       TextNameType,
   designator CodeOrganisationDesignatorType,
   type       CodeOrganisationType,
@@ -632,7 +632,7 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
-  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
   latitude           latitude,
   longtitude         longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
@@ -656,7 +656,7 @@ CREATE TABLE ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
-  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POLYGON, 4326)
 );
@@ -676,7 +676,7 @@ CREATE TABLE ElevatedSurface
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
 (
-  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4(),
   designator                  CodeAirportHeliportDesignatorType,
   name                        TextNameType,
   locationIndicatorICAO       CodeICAOType,
@@ -712,7 +712,7 @@ CREATE TABLE AirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   name                TextNameType,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
@@ -721,7 +721,7 @@ CREATE TABLE City
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
 (
-  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   uuidElevatedPoint   id REFERENCES Point (uuid),
   designator          TextNameType
@@ -731,7 +731,7 @@ CREATE TABLE SurveyControlPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
 CREATE TABLE AirportHotSpot
 (
-  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidElevatedSurface id REFERENCES Surface (uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   designator          TextDesignatorType,
@@ -742,7 +742,7 @@ CREATE TABLE AirportHotSpot
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
 CREATE TABLE AltimeterSource
 (
-  uuid      id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid      id PRIMARY KEY DEFAULT uuid_generate_v4(),
   isRemote  CodeYesNoType,
   isPrimary CodeYesNoType
 );
@@ -758,7 +758,7 @@ CREATE TABLE AltimeterSourceAirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
-  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
 );
@@ -767,7 +767,7 @@ CREATE TABLE AltimeterSourceStatus
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   name                      TextNameType,
@@ -778,7 +778,7 @@ CREATE TABLE ContactInformation
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
-  uuid                  id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                  id PRIMARY KEY DEFAULT uuid_generate_v4(),
   observationTime       DateTimeType,
   depth                 ValDepthType,
   frictionCoefficient   ValFrictionType,
@@ -795,7 +795,7 @@ CREATE TABLE SurfaceContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
-  uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
+  uuid                id PRIMARY KEY REFERENCES SurfaceContamination (uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -803,7 +803,7 @@ CREATE TABLE AirportHeliportContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
-  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
@@ -812,101 +812,101 @@ CREATE TABLE AirportHeliportAvailability
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Runway
 CREATE TABLE Runway
 (
-  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuid                       id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuidAirportHeliport        id REFERENCES AirportHeliport (uuid),
   uuidSurfaceCharacteristics id REFERENCES SurfaceCharacteristics (uuid),
-  designator TextDesignatorType,
-  type CodeRunwayType,
-  nominalLength ValDistanceType,
-  lengthAccuracy ValDistanceType,
-  nominalWidth ValDistanceType,
-  widthAccuracy ValDistanceType,
-  widthShoulder ValDistanceType,
-  lengthStrip ValDistanceType,
-  widthStrip ValDistanceType,
-  lengthOffset ValDistanceSignedType,
-  widthOffset ValDistanceSignedType,
-  abandoned CodeYesNoType
+  designator                 TextDesignatorType,
+  type                       CodeRunwayType,
+  nominalLength              ValDistanceType,
+  lengthAccuracy             ValDistanceType,
+  nominalWidth               ValDistanceType,
+  widthAccuracy              ValDistanceType,
+  widthShoulder              ValDistanceType,
+  lengthStrip                ValDistanceType,
+  widthStrip                 ValDistanceType,
+  lengthOffset               ValDistanceSignedType,
+  widthOffset                ValDistanceSignedType,
+  abandoned                  CodeYesNoType
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
 CREATE TABLE SurfaceCharacteristics
 (
-  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
-  uuidRunway id REFERENCES Runway (uuid),
-  composition CodeSurfaceCompositionType,
-  preparation CodeSurfacePreparationType,
-  surfaceCondition CodeSurfaceConditionType,
-  classPCN ValPCNType,
-  pavementTypePCN CodePCNPavementType,
+  uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuidRunway          id REFERENCES Runway (uuid),
+  composition         CodeSurfaceCompositionType,
+  preparation         CodeSurfacePreparationType,
+  surfaceCondition    CodeSurfaceConditionType,
+  classPCN            ValPCNType,
+  pavementTypePCN     CodePCNPavementType,
   pavementSubgradePCN CodePCNSubgradeType,
-  maxTyrePressurePCN CodePCNTyrePressureType,
+  maxTyrePressurePCN  CodePCNTyrePressureType,
   evaluationMethodPCN CodePCNMethodType,
-  classLCN ValLCNType,
-  weightSIWL ValWeightType,
-  tyrePressureSIWL ValPressureType,
-  weightAUW ValWeightType
+  classLCN            ValLCNType,
+  weightSIWL          ValWeightType,
+  tyrePressureSIWL    ValPressureType,
+  weightAUW           ValWeightType
 );
 
 
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayContamination
 CREATE TABLE RunwayContamination
 (
-  uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
-  uuidRunway id REFERENCES Runway (uuid),
-  clearedLength ValDistanceType,
-  clearedWidth ValDistanceType,
-  clearedSide CodeSideType,
+  uuid                   id PRIMARY KEY REFERENCES SurfaceContamination (uuid),
+  uuidRunway             id REFERENCES Runway (uuid),
+  clearedLength          ValDistanceType,
+  clearedWidth           ValDistanceType,
+  clearedSide            CodeSideType,
   furtherClearanceLength ValDistanceType,
-  furtherClearanceWidth ValDistanceType,
-  obscuredLightsSide CodeSideType,
-  clearedLengthBegin ValDistanceType,
-  taxiwayAvailable CodeYesNoType,
-  apronAvailable CodeYesNoType
+  furtherClearanceWidth  ValDistanceType,
+  obscuredLightsSide     CodeSideType,
+  clearedLengthBegin     ValDistanceType,
+  taxiwayAvailable       CodeYesNoType,
+  apronAvailable         CodeYesNoType
 );
 
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwaySectionContamination
 CREATE TABLE RunwaySectionContamination
 (
-  uuid id PRIMARY KEY REFERENCES SurfaceContamination(uuid),
+  uuid       id PRIMARY KEY REFERENCES SurfaceContamination (uuid),
   uuidRunway id REFERENCES Runway (uuid),
-  section CodeRunwaySectionType
+  section    CodeRunwaySectionType
 );
 
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirection
 CREATE TABLE RunwayDirection
 (
-  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
-  uuidRunway id REFERENCES Runway (uuid),
-  designator TextDesignatorType,
-  trueBearing ValBearingType,
-  trueBearingAccuracy ValAngleType,
-  magneticBearing ValBearingType,
-  patternVFR CodeDirectionTurnType,
-  slopeTDZ ValSlopeType,
-  elevationTDZ ValDistanceVerticalType,
-  elevationTDZAccuracy ValDistanceType,
-  approachMarkingType CodeRunwayMarkingType,
-  approachMarkingCondition CodeMarkingConditionType,
-  classLightingJAR CodeLightingJARType,
+  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuidRunway                id REFERENCES Runway (uuid),
+  designator                TextDesignatorType,
+  trueBearing               ValBearingType,
+  trueBearingAccuracy       ValAngleType,
+  magneticBearing           ValBearingType,
+  patternVFR                CodeDirectionTurnType,
+  slopeTDZ                  ValSlopeType,
+  elevationTDZ              ValDistanceVerticalType,
+  elevationTDZAccuracy      ValDistanceType,
+  approachMarkingType       CodeRunwayMarkingType,
+  approachMarkingCondition  CodeMarkingConditionType,
+  classLightingJAR          CodeLightingJARType,
   precisionApproachGuidance CodeApproachGuidanceType
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystemhttps://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystem
 CREATE TABLE GroundLightSystem
 (
-  uuid id PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
   emergencyLighting CodeYesNoType,
-  intensityLevel CodeLightIntensityType,
-  colour CodeColourType
+  intensityLevel    CodeLightIntensityType,
+  colour            CodeColourType
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
-  uuid id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
+  uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
   uuidRunwayDirection id REFERENCES RunwayDirection (uuid),
-  position CodeRunwaySectionType
+  position            CodeRunwaySectionType
 );
 
 
@@ -939,11 +939,12 @@ VALUES (12, 12, '(0.28,"M")', 4326),
   (10, 42, '(0.20,"M")', 4326);
 
 
-UPDATE Point set srid = 4284;
+UPDATE Point
+SET srid = 4284;
 INSERT INTO ElevatedPoint (elevation, geoidUndulation, verticalDatum, verticalAccuracy)
 VALUES ('530be26e-9146-4a2f-944f-5c1b7efe6a25', '(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
-  ('41e75b2f-2a3c-4000-b123-20d17e748ba3','(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
-  ('d406c3cc-558c-43e4-821d-338bbd0aa2a9','(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
+  ('41e75b2f-2a3c-4000-b123-20d17e748ba3', '(14.5,"UNL","M")', '(1.3,"M")', 'AHD', '(0.14,"M")'),
+  ('d406c3cc-558c-43e4-821d-338bbd0aa2a9', '(14.7,"UNL","M")', '(1.3,"M")', 'AHD', '(0.08,"M")');
 
 
 INSERT INTO OrganisationAuthority (uuid, name)
@@ -951,7 +952,7 @@ VALUES (1, 'name');
 
 INSERT INTO AirportHeliport (designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate)
 VALUES
-  ( 'IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
+  ('IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
    2014, 1.5, (8, 'C'), 'No', 'Yes', 'Other', 'No', (24.8, 'UNL', 'M'), (100, 'SM'), (-10, 'C'), 'Other', '1999-01-03',
    '2015-01-03'),
   ('IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
@@ -963,13 +964,24 @@ VALUES
 
 
 CREATE VIEW airports
-  AS SELECT ElevatedPoint.uuid, AirportHeliport.name, AirportHeliport.designator, AirportHeliport.type, Point.latitude, Point.longtitude, Point.geom,
-       ElevatedPoint.elevation, Runway.nominalLength, SurfaceCharacteristics.pavementTypePCN, RunwayDirectionLightSystem.uuid
-     FROM AirportHeliport, Point, ElevatedPoint, Runway, SurfaceCharacteristics, RunwayDirectionLightSystem
+AS
+  SELECT
+    ElevatedPoint.uuid,
+    AirportHeliport.name,
+    AirportHeliport.designator,
+    AirportHeliport.type,
+    Point.latitude,
+    Point.longtitude,
+    Point.geom,
+    ElevatedPoint.elevation,
+    Runway.nominalLength,
+    SurfaceCharacteristics.pavementTypePCN,
+    RunwayDirectionLightSystem.uuid
+  FROM AirportHeliport, Point, ElevatedPoint, Runway, SurfaceCharacteristics, RunwayDirectionLightSystem
   WHERE ElevatedPoint.uuid = Point.uuid
-AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
-  AND  Runway.uuidAirportHeliport = AirportHeliport.uuid
-  AND SurfaceCharacteristics.uuidRunway = Runway.uuid
-  AND RunwayDirection.uuidRunway = Runway.uuid
-  AND RunwayDirectionLightSystem.uuidRunwayDirection = RunwayDirection.uuid
-ORDER BY AirportHeliport.name;
+        AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
+        AND Runway.uuidAirportHeliport = AirportHeliport.uuid
+        AND SurfaceCharacteristics.uuidRunway = Runway.uuid
+        AND RunwayDirection.uuidRunway = Runway.uuid
+        AND RunwayDirectionLightSystem.uuidRunwayDirection = RunwayDirection.uuid
+  ORDER BY AirportHeliport.name;
