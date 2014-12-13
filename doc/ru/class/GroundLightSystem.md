@@ -4,6 +4,11 @@ GroundLightSystem
 
 Один или более источников света, которые размещены на поверхности и которые предоставляют визуальную помощь для навигации в воздухе и на земле.
 
+## Наследование
+
+### Родительский класс для:
+- F RunwayDirectionLightSystem
+
 ## Атрибуты
 
 ##### uuid
@@ -34,6 +39,8 @@ GroundLightSystem
 
 ### Многие ко многим:
 
+- O ~~GroundLightingAvailability~~
+- O ~~LightElement~~
 - F ~~PilotControlledLighting~~
 - F ~~VerticalStructure~~
 
