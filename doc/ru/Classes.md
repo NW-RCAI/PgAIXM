@@ -32,7 +32,7 @@
 
 - **AirportHeliportAvailability**
 
-- AirportHeliportCollocation
+- **AirportHeliportCollocation**
 
 - **AirportHeliportContamination**
 
@@ -216,7 +216,7 @@
 
 - Glidepath
 
-- GroundLightSystem
+- **GroundLightSystem**
 
 - GroundLightingAvailability
 
@@ -338,7 +338,7 @@
 
 - PilotControlledLighting
 
-- Point
+- **Point**
 
 - PointReference
 
@@ -390,21 +390,21 @@
 
 - RulesProcedures
 
-- Runway
+- **Runway**
 
 - RunwayBlastPad
 
 - RunwayCentrelinePoint
 
-- RunwayContamination
+- **RunwayContamination**
 
 - RunwayDeclaredDistance
 
 - RunwayDeclaredDistanceValue
 
-- RunwayDirection
+- **RunwayDirection**
 
-- RunwayDirectionLightSystem
+- **RunwayDirectionLightSystem**
 
 - RunwayElement
 
@@ -470,9 +470,9 @@
 
 - Surface
 
-- SurfaceCharacteristics
+- **SurfaceCharacteristics**
 
-- SurfaceContamination
+- **SurfaceContamination**
 
 - SurfaceContaminationLayer
 
