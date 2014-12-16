@@ -1,5 +1,7 @@
 AirportHeliport
 ===============
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport)
+
 Тип: Feature
 
 Определенный участок земной или водной поверхности (включая любые здания, сооружения и оборудование),

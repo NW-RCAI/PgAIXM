@@ -1,5 +1,7 @@
 ElevatedPoint
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint)
+
 Тип: Object
 
 Географическая точка с добавлением информации о высоты и точности измерения высоты. 

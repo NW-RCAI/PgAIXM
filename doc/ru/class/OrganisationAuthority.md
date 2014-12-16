@@ -1,5 +1,7 @@
 OrganisationAuthority
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority)
+
 Тип: Feature
 
 Различные организации, органов власти, департаменты, агентства или объединения.

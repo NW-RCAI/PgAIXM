@@ -1,5 +1,7 @@
 ElevatedSurface
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface)
+
 Тип: Object
 
 Поверхность с высотами AIXM, наследованная от GM_Surface, включает характеристики, показывающие вертикальное положение.

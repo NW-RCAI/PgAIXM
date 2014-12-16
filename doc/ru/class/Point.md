@@ -1,5 +1,7 @@
 Point
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point)
+
 Тип: Object
 
 Географическая точка с указанием точности измерения горизонтальных координат.
