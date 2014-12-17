@@ -1,5 +1,7 @@
 AirportHotSpot
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot)
+
 Тип: Feature
 
 Области на аэродромной территории, где когда-либо случилось ранее или имеется потенциальный риск столкновения или несанкционированного выезда на ВПП, и где требуется повышенное внимание пилотов/водителей.

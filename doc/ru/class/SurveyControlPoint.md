@@ -1,5 +1,7 @@
 SurveyControlPoint
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint)
+
 Тип: Feature
 
 Опорные геодезические пункты.

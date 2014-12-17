@@ -1,5 +1,7 @@
 City
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City)
+
 Тип: Object
 
 Населенный пункт, который обслуживает аэродром/вертодром.

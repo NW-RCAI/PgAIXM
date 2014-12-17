@@ -1,5 +1,7 @@
 AltimeterSource
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource)
+
 Тип: Feature
 
 Прибор, который измеряет и показывает высоту, на которой расположен объект (например, самолет).
