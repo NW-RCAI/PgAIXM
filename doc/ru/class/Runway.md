@@ -99,7 +99,7 @@ Runway
 
 - O RunwayContamination
 - O RunwaySectionContamination
-- F ~~RunwayDirection~~
+- F RunwayDirection
 - F ~~TouchDownLiftOff~~
 - F ~~RunwayMarking~~
 - O ~~Note~~
