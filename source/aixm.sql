@@ -706,7 +706,7 @@ CREATE TABLE AirportHeliport
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
   uuidElevatedPoint           SERIAL REFERENCES ElevatedPoint (uuid)
-  --uuidElevatedSurface         SERIAL REFERENCES ElevatedSurface (uuid)
+ -- uuidElevatedSurface         SERIAL REFERENCES ElevatedSurface (uuid)
 );
 
 
@@ -779,7 +779,7 @@ CREATE TABLE ContactInformation
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
-  uuid                  id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuid                  SERIAL PRIMARY KEY,
   observationTime       DateTimeType,
   depth                 ValDepthType,
   frictionCoefficient   ValFrictionType,
@@ -796,7 +796,7 @@ CREATE TABLE SurfaceContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
-  uuid                id PRIMARY KEY REFERENCES SurfaceContamination (uuid),
+  uuid                SERIAL PRIMARY KEY REFERENCES SurfaceContamination (uuid),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -950,23 +950,48 @@ VALUES ('(12.2,"UNL","M")', '(1.3,"M")', 'AHD', '(0.11,"M")'),
 
 
 INSERT INTO OrganisationAuthority (name)
-VALUES ('name');
+VALUES ('name'),
+  ('name2'),
+  ('name3');
 
 
 
-INSERT INTO AirportHeliport (designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate)
+INSERT INTO AirportHeliport (designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate, uuidElevatedPoint)
 VALUES
   ('IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
    2014, 1.5, (8, 'C'), 'No', 'Yes', 'Other', 'No', (24.8, 'UNL', 'M'), (100, 'SM'), (-10, 'C'), 'Other', '1999-01-03',
-   '2015-01-03'),
+   '2015-01-03', 1),
   ('IKAB', 'IGLOB', 'ICAB', 'IAB', 'AD', 'No', 'Yes', 'MIL', '(12.4,"UNL","M")', '(0.12,"UNL","M")', 'AHD', 18, 2,
    2014, 1.5, (22, 'C'), 'Yes', 'Yes', 'No', 'No', (26.8, 'UNL', 'M'), (90, 'SM'), (0, 'C'), 'Yes', '1999-10-03',
-   '2012-10-03'),
+   '2012-10-03', 2),
   ('IKAC', 'IGLOC', 'ICAC', 'IAC', 'AD', 'No', 'No', 'JOINT', '(11.1,"UNL","M")', '(0.15,"UNL","M")', 'AHD', 21, 2,
    2014, 1.5, (30, 'C'), 'No', 'No', 'Yes', 'No', (20.2, 'UNL', 'M'), (150, 'SM'), (-30, 'C'), 'No', '2001-01-06',
-   '2018-01-06');
+   '2018-01-06', 3);
 
+INSERT INTO SurfaceCharacteristics (composition, pavementTypePCN)
+    VALUES ('GRASS', 'RIGID'),
+      ('SAND', 'FLEXIBLE'),
+      ('WATER', 'FLEXIBLE');
 
+INSERT INTO Runway (designator, nominalLength)
+values ('09/27', (956, 'M')),
+  ('09/28', (957, 'M')),
+  ('09/29', (958, 'M'));
+
+INSERT INTO GroundLightSystem (emergencyLighting)
+    VALUES ('Yes'),
+      ('No'),
+      ('Yes');
+
+INSERT INTO RunwayDirection (designator)
+    VALUES ('35L'),
+      ('36L'),
+      ('37L');
+
+INSERT INTO RunwayDirectionLightSystem (position)
+    VALUES ('END'),
+      ('END'),
+      ('CL');
 
 CREATE VIEW airports
 AS
@@ -985,8 +1010,9 @@ AS
   FROM AirportHeliport, Point, ElevatedPoint, Runway, SurfaceCharacteristics, RunwayDirectionLightSystem
   WHERE ElevatedPoint.uuid = Point.uuid
         AND AirportHeliport.uuidElevatedPoint = ElevatedPoint.uuid
+
         AND Runway.uuidAirportHeliport = AirportHeliport.uuid
         AND Runway.uuidSurfaceCharacteristics = SurfaceCharacteristics.uuid
         AND RunwayDirection.uuidRunway = Runway.uuid
-        AND RunwayDirectionLightSystem.uuidRunwayDirection = RunwayDirection.uuid
+        AND RunwayDirection.uuid = RunwayDirectionLightSystem.uuidRunwayDirection
   ORDER BY AirportHeliport.name;
