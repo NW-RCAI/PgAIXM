@@ -633,7 +633,7 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
-  uuid               SERIAL PRIMARY KEY,
+  id               SERIAL PRIMARY KEY,
   latitude           latitude,
   longtitude         longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
@@ -646,7 +646,7 @@ CREATE TABLE Point
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  uuid             SERIAL PRIMARY KEY REFERENCES Point (uuid),
+  id             SERIAL PRIMARY KEY REFERENCES Point (id),
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -657,7 +657,7 @@ CREATE TABLE ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
-  uuid               SERIAL PRIMARY KEY,
+  id               SERIAL PRIMARY KEY,
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POLYGON, 4326)
 );
@@ -666,7 +666,7 @@ CREATE TABLE Surface
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
-  uuid             SERIAL PRIMARY KEY REFERENCES Surface (uuid),
+  id             SERIAL PRIMARY KEY REFERENCES Surface (id),
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -705,15 +705,15 @@ CREATE TABLE AirportHeliport
   certificationDate           DateType,
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
-  uuidElevatedPoint           SERIAL REFERENCES ElevatedPoint (uuid)
--- uuidElevatedSurface         SERIAL REFERENCES ElevatedSurface (uuid)
+  idElevatedPoint           SERIAL REFERENCES ElevatedPoint (id)
+-- idElevatedSurface         SERIAL REFERENCES ElevatedSurface (uuid)
 );
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  uuid                SERIAL PRIMARY KEY,
+  id                SERIAL PRIMARY KEY,
   name                TextNameType,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
@@ -724,7 +724,7 @@ CREATE TABLE SurveyControlPoint
 (
   uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-  uuidElevatedPoint   SERIAL REFERENCES Point (uuid),
+  idElevatedPoint   SERIAL REFERENCES Point (id),
   designator          TextNameType
 );
 
@@ -733,7 +733,7 @@ CREATE TABLE SurveyControlPoint
 CREATE TABLE AirportHotSpot
 (
   uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  uuidElevatedSurface SERIAL REFERENCES Surface (uuid),
+  idElevatedSurface   SERIAL REFERENCES Surface (id),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   designator          TextDesignatorType,
   instruction         TextInstructionType
@@ -759,7 +759,7 @@ CREATE TABLE AltimeterSourceAirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
-  uuid                SERIAL PRIMARY KEY,
+  id                  SERIAL PRIMARY KEY,
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
 );
@@ -768,7 +768,7 @@ CREATE TABLE AltimeterSourceStatus
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  uuid                      SERIAL PRIMARY KEY,
+  id                      SERIAL PRIMARY KEY,
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   name                      TextNameType,
@@ -779,7 +779,7 @@ CREATE TABLE ContactInformation
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
-  uuid                  SERIAL PRIMARY KEY,
+  id                    SERIAL PRIMARY KEY,
   observationTime       DateTimeType,
   depth                 ValDepthType,
   frictionCoefficient   ValFrictionType,
@@ -796,7 +796,7 @@ CREATE TABLE SurfaceContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
-  uuid                SERIAL PRIMARY KEY REFERENCES SurfaceContamination (uuid),
+  id                  SERIAL PRIMARY KEY REFERENCES SurfaceContamination (id),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -804,7 +804,7 @@ CREATE TABLE AirportHeliportContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
-  uuid                SERIAL PRIMARY KEY,
+  id                SERIAL PRIMARY KEY,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
@@ -814,7 +814,7 @@ CREATE TABLE AirportHeliportAvailability
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
 CREATE TABLE SurfaceCharacteristics
 (
-  uuid                SERIAL PRIMARY KEY,
+  id                SERIAL PRIMARY KEY,
   composition         CodeSurfaceCompositionType,
   preparation         CodeSurfacePreparationType,
   surfaceCondition    CodeSurfaceConditionType,
@@ -834,7 +834,7 @@ CREATE TABLE Runway
 (
   uuid                       id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport        id REFERENCES AirportHeliport (uuid),
-  uuidSurfaceCharacteristics SERIAL REFERENCES SurfaceCharacteristics (uuid),
+  idSurfaceCharacteristics SERIAL REFERENCES SurfaceCharacteristics (id),
   designator                 TextDesignatorType,
   type                       CodeRunwayType,
   nominalLength              ValDistanceType,
@@ -853,7 +853,7 @@ CREATE TABLE Runway
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayContamination
 CREATE TABLE RunwayContamination
 (
-  uuid                   SERIAL PRIMARY KEY REFERENCES SurfaceContamination (uuid),
+  id                   SERIAL PRIMARY KEY REFERENCES SurfaceContamination (id),
   uuidRunway             id REFERENCES Runway (uuid),
   clearedLength          ValDistanceType,
   clearedWidth           ValDistanceType,
@@ -869,7 +869,7 @@ CREATE TABLE RunwayContamination
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwaySectionContamination
 CREATE TABLE RunwaySectionContamination
 (
-  uuid       SERIAL PRIMARY KEY REFERENCES SurfaceContamination (uuid),
+  id       SERIAL PRIMARY KEY REFERENCES SurfaceContamination (id),
   uuidRunway id REFERENCES Runway (uuid),
   section    CodeRunwaySectionType
 );
@@ -954,7 +954,7 @@ VALUES ('name'),
   ('name3');
 
 
-INSERT INTO AirportHeliport (designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate, uuidElevatedPoint)
+INSERT INTO AirportHeliport (designator, name, locationIndicatorICAO, designatorIATA, type, certifiedICAO, privateUse, controlType, fieldElevation, fieldElevationAccuracy, verticalDatum, magneticVariation, magneticVariationAccuracy, dateMagneticVariation, magneticVariationChange, referenceTemperature, altimeterCheckLocation, secondaryPowerSupply, windDirectionIndicator, landingDirectionIndicator, transitionAltitude, transitionLevel, lowestTemperature, abandoned, certificationDate, certificationExpirationDate, idElevatedPoint)
 VALUES
   ('IKAA', 'IGLOA', 'ICAA', 'IAA', 'AD', 'Yes', 'Yes', 'JOINT', '(12.2,"UNL","M")', '(0.1,"UNL","M")', 'AHD', 20, 2,
    2014, 1.5, (8, 'C'), 'No', 'Yes', 'Other', 'No', (24.8, 'UNL', 'M'), (100, 'SM'), (-10, 'C'), 'Other', '1999-01-03',
@@ -993,12 +993,12 @@ VALUES ('END'),
 
 CREATE VIEW airports AS
   SELECT
---ElevatedPoint.uuid,
---elevatedpoint.uuid,
+--ElevatedPoint.id,
+--elevatedpoint.id,
 --airportheliport.uuidelevatedpoint,
 --airportheliport.uuid,
 --runway.uuidairportheliport,
---point.uuid,
+--point.id,
     AirportHeliport.name,
     AirportHeliport.designator,
     AirportHeliport.type,
@@ -1012,8 +1012,8 @@ CREATE VIEW airports AS
   FROM airportheliport
     LEFT JOIN
     (elevatedpoint
-      JOIN point ON (elevatedpoint.uuid = point.uuid))
-      ON (elevatedpoint.uuid = airportheliport.uuidelevatedpoint)
+      JOIN point ON (elevatedpoint.id = point.id))
+      ON (elevatedpoint.id = airportheliport.idelevatedpoint)
     LEFT JOIN
     (SELECT
        max((nominallength).value) AS lenght,
