@@ -51,16 +51,21 @@ DROP VIEW IF EXISTS airports;
 -- http://www.postgresql.org/docs/9.3/static/datatype-uuid.html
 CREATE DOMAIN id AS UUID;
 
--- Уникальный индификатор для аэродрома/вертодрома5
+-- Уникальный индификатор для аэродрома/вертодрома.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(10)
 CHECK (VALUE ~ '[A-Z]{3,4}|[A-Z]{2}[0-9]{4}');
 
--- Используется для названий с максимальной длинной в 60 символов
+-- Используется для названий с максимальной длинной в 60 символов.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextNameType
 CREATE DOMAIN TextNameType AS VARCHAR(60);
+
+-- A full free text address.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextAddressBaseType
+CREATE DOMAIN TextAddressType AS VARCHAR(500);
 
 -- Четырехбуквенный индекс аэродрома ICAO (http://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code)
 --
@@ -618,6 +623,79 @@ CREATE TYPE CodeLightIntensityType AS ENUM ('LIL', 'LIM', 'LIH', 'LIL_LIH', 'PRE
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
 CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', 'PURPLE', 'ORANGE', 'AMBER', 'BLACK', 'BROWN', 'GREY', 'LIGHT_GREY', 'MAGENTA', 'PINK', 'VIOLET', 'OTHER');
 
+-- Codelist containing the Telecom Networks that can be used to address an organisation.
+-- AFTN - The data interchange in the AFS is performed by the Aeronautical Fixed Telecommunications Network, AFTN. This is a message handling network running according to ICAO Standards documented in Annex 10 to the ICAO Convention
+-- AMHS - Aeronautical Message Handling System. A standard for aeronautical ground-ground communications (e.g. for the transmission of NOTAM, Flight Plans or Meteorological Data) based on X.400 profiles. It has been defined by the International Civil Aviation Organization (ICAO)
+-- INTERNET - The Internet is a worldwide, publicly accessible series of interconnected computer networks that transmit data by packet switching using the standard Internet Protocol (IP)
+-- SITA - SITA network
+-- ACARS - Aircraft Communications Addressing and Reporting System. A datalink system that enables ground stations (airports, aircraft maintenance bases, etc.) and commercial aircraft to communicate without voice using a datalink system.
+-- ADNS - ARINC Data Network Service (retired Mar 2007)
+-- RESURFACING - работы по асфальтированию
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTelecomNetworkType
+CREATE TYPE CodeTelecomNetworkType AS ENUM ('AFTN', 'AMHS', 'INTERNET', 'SITA', 'ACARS', 'ADNS', 'OTHER');
+
+-- A phone or facsimile number.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextPhoneBaseType
+CREATE DOMAIN TextPhoneType AS VARCHAR
+CHECK (VALUE ~ '(\+)?[0-9\s\-\(\)]+');
+
+
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
+CREATE TABLE ContactInformation
+(
+  id                        SERIAL PRIMARY KEY,
+  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  name                      TextNameType,
+  title                     TextNameType
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
+CREATE TABLE PostalAddress (
+  id            SERIAL PRIMARY KEY,
+  deliveryPoint TextAddressType,
+  city          TextNameType,
+  administrativeArea TextNameType,
+  postalCode    TextNameType,
+  country       TextNameType
+);
+
+CREATE TABLE ContactInformationPostalAddress
+(
+  idContactInformation id REFERENCES ContactInformation (id),
+  idPostalAddress id REFERENCES PostalAddress (id)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
+
+CREATE TABLE OnlineContact (
+  id SERIAL PRIMARY KEY,
+  network CodeTelecomNetworkType,
+  linkage TextAddressType,
+  protocol TextNameType,
+  eMail TextAddressType
+);
+
+CREATE TABLE ContactInformationOnlineContact
+(
+  idContactInformation id REFERENCES ContactInformation (id),
+  idOnlineContact id REFERENCES OnlineContact (id)
+);
+
+CREATE TABLE TelephoneContact (
+  id SERIAL PRIMARY KEY,
+  voice TextPhoneType,
+  facsimile TextPhoneType
+);
+
+CREATE TABLE ContactInformationTelephoneContact
+(
+  idContactInformation id REFERENCES ContactInformation (id),
+  idTelephoneContact id REFERENCES TelephoneContact (id)
+);
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -763,18 +841,6 @@ CREATE TABLE AltimeterSourceStatus
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
 );
-
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
-CREATE TABLE ContactInformation
-(
-  id                        SERIAL PRIMARY KEY,
-  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
-  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  name                      TextNameType,
-  title                     TextNameType
-);
-
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
