@@ -40,12 +40,11 @@ OrganisationAuthority
 
 ### Один ко многим:
 
-- O ContactInformation
 - F AirportHeliport
 - F ~~AuthorityForAirspace~~
 - F ~~SpecialNavigationStation~~
 - F ~~SpecialNavigationSystem~~
-- - C ~~ObstacleAreaOrigin~~
+- C ~~ObstacleAreaOrigin~~
 - F ~~SpecialDate~~
 - F ~~Unit~~
 - C ~~FlightConditionElementChoice~~
@@ -55,8 +54,9 @@ OrganisationAuthority
 
 ### Многие ко многим:
 
-- O ~~AirspaceActivation~~
 - F ~~OrganisationAuthority~~
+- O ContactInformation
+- O ~~AirspaceActivation~~
 - F ~~RadarSystem~~
 - O ~~PropertiesWithSchedule~~
 - F ~~NavaidEquipment~~
