@@ -324,7 +324,7 @@
 
 - Oil
 
-- OnlineContact
+- **OnlineContact**
 
 - **OrganisationAuthority**
 
@@ -342,7 +342,7 @@
 
 - PointReference
 
-- PostalAddress
+- **PostalAddress**
 
 - PrecisionApproachRadar
 
@@ -500,7 +500,7 @@
 
 - TaxiwayMarking
 
-- TelephoneContact
+- **TelephoneContact**
 
 - TerminalArrivalArea
 
