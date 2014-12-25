@@ -1,5 +1,7 @@
 ContactInformation
 ====
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation)
+
 Тип: Object
 
 Информация, необходимая для того, чтобы была возможносьт соединиться с ответственным лицом и/или организацией.
@@ -8,17 +10,7 @@ ContactInformation
 
 ## Атрибуты
 
-##### uuid
-
-##### uuidAirportHeliport
-Ссылка на: AirportHeliport (uuid)
-
-Ссылка на аэродром/вертодром, которой принадлежит данная контактная информация.
-
-##### uuidOrganisationAuthority
-Ссылка на: OrganisationAuthority (uuid)
-
-Ссылка на оранизацию, которой принадлежит данная контактная информация.
+##### id
 
 ##### name
 Тип данных: TextNameType
@@ -39,22 +31,22 @@ ContactInformation
 
 ### Один ко многим:
 
-- O ~~PostalAddress~~
-- O ~~OnlineContact~~
-- O ~~TelephoneContact~~
-- O ~~Note~~
-- O ~~UsageCondition~~
-
+- отсутствуют
 
 ### Многие ко многим:
 
-- отсутствуют
+- O PostalAddress
+- O OnlineContact
+- O TelephoneContact
+- F AirportHeliport
+- F OrganisationAuthority
+- O ~~UsageCondition~~
+- F ~~RadarEquipment~~
+- F ~~Service~~
+- F ~~Unit~~
+- O ~~FlightRestrictionRoute~~
+- O ~~Note~~
 
 ### Многие к одному:
 
-- F AirportHeliport
-- F ~~RadarEquipment~~
-- F ~~Service~~
-- F OrganisationAuthority
-- F ~~Unit~~
-- O ~~FlightRestrictionRoute~~
+- отсутствуют
