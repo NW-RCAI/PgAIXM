@@ -21,13 +21,21 @@ DROP TABLE IF EXISTS RunwayContamination CASCADE;
 DROP TABLE IF EXISTS RunwaySectionContamination CASCADE;
 DROP TABLE IF EXISTS RunwayDirection CASCADE;
 DROP TABLE IF EXISTS GroundLightSystem CASCADE;
-DROP TABLE IF EXISTS RunwayDirectionLightSystem;
+DROP TABLE IF EXISTS RunwayDirectionLightSystem CASCADE ;
+DROP TABLE IF EXISTS PostalAddress CASCADE ;
+DROP TABLE IF EXISTS OnlineContact CASCADE ;
+DROP TABLE IF EXISTS TelephoneContact CASCADE ;
+DROP TABLE IF EXISTS ContactInformationOnlineContact CASCADE ;
+DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE ;
+DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE ;
+
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
 CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
-TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType CASCADE;
+TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType,
+textaddresstype CASCADE;
 
 DROP TYPE IF EXISTS
 CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
@@ -40,7 +48,7 @@ CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureTy
 codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
 valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype, CodeLightingJARType,
 CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType,
-coderunwaymarkingtype CASCADE;
+coderunwaymarkingtype, textphonetype, codetelecomnetworktype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 
@@ -641,62 +649,6 @@ CREATE TYPE CodeTelecomNetworkType AS ENUM ('AFTN', 'AMHS', 'INTERNET', 'SITA', 
 CREATE DOMAIN TextPhoneType AS VARCHAR
 CHECK (VALUE ~ '(\+)?[0-9\s\-\(\)]+');
 
-
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
-CREATE TABLE ContactInformation
-(
-  id                        SERIAL PRIMARY KEY,
-  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
-  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  name                      TextNameType,
-  title                     TextNameType
-);
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
-CREATE TABLE PostalAddress (
-  id            SERIAL PRIMARY KEY,
-  deliveryPoint TextAddressType,
-  city          TextNameType,
-  administrativeArea TextNameType,
-  postalCode    TextNameType,
-  country       TextNameType
-);
-
-CREATE TABLE ContactInformationPostalAddress
-(
-  idContactInformation id REFERENCES ContactInformation (id),
-  idPostalAddress id REFERENCES PostalAddress (id)
-);
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
-
-CREATE TABLE OnlineContact (
-  id SERIAL PRIMARY KEY,
-  network CodeTelecomNetworkType,
-  linkage TextAddressType,
-  protocol TextNameType,
-  eMail TextAddressType
-);
-
-CREATE TABLE ContactInformationOnlineContact
-(
-  idContactInformation id REFERENCES ContactInformation (id),
-  idOnlineContact id REFERENCES OnlineContact (id)
-);
-
-CREATE TABLE TelephoneContact (
-  id SERIAL PRIMARY KEY,
-  voice TextPhoneType,
-  facsimile TextPhoneType
-);
-
-CREATE TABLE ContactInformationTelephoneContact
-(
-  idContactInformation id REFERENCES ContactInformation (id),
-  idTelephoneContact id REFERENCES TelephoneContact (id)
-);
-
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -706,7 +658,6 @@ CREATE TABLE OrganisationAuthority
   type       CodeOrganisationType,
   military   CodeMilitaryOperationsType
 );
-
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
@@ -786,6 +737,61 @@ CREATE TABLE AirportHeliport
   idElevatedPoint             SERIAL REFERENCES ElevatedPoint (id)
 -- idElevatedSurface         SERIAL REFERENCES ElevatedSurface (uuid)
 );
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
+CREATE TABLE ContactInformation
+(
+  id                        SERIAL PRIMARY KEY,
+  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  name                      TextNameType,
+  title                     TextNameType
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
+CREATE TABLE PostalAddress (
+  id            SERIAL PRIMARY KEY,
+  deliveryPoint TextAddressType,
+  city          TextNameType,
+  administrativeArea TextNameType,
+  postalCode    TextNameType,
+  country       TextNameType
+);
+
+CREATE TABLE ContactInformationPostalAddress
+(
+  idContactInformation SERIAL REFERENCES ContactInformation (id),
+  idPostalAddress SERIAL REFERENCES PostalAddress (id)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
+
+CREATE TABLE OnlineContact (
+  id SERIAL PRIMARY KEY,
+  network CodeTelecomNetworkType,
+  linkage TextAddressType,
+  protocol TextNameType,
+  eMail TextAddressType
+);
+
+CREATE TABLE ContactInformationOnlineContact
+(
+  idContactInformation SERIAl REFERENCES ContactInformation (id),
+  idOnlineContact SERIAL REFERENCES OnlineContact (id)
+);
+
+CREATE TABLE TelephoneContact (
+  id SERIAL PRIMARY KEY,
+  voice TextPhoneType,
+  facsimile TextPhoneType
+);
+
+CREATE TABLE ContactInformationTelephoneContact
+(
+  idContactInformation SERIAL REFERENCES ContactInformation (id),
+  idTelephoneContact SERIAL REFERENCES TelephoneContact (id)
+);
+
+
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
@@ -1006,6 +1012,7 @@ CREATE VIEW airports AS
     AirportHeliport.name,
     AirportHeliport.designator,
     AirportHeliport.type,
+    AirportHeliport.controlType,
     elevatedpoint.elevation,
     runwayMax.lenght,
     Point.latitude,
