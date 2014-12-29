@@ -45,10 +45,10 @@ VALUES ('Yes'),
   ('No'),
   ('Yes');
 
-INSERT INTO RunwayDirection (designator)
-VALUES ('35L'),
-  ('36L'),
-  ('37L');
+INSERT INTO RunwayDirection (designator, truebearing)
+VALUES ('35L', '220'),
+  ('36L', '223'),
+  ('37L', '14');
 
 INSERT INTO RunwayDirectionLightSystem (position)
 VALUES ('END'),

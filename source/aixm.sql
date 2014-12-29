@@ -950,7 +950,6 @@ CREATE TABLE RunwaySectionContamination
 CREATE TABLE RunwayDirection
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  uuidRunway                id REFERENCES Runway (uuid),
   designator                TextDesignatorType,
   trueBearing               ValBearingType,
   trueBearingAccuracy       ValAngleType,
@@ -982,6 +981,12 @@ CREATE TABLE RunwayDirectionLightSystem
   position            CodeRunwaySectionType
 );
 
+CREATE TABLE CartographyLabel
+(
+  xlbl latitude,
+  ylbl longitude,
+  rotation ValAngleType
+);
 
 -- Отслеживание изменений координат и SRID
 --
@@ -1008,26 +1013,36 @@ BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert();
 
 CREATE VIEW airports AS
-  SELECT
-    AirportHeliport.name,
-    AirportHeliport.designator,
-    AirportHeliport.type,
-    AirportHeliport.controlType,
-    elevatedpoint.elevation,
-    runwayMax.lenght,
-    Point.latitude,
-    Point.longtitude,
-    Point.geom
-  FROM airportheliport
-    LEFT JOIN (
-        elevatedpoint
-        JOIN point ON (elevatedpoint.id = point.id)
-      ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
-    LEFT JOIN (
-                SELECT
-                  max((nominallength).value) AS lenght,
-                  uuidAirportHeliport
-                FROM runway
-                GROUP BY uuidAirportHeliport
-              ) runwayMax
-      ON airportheliport.uuid = runwayMax.uuidAirportHeliport
+SELECT
+  AirportHeliport.name,
+  AirportHeliport.designator,
+  AirportHeliport.type,
+  AirportHeliport.controlType,
+  airportheliport.abandoned,
+  elevatedpoint.elevation,
+  runwayMax.lenght,
+  Point.latitude,
+  Point.longtitude,
+  Point.geom,
+  runway.designator,
+  runwaydirection.truebearing
+FROM airportheliport
+  LEFT JOIN (
+      elevatedpoint
+      JOIN point ON (elevatedpoint.id = point.id)
+    ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
+  LEFT JOIN (
+              SELECT
+                max((nominallength).value) AS lenght,
+                uuidAirportHeliport
+              FROM runway
+              GROUP BY uuidAirportHeliport
+            ) runwayMax
+    ON airportheliport.uuid = runwayMax.uuidAirportHeliport
+  LEFT JOIN (
+      runway
+      JOIN runwaydirection  ON (runway.uuid = runwaydirection.uuidrunway)
+    )
+    ON  airportheliport.uuid= runway.uuidairportheliport
+WHERE runway.nominallength in
+            (SELECT max((nominallength).value) FROM runway GROUP BY uuidAirportHeliport)
