@@ -28,7 +28,7 @@ DROP TABLE IF EXISTS TelephoneContact CASCADE ;
 DROP TABLE IF EXISTS ContactInformationOnlineContact CASCADE ;
 DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE ;
 DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE ;
-
+DROP TABLE IF EXISTS CartographyLabel CASCADE ;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -950,6 +950,7 @@ CREATE TABLE RunwaySectionContamination
 CREATE TABLE RunwayDirection
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuidRunway id REFERENCES Runway (uuid),
   designator                TextDesignatorType,
   trueBearing               ValBearingType,
   trueBearingAccuracy       ValAngleType,
@@ -976,7 +977,7 @@ CREATE TABLE GroundLightSystem
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
-  uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
+  uuid               id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
   uuidRunwayDirection id REFERENCES RunwayDirection (uuid),
   position            CodeRunwaySectionType
 );
@@ -1014,18 +1015,23 @@ EXECUTE PROCEDURE trigger_insert();
 
 CREATE VIEW airports AS
 SELECT
+  Point.id as id,
   AirportHeliport.name,
   AirportHeliport.designator,
   AirportHeliport.type,
   AirportHeliport.controlType,
   airportheliport.abandoned,
-  elevatedpoint.elevation,
+  --elevatedpoint.elevation,
   runwayMax.lenght,
   Point.latitude,
   Point.longtitude,
-  Point.geom,
-  runway.designator,
-  runwaydirection.truebearing
+
+-- runway.designator AS runway_design,
+  runwaydirection.truebearing,
+  surfacecharacteristics.composition,
+  --runwaydirectionlightsystem.lightsystem,
+  --runwaydirectionlightsystem.position
+    Point.geom
 FROM airportheliport
   LEFT JOIN (
       elevatedpoint
@@ -1041,8 +1047,19 @@ FROM airportheliport
     ON airportheliport.uuid = runwayMax.uuidAirportHeliport
   LEFT JOIN (
       runway
-      JOIN runwaydirection  ON (runway.uuid = runwaydirection.uuidrunway)
+      JOIN (runwaydirection
+      JOIN (SELECT
+              array_agg(runwaydirectionlightsystem.position) AS lightsystem,
+              runwaydirectionlightsystem.uuidrunwaydirection
+            FROM runwaydirectionlightsystem
+            GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
+        ON runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid)
+        ON (runway.uuid = runwaydirection.uuidrunway)
+      JOIN surfacecharacteristics ON runway.idsurfacecharacteristics = surfacecharacteristics.id
     )
-    ON  airportheliport.uuid= runway.uuidairportheliport
-WHERE runway.nominallength in
-            (SELECT max((nominallength).value) FROM runway GROUP BY uuidAirportHeliport)
+    ON airportheliport.uuid = runway.uuidairportheliport
+WHERE (runway.nominallength).value =
+      (SELECT max((nominallength).value)
+       FROM runway
+       GROUP BY uuidAirportHeliport
+       HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
