@@ -34,8 +34,8 @@ City
 
 ### Многие ко многим:
 
-- отсутствуют
+- F AirportHeliport
 
 ### Многие к одному:
 
-- F AirportHeliport
+- отсутствуют
