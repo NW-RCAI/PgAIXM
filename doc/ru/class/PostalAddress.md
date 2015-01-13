@@ -48,7 +48,7 @@ PostalAddress
 ### Многие ко многим:
 
 - O ~~Timesheet~~
-- O ~~ContactInformation~~
+- O ContactInformation
 - F ~~OrganisationAuthority~~
 - O ~~Note~~
 
