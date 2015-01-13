@@ -171,7 +171,6 @@ The altitude at or below which the vertical position of an aircraft is controlle
 
 ### Один ко многим:
 
-- O City
 - O AirportHeliportContamination
 - O ContactInformation
 - O AirportHeliportAvailability
@@ -200,6 +199,7 @@ The altitude at or below which the vertical position of an aircraft is controlle
 
 ### Многие ко многим:
 
+- O City
 - F AltimeterSource
 - F ~~RulesProcedures~~
 - F ~~AirportGroundService~~
