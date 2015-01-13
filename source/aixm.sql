@@ -791,17 +791,18 @@ CREATE TABLE ContactInformationTelephoneContact
   idTelephoneContact SERIAL REFERENCES TelephoneContact (id)
 );
 
-
-
-
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
   id                  SERIAL PRIMARY KEY,
-  name                TextNameType,
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
+  name                TextNameType
 );
 
+CREATE TABLE AirportHeliportCity
+(
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
+  idCity id REFERENCES City (id)
+);
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
