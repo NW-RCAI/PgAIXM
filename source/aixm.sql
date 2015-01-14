@@ -29,6 +29,7 @@ DROP TABLE IF EXISTS ContactInformationOnlineContact CASCADE ;
 DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE ;
 DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE ;
 DROP TABLE IF EXISTS CartographyLabel CASCADE ;
+DROP TABLE IF EXISTS AirportHeliportCity CASCADE ;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -800,8 +801,8 @@ CREATE TABLE City
 
 CREATE TABLE AirportHeliportCity
 (
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
-  idCity id REFERENCES City (id)
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  idCity SERIAL REFERENCES City (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
@@ -1064,3 +1065,25 @@ WHERE (runway.nominallength).value =
        FROM runway
        GROUP BY uuidAirportHeliport
        HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
+
+CREATE VIEW AIRP_TABLE AS
+  SELECT name, designator,
+ (SELECT array_agg(runwaydirectionlightsystem.position) AS lightsystem FROM runwaydirectionlightsystem,runwaydirection, runway WHERE runwaydirectionlightsystem.uuidrunwaydirection=runwaydirection.uuid and runway.uuid = runwaydirection.uuidrunway and runway.uuidairportheliport = airportheliport.uuid),
+  (SELECT count(surfacecharacteristics.composition) AS cover FROM surfacecharacteristics, runway WHERE runway.idsurfacecharacteristics=surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+                                                                                                       AND surfacecharacteristics.composition IN ('GRASS', 'ASPH','ASPH_GRASS','CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM','BRICK','MEMBRANE','METAL','MATS','PIERCED_STEEL', 'NON_BITUM_MIX')),
+  (SELECT point.latitude FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint),
+  (SELECT point.longtitude FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint)
+FROM airportheliport;
+
+CREATE VIEW AIRP_MAP AS
+  SELECT designator, name, controltype AS type,
+  (SELECT elevation FROM elevatedpoint WHERE airportheliport.idelevatedpoint=elevatedpoint.id),
+  (SELECT max((nominallength).value) as length FROM runway WHERE runway.uuidairportheliport=airportheliport.uuid),
+  (SELECT count(surfacecharacteristics.composition) AS cover FROM surfacecharacteristics, runway WHERE runway.idsurfacecharacteristics=surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+                                                                                                       AND surfacecharacteristics.composition IN ('GRASS', 'ASPH','ASPH_GRASS','CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM','BRICK','MEMBRANE','METAL','MATS','PIERCED_STEEL', 'NON_BITUM_MIX')),
+  (SELECT max(truebearing) AS angle FROM runwaydirection, runway WHERE runwaydirection.uuidrunway=runway.uuid and runway.uuidairportheliport=airportheliport.uuid),
+  (SELECT array_agg(runwaydirectionlightsystem.position) AS lightsystem FROM runwaydirectionlightsystem,runwaydirection, runway WHERE runwaydirectionlightsystem.uuidrunwaydirection=runwaydirection.uuid and runway.uuid = runwaydirection.uuidrunway and runway.uuidairportheliport = airportheliport.uuid),
+  (SELECT point.latitude FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint),
+  (SELECT point.longtitude FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint),
+  abandoned
+FROM airportheliport;
