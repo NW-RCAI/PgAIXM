@@ -21,15 +21,15 @@ DROP TABLE IF EXISTS RunwayContamination CASCADE;
 DROP TABLE IF EXISTS RunwaySectionContamination CASCADE;
 DROP TABLE IF EXISTS RunwayDirection CASCADE;
 DROP TABLE IF EXISTS GroundLightSystem CASCADE;
-DROP TABLE IF EXISTS RunwayDirectionLightSystem CASCADE ;
-DROP TABLE IF EXISTS PostalAddress CASCADE ;
-DROP TABLE IF EXISTS OnlineContact CASCADE ;
-DROP TABLE IF EXISTS TelephoneContact CASCADE ;
-DROP TABLE IF EXISTS ContactInformationOnlineContact CASCADE ;
-DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE ;
-DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE ;
-DROP TABLE IF EXISTS CartographyLabel CASCADE ;
-DROP TABLE IF EXISTS AirportHeliportCity CASCADE ;
+DROP TABLE IF EXISTS RunwayDirectionLightSystem CASCADE;
+DROP TABLE IF EXISTS PostalAddress CASCADE;
+DROP TABLE IF EXISTS OnlineContact CASCADE;
+DROP TABLE IF EXISTS TelephoneContact CASCADE;
+DROP TABLE IF EXISTS ContactInformationOnlineContact CASCADE;
+DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE;
+DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE;
+DROP TABLE IF EXISTS CartographyLabel CASCADE;
+DROP TABLE IF EXISTS AirportHeliportCity CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -52,6 +52,7 @@ CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeC
 coderunwaymarkingtype, textphonetype, codetelecomnetworktype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
+DROP FUNCTION IF EXISTS trigger_update();
 
 DROP VIEW IF EXISTS airports;
 
@@ -750,59 +751,59 @@ CREATE TABLE ContactInformation
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
 CREATE TABLE PostalAddress (
-  id            SERIAL PRIMARY KEY,
-  deliveryPoint TextAddressType,
-  city          TextNameType,
+  id                 SERIAL PRIMARY KEY,
+  deliveryPoint      TextAddressType,
+  city               TextNameType,
   administrativeArea TextNameType,
-  postalCode    TextNameType,
-  country       TextNameType
+  postalCode         TextNameType,
+  country            TextNameType
 );
 
 CREATE TABLE ContactInformationPostalAddress
 (
   idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idPostalAddress SERIAL REFERENCES PostalAddress (id)
+  idPostalAddress      SERIAL REFERENCES PostalAddress (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
 
 CREATE TABLE OnlineContact (
-  id SERIAL PRIMARY KEY,
-  network CodeTelecomNetworkType,
-  linkage TextAddressType,
+  id       SERIAL PRIMARY KEY,
+  network  CodeTelecomNetworkType,
+  linkage  TextAddressType,
   protocol TextNameType,
-  eMail TextAddressType
+  eMail    TextAddressType
 );
 
 CREATE TABLE ContactInformationOnlineContact
 (
-  idContactInformation SERIAl REFERENCES ContactInformation (id),
-  idOnlineContact SERIAL REFERENCES OnlineContact (id)
+  idContactInformation SERIAL REFERENCES ContactInformation (id),
+  idOnlineContact      SERIAL REFERENCES OnlineContact (id)
 );
 
 CREATE TABLE TelephoneContact (
-  id SERIAL PRIMARY KEY,
-  voice TextPhoneType,
+  id        SERIAL PRIMARY KEY,
+  voice     TextPhoneType,
   facsimile TextPhoneType
 );
 
 CREATE TABLE ContactInformationTelephoneContact
 (
   idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idTelephoneContact SERIAL REFERENCES TelephoneContact (id)
+  idTelephoneContact   SERIAL REFERENCES TelephoneContact (id)
 );
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  id                  SERIAL PRIMARY KEY,
-  name                TextNameType
+  id   SERIAL PRIMARY KEY,
+  name TextNameType
 );
 
 CREATE TABLE AirportHeliportCity
 (
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-  idCity SERIAL REFERENCES City (id)
+  idCity              SERIAL REFERENCES City (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
@@ -952,7 +953,7 @@ CREATE TABLE RunwaySectionContamination
 CREATE TABLE RunwayDirection
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  uuidRunway id REFERENCES Runway (uuid),
+  uuidRunway                id REFERENCES Runway (uuid),
   designator                TextDesignatorType,
   trueBearing               ValBearingType,
   trueBearingAccuracy       ValAngleType,
@@ -979,18 +980,37 @@ CREATE TABLE GroundLightSystem
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
-  uuid               id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
+  uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
   uuidRunwayDirection id REFERENCES RunwayDirection (uuid),
   position            CodeRunwaySectionType
 );
 
 CREATE TABLE CartographyLabel
 (
-  xlbl latitude,
-  ylbl longitude,
-  rotation ValAngleType,
-  uuidairportheliport uuid REFERENCES AirportHeliport
+  id                  SERIAL PRIMARY KEY,
+  xlbl                latitude,
+  ylbl                longitude,
+  rotation            ValAngleType,
+  srid                INTEGER REFERENCES spatial_ref_sys (srid),
+  uuidairportheliport UUID REFERENCES AirportHeliport,
+  geom                GEOMETRY(POINT, 4326)
 );
+
+CREATE OR REPLACE FUNCTION trigger_update()
+  RETURNS TRIGGER AS $update_lbl$
+BEGIN
+      INSERT INTO CartographyLabel (xlbl, ylbl, srid, uuidairportheliport, geom) VALUES
+        ((SELECT latitude FROM Point, ElevatedPoint WHERE Point.id=ElevatedPoint.id AND ElevatedPoint.id=NEW.idElevatedPoint),
+        (SELECT longtitude FROM Point, ElevatedPoint WHERE Point.id=ElevatedPoint.id AND ElevatedPoint.id=NEW.idElevatedPoint),
+        (SELECT srid FROM Point, ElevatedPoint WHERE Point.id=ElevatedPoint.id AND ElevatedPoint.id=NEW.idElevatedPoint),
+        NEW.uuid,
+        (SELECT geom FROM Point, ElevatedPoint WHERE Point.id=ElevatedPoint.id AND ElevatedPoint.id=NEW.idElevatedPoint));
+  RETURN NEW;
+END;
+$update_lbl$ LANGUAGE plpgsql;
+
+CREATE TRIGGER CartographyLabel
+AFTER INSERT ON AirportHeliport FOR EACH ROW EXECUTE PROCEDURE trigger_update();
 
 -- Отслеживание изменений координат и SRID
 --
@@ -1018,77 +1038,111 @@ EXECUTE PROCEDURE trigger_insert();
 
 
 CREATE VIEW airports AS
-SELECT
-  Point.id as id,
-  AirportHeliport.name,
-  AirportHeliport.designator,
-  AirportHeliport.type,
-  AirportHeliport.controlType,
-  airportheliport.abandoned,
-  --elevatedpoint.elevation,
-  runwayMax.lenght,
-  Point.latitude,
-  Point.longtitude,
+  SELECT
+    Point.id AS id,
+    AirportHeliport.name,
+    AirportHeliport.designator,
+    AirportHeliport.type,
+    AirportHeliport.controlType,
+    airportheliport.abandoned,
+--elevatedpoint.elevation,
+    runwayMax.lenght,
+    Point.latitude,
+    Point.longtitude,
 
 -- runway.designator AS runway_design,
-  runwaydirection.truebearing,
-  surfacecharacteristics.composition,
-  --runwaydirectionlightsystem.lightsystem,
-  --runwaydirectionlightsystem.position
+    runwaydirection.truebearing,
+    surfacecharacteristics.composition,
+--runwaydirectionlightsystem.lightsystem,
+--runwaydirectionlightsystem.position
     Point.geom
-FROM airportheliport
-  LEFT JOIN (
-      elevatedpoint
-      JOIN point ON (elevatedpoint.id = point.id)
-    ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
-  LEFT JOIN (
-              SELECT
-                max((nominallength).value) AS lenght,
-                uuidAirportHeliport
-              FROM runway
-              GROUP BY uuidAirportHeliport
-            ) runwayMax
-    ON airportheliport.uuid = runwayMax.uuidAirportHeliport
-  LEFT JOIN (
-      runway
-      JOIN (runwaydirection
-      JOIN (SELECT
-              array_agg(runwaydirectionlightsystem.position) AS lightsystem,
-              runwaydirectionlightsystem.uuidrunwaydirection
-            FROM runwaydirectionlightsystem
-            GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
-        ON runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid)
-        ON (runway.uuid = runwaydirection.uuidrunway)
-      JOIN surfacecharacteristics ON runway.idsurfacecharacteristics = surfacecharacteristics.id
-    )
-    ON airportheliport.uuid = runway.uuidairportheliport
-WHERE (runway.nominallength).value =
-      (SELECT max((nominallength).value)
-       FROM runway
-       GROUP BY uuidAirportHeliport
-       HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
+  FROM airportheliport
+    LEFT JOIN (
+        elevatedpoint
+        JOIN point ON (elevatedpoint.id = point.id)
+      ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
+    LEFT JOIN (
+                SELECT
+                  max((nominallength).value) AS lenght,
+                  uuidAirportHeliport
+                FROM runway
+                GROUP BY uuidAirportHeliport
+              ) runwayMax
+      ON airportheliport.uuid = runwayMax.uuidAirportHeliport
+    LEFT JOIN (
+        runway
+        JOIN (runwaydirection
+        JOIN (SELECT
+                array_agg(runwaydirectionlightsystem.position) AS lightsystem,
+                runwaydirectionlightsystem.uuidrunwaydirection
+              FROM runwaydirectionlightsystem
+              GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
+          ON runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid)
+          ON (runway.uuid = runwaydirection.uuidrunway)
+        JOIN surfacecharacteristics ON runway.idsurfacecharacteristics = surfacecharacteristics.id
+      )
+      ON airportheliport.uuid = runway.uuidairportheliport
+  WHERE (runway.nominallength).value =
+        (SELECT max((nominallength).value)
+         FROM runway
+         GROUP BY uuidAirportHeliport
+         HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
 
 CREATE VIEW AIRP_TABLE AS
-  SELECT uuid, name, designator,
- (SELECT array_agg(runwaydirectionlightsystem.position) AS lightsystem FROM runwaydirectionlightsystem,runwaydirection, runway WHERE runwaydirectionlightsystem.uuidrunwaydirection=runwaydirection.uuid and runway.uuid = runwaydirection.uuidrunway and runway.uuidairportheliport = airportheliport.uuid),
-  (SELECT count(surfacecharacteristics.composition) AS cover FROM surfacecharacteristics, runway WHERE runway.idsurfacecharacteristics=surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
-                                                                                                       AND surfacecharacteristics.composition IN ('ASPH','ASPH_GRASS','CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM','BRICK','MEMBRANE','METAL','MATS','PIERCED_STEEL', 'NON_BITUM_MIX')),
-  (SELECT point.latitude FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint),
-  (SELECT point.longtitude FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint),
-    (SELECT POINT.geom FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint)
-FROM airportheliport;
+  SELECT
+    uuid,
+    name,
+    designator,
+    (SELECT array_agg(runwaydirectionlightsystem.position) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT count(surfacecharacteristics.composition) AS cover
+     FROM surfacecharacteristics, runway
+     WHERE
+       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       AND surfacecharacteristics.composition IN
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
+    (SELECT point.latitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT point.longtitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT POINT.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
+  FROM airportheliport;
 
 CREATE VIEW AIRP_MAP AS
-SELECT uuid, designator, name, controltype AS type,
-  (SELECT ((elevation).value) as height FROM elevatedpoint WHERE airportheliport.idelevatedpoint=elevatedpoint.id),
-  (SELECT max((nominallength).value) as length FROM runway WHERE runway.uuidairportheliport=airportheliport.uuid),
-  (SELECT count(surfacecharacteristics.composition) AS hydroaerodrom FROM surfacecharacteristics, runway WHERE runway.idsurfacecharacteristics=surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
-                                                                                                       AND surfacecharacteristics.composition IN ('WATER')),
-  (SELECT max(truebearing) AS angle FROM runwaydirection, runway WHERE runwaydirection.uuidrunway=runway.uuid and runway.uuidairportheliport=airportheliport.uuid),
-  (SELECT count(runwaydirectionlightsystem.position) AS lightsystem FROM runwaydirectionlightsystem,runwaydirection, runway WHERE runwaydirectionlightsystem.uuidrunwaydirection=runwaydirection.uuid and runway.uuid = runwaydirection.uuidrunway and runway.uuidairportheliport = airportheliport.uuid),
-  (SELECT point.geom FROM point, elevatedpoint WHERE point.id=elevatedpoint.id AND elevatedpoint.id=airportheliport.idelevatedpoint),
-  abandoned
-FROM airportheliport;
+  SELECT
+    uuid,
+    designator,
+    name,
+            controltype AS type,
+    (SELECT ((elevation).value) AS height
+     FROM elevatedpoint
+     WHERE airportheliport.idelevatedpoint = elevatedpoint.id),
+    (SELECT max((nominallength).value) AS length
+     FROM runway
+     WHERE runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT count(surfacecharacteristics.composition) AS hydroaerodrom
+     FROM surfacecharacteristics, runway
+     WHERE
+       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       AND surfacecharacteristics.composition IN ('WATER')),
+    (SELECT max(truebearing) AS angle
+     FROM runwaydirection, runway
+     WHERE runwaydirection.uuidrunway = runway.uuid AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT count(runwaydirectionlightsystem.position) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT point.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    abandoned
+  FROM airportheliport;
 
 --CREATE RULE airp_table_insert as on INSERT TO AIRP_MAP
  -- DO INSTEAD INSERT INTO AirportHeliport VALUES (new.uuid, new.designator, new.name, new.controltype)
