@@ -14,7 +14,7 @@ ElevatedPoint
 
 ## Атрибуты
 
-##### uuid
+##### id
 
 Наследуетcя из таблицы Point.
 

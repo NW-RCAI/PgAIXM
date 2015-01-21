@@ -13,7 +13,7 @@ Point
 
 ## Атрибуты
 
-##### uuid
+##### id
 
 ##### latitude
 Тип данных: latitude

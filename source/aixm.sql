@@ -30,13 +30,19 @@ DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE;
 DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE;
 DROP TABLE IF EXISTS CartographyLabel CASCADE;
 DROP TABLE IF EXISTS AirportHeliportCity CASCADE;
+DROP TABLE IF EXISTS Service CASCADE;
+DROP TABLE IF EXISTS AirTrafficManagementService CASCADE;
+DROP TABLE IF EXISTS  AirportGroundService CASCADE;
+DROP TABLE IF EXISTS InformationService CASCADE;
+DROP TABLE IF EXISTS SearchRescueService CASCADE;
+DROP TABLE IF EXISTS Airspace CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
 CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
 TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType,
-textaddresstype CASCADE;
+textaddresstype, CodeAirspaceDesignatorType CASCADE;
 
 DROP TYPE IF EXISTS
 CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
@@ -49,7 +55,8 @@ CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureTy
 codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
 valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype, CodeLightingJARType,
 CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType,
-coderunwaymarkingtype, textphonetype, codetelecomnetworktype CASCADE;
+coderunwaymarkingtype, textphonetype, codetelecomnetworktype, CodeFlightDestinationType, CodeFacilityRankingType,
+CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType, CodeAirspaceType  CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -651,6 +658,122 @@ CREATE TYPE CodeTelecomNetworkType AS ENUM ('AFTN', 'AMHS', 'INTERNET', 'SITA', 
 CREATE DOMAIN TextPhoneType AS VARCHAR
 CHECK (VALUE ~ '(\+)?[0-9\s\-\(\)]+');
 
+-- Список значений, идентифицирующих цель полета в зависимости от расположения, таких как прибытие, вылет, перелет
+-- ARR - прибытие
+-- DEP - вылет
+-- OVERFLY - перелет
+-- ALL - все типы
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightDestinationType
+CREATE TYPE CodeFlightDestinationType AS ENUM ('ARR', 'DEP', 'OVERFLY', 'ALL', 'OTHER');
+
+-- Список очередности обслуживания внутри последовательности анологичных видов обслуживания: первичная, вторичная, альтернативная
+-- PRIMARY
+-- SECONDARY
+-- ALTERNATE
+-- EMERG - аварийная
+-- GUARD - защитная
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFacilityRankingType
+CREATE TYPE CodeFacilityRankingType AS ENUM ('PRIMARY', 'SECONDARY', 'ALTERNATE', 'EMERG', 'GUARD', 'OTHER');
+
+-- Список значений, используемых для определения сервиса по плнированию полетов и регулированию потоков
+-- FPL - служба, предоставляющая одобрение и распределение планирования полетов, относящееся к ATC Unites (к объединениям Контроля Воздушного Движения -?)
+-- FPLV - служба, предоставляющая утверждение планирования полетов
+-- ATFM - служба управления воздушными потоками
+-- CLEARANCE - служба, предоставляющая разрешения (вход, посадка, перелет, выход и т.д.) в данной точке
+-- SCHED - служба, составляющая расписание и распределение временных интервалов
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATFMType
+CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SCHED', 'OTHER');
+
+-- Список значений, используемых для определения сервиса по предоставлению информации
+-- AFIS - служба полетной информации аэродрома, как дано в ICAO Annex 11
+-- AIS - служба авиационной информации, как дано в ICAO Annex 15
+-- ATIS - служба автоматизированной конечной информации, как дано в ICAO Annex 11
+-- BRIEFING - служба предполетная и послеполетной информации
+-- FIS - служба, созданная с целью дать совет и информацию, полезную для безопасного и рационального полета
+-- OFIS_VHF - VHF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
+-- OFIS_HF - HF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
+-- NOTAM - обеспечение службой NOTAM, как дано в ICAO Annex 11
+-- INFO - предоставление ограниченной специальной информакии о специфичной активности в определенном месте
+-- RAF - служба регионального прогноза
+-- METAR - регулярный авиационный отчет по погоде
+-- SIGMET - информация, издаваемая службой метеоролического наблюдения, касающаяся появления или ожидаемого появлени указанного проходящего погодного явления, котрое может повлиять на безопасность операций воздушного судна
+-- TWEB - служба передачи погоды (?)
+-- TAF - служба метеорологического прогноза в области терминала
+-- VOLMET - служба передачи метеорологической информации для воздушного судна в полете
+-- ALTIMETER - служба предоставления информации настроек альтиметра
+-- ASOS - автоматизированная служба обследования поверхности
+-- AWOS - автоматизированная служба обследования погоды
+--
+--  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
+CREATE TYPE CodeServiceInformationType AS ENUM ('AFIS','AIS', 'ATIS', 'BRIEFING', 'FIS', 'OFIS_VHF', 'OFIS_HF', 'INFO', 'RAF', 'METAR', 'SIGMET', 'TWEB', 'TAF', 'VOLMET', 'ALTIMETER', 'ASOS', 'AWOS', 'OTHER');
+
+-- Список значений, используемых для определения сервиса по поиску и спасению
+-- ALRS - служба предупреждения
+-- SAR - служба поиска и спасения
+-- RCC - служба по координации спасательных операций
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceSARType
+CREATE TYPE CodeServiceSARType AS ENUM ('ALRS', 'SAR', 'RCC', 'OTHER');
+
+--Список значений, идентифицирующих тип воздушного пространства
+-- NAS - национальная система воздушного пространства
+-- FIR - район полетной информации
+-- FIR_P - часть РПИ
+-- UIR - верхний район полетной информации
+-- UIR_P - часть верхнего РПИ
+-- CTA - диспетчерская зона
+-- CTA_P - часть диспетчерской зоны
+-- OCA - океаническая диспетчерская зона
+-- OCA_P - часть океанической диспетчерской зоны
+-- UTA - верхняя диспетчерская зона
+-- UTA_P - часть верхней диспетчерской зоны
+-- TMA - диспетчерская зона у аэропортов
+-- TMA_P - часть диспетчерской зоны у аэропортов
+-- CTR - диспетчерский район
+-- CTR_P - часть диспетчерского района
+-- OTA - океаническая транзитная зона
+-- SECTOR - диспетчерский сектор. Разделение обозначенной диспетчерской зоны, внутри которой ответственность отведена одному диспетчеру или небольшой группе диспетчеров
+-- SECTOR_C - временно сгруппированный сектор
+-- TSA - временно отделенная зона
+-- CBA - зарубежная зона
+-- RCA - сокращенная зона координации
+-- RAS - регулируемое воздушное пространство
+-- AWY - воздушный путь (корридор)
+-- MTR - буферная зона военного тренировочного пути
+-- P - запрещенная зона
+-- R - зона ограничения полетов
+-- D - опасная зона
+-- ADIZ - воздушная защитная идентификационная зона
+-- NO_FIR - воздушная зона, для которой не определен даже РПИ
+-- PART - часть воздушного пространства
+-- CLASS - воздушное пространство, имеющее определённый класс
+-- POLITICAL - политическая/административная зона
+-- D_OTHER - действия опасного происхождения (не то же, что опасна зона)
+-- TRA - временнно зарезервированная зона
+-- A - зона тревоги
+-- W - зона предупреждения
+-- PROTECT - воздушное пространство, защищенное от необычного воздушного движения
+-- AMA - зона минимальной высоты
+-- ASR - зона установки альтиметра
+-- ADV - рекомендованная зона
+-- UADV - верхняя рекомендованная зона
+-- ATZ - зона движения аэропорта
+-- ATZ_P - часть зоны движения аэропорта
+-- HTZ	- зона движения вертодрома
+-- NAS_P - часть национальной системы воздушного пространства
+--
+--https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
+CREATE TYPE CodeAirspaceType AS ENUM ('NAS', 'FIR', 'FIR_P', 'UIR', 'UIR_P', 'CTA', 'CTA_P', 'OCA', 'OCA_P', 'UTA', 'UTA_P', 'TMA', 'TMA_P', 'CTR', 'CTR_P', 'OTA', 'SECTOR', 'SECTOR_C', 'TSA', 'CBA', 'RCA', 'RAS', 'AWY', 'MTR', 'P', 'R', 'D', 'ADIZ', 'NO_FIR', 'PART', 'CLASS', 'POLITICAL', 'D_OTHER', 'TRA', 'A', 'W', 'PROTECT', 'AMA', 'ASR', 'ADV', 'UADV', 'ATZ', 'ATZ_P', 'HTZ', 'NAS_P', 'OTHER');
+
+-- Допустимый тип воздушного пространства
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceDesignatorType
+CREATE DOMAIN CodeAirspaceDesignatorType AS VARCHAR(10)
+CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -1146,3 +1269,51 @@ CREATE VIEW AIRP_MAP AS
 
 --CREATE RULE airp_table_insert as on INSERT TO AIRP_MAP
  -- DO INSTEAD INSERT INTO AirportHeliport VALUES (new.uuid, new.designator, new.name, new.controltype)
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Service
+CREATE TABLE Service
+(
+  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  flightOperations CodeFlightDestinationType,
+  rank CodeFacilityRankingType,
+  compliantICAO CodeYesNoType,
+  name 	TextNameType
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
+CREATE TABLE AirTrafficManagementService
+(
+  uuid              id REFERENCES Service,
+  type CodeServiceATFMType
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportGroundService
+CREATE TABLE AirportGroundService
+  (
+  uuid              id REFERENCES Service
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_InformationService
+CREATE TABLE InformationService
+(
+  uuid              id REFERENCES Service,
+  type CodeServiceInformationType,
+  voice CodeYesNoType,
+  dataLink CodeYesNoType,
+  recorded CodeYesNoType
+);
+
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SearchRescueService
+CREATE TABLE SearchRescueService
+(
+  uuid              id REFERENCES Service,
+  type CodeServiceSARType
+);
+
+CREATE TABLE Airspace
+(
+  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type CodeAirspaceType,
+  designator CodeAirspaceDesignatorType
+);
