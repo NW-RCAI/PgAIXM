@@ -4,14 +4,14 @@ Service
 
 Тип: Feature
 
-Обеспечение материальными благами, информацией, инструкциями, управлением и т.д. пилотов, полетов, операторов воздушного суда и другой персонал и институты, относящиеся к полетным операциям.
+Обеспечение материальными благами, информацией, инструкциями, управлением и т.д. пилотов, полетов, операторов воздушного суда и другой персонал и организации, относящиеся к обеспечению полетов.
 
 ## Наследование
 
 ### Родительский класс для:
 
 - F ~~AirTrafficManagementService~~
-- F ~~ AirportGroundService~~
+- F ~~AirportGroundService~~
 - F ~~InformationService~~
 - F ~~SearchRescueService~~
 - F ~~TrafficSeparationService~~
@@ -23,7 +23,7 @@ Service
 ##### flightOperations
 Тип данных: CodeFlightDestinationType
 
-Цель (прибытие, отлет и т.д.) полетов, для которых предоставляется информация.
+Цель (прибытие, вылет и т.д.) полетов, для которых предоставляется информация.
 
 ##### rank
 Тип данных: CodeFacilityRankingType
@@ -48,11 +48,11 @@ Service
 
 ### Один ко многим:
 
-- O ContactInformation
 - O ~~Note~~
 
 ### Многие ко многим:
 
+- O ContactInformation
 - O ~~CallsignDetail~~
 - F ~~RadioCommunicationChannel~~
 - F ~~VerticalStructure~~
