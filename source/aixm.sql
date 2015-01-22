@@ -1277,7 +1277,8 @@ CREATE TABLE Service
   flightOperations CodeFlightDestinationType,
   rank CodeFacilityRankingType,
   compliantICAO CodeYesNoType,
-  name 	TextNameType
+  name 	TextNameType,
+  idElevatedPoint             SERIAL REFERENCES ElevatedPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
