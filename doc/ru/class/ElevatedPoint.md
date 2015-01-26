@@ -60,7 +60,7 @@ ElevatedPoint
 - F ~~RadarEquipment~~
 - F ~~RadarSystem~~
 - O ~~LightElement~~
-- F ~~Service~~
+- F Service
 - F ~~Navaid~~
 - F ~~NavaidEquipment~~
 - F ~~NavigationSystemCheckpoint~~
