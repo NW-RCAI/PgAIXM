@@ -51,11 +51,11 @@ AirTrafficManagementService
 
 ### Один ко многим:
 
-- O ContactInformation
 - O ~~Note~~
 
 ### Многие ко многим:
 
+- O ContactInformation
 - O ~~CallsignDetail~~
 - F ~~RadioCommunicationChannel~~
 - F ~~VerticalStructure~~
