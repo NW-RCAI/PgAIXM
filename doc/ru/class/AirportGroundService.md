@@ -4,7 +4,7 @@ AirportGroundService
 
 Тип: Feature
 
-Службы, поддерживающие инфраструктуру аэропорта и непосредственную помощь воздушному судну на земле.
+Службы, поддерживающие инфраструктуру аэропорта и оказывающие непосредственную помощь воздушному судну на земле.
 
 ## Наследование
 
@@ -46,11 +46,11 @@ AirportGroundService
 
 ### Один ко многим:
 
-- O ContactInformation
 - O ~~Note~~
 
 ### Многие ко многим:
 
+- O ContactInformation
 - O ~~CallsignDetail~~
 - F ~~RadioCommunicationChannel~~
 - F ~~VerticalStructure~~
