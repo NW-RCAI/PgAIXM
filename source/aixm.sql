@@ -36,13 +36,15 @@ DROP TABLE IF EXISTS  AirportGroundService CASCADE;
 DROP TABLE IF EXISTS InformationService CASCADE;
 DROP TABLE IF EXISTS SearchRescueService CASCADE;
 DROP TABLE IF EXISTS Airspace CASCADE;
+DROP TABLE IF EXISTS AirspaceLayerClass CASCADE;
+DROP TABLE IF EXISTS AirspaceLayer CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
 CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
 TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType,
-textaddresstype, CodeAirspaceDesignatorType CASCADE;
+textaddresstype, CodeAirspaceDesignatorType, NoNumberType CASCADE;
 
 DROP TYPE IF EXISTS
 CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
@@ -56,7 +58,10 @@ codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetim
 valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype, CodeLightingJARType,
 CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType,
 coderunwaymarkingtype, textphonetype, codetelecomnetworktype, CodeFlightDestinationType, CodeFacilityRankingType,
-CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType, CodeAirspaceType  CASCADE;
+CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType,
+CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType,
+CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType, CodeRouteOriginType, CodeMilitaryStatusType,
+CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -385,7 +390,7 @@ CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'R
 CREATE DOMAIN latitude AS DECIMAL(17, 15);
 
 -- Долгота
--- 
+--
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
 -- Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
@@ -451,8 +456,8 @@ CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL', 'ROLLED', 'COMPACTED'
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
 CREATE TYPE CodeSurfaceConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'UNSAFE', 'DEFORMED', 'OTHER');
 
--- Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость) 
--- покрытия взлётно-посадочной полосы аэродрома для эксплуатации без ограничений, используемый 
+-- Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость)
+-- покрытия взлётно-посадочной полосы аэродрома для эксплуатации без ограничений, используемый
 -- совместно с классификационным числом воздушного судна.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
@@ -812,6 +817,115 @@ CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*'
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceClassificationType
 CREATE TYPE CodeAirspaceClassificationType AS ENUM ('A','B','C','D','E','F','G','OTHER');
 
+-- SFC - расстояние, измеренное от поверхности Земли (эквивалентно AGL - над уровнем Земли)
+-- MSL - расстояние, измеренное от среднего уровня моря (эквивалентно высоте)
+-- W84 - расстояние, измеренное от эллипсоида WGS84
+-- STD - вертикальное расстояние, измеренное с помощью альтиметра, установленного по стандартной атмосфере
+CREATE TYPE CodeVerticalReferenceType AS ENUM ('SFC','MSL','W84','STD','OTHER');
+
+-- ABOVE_LOWER - на нижней высоте или выше нее
+-- BELOW_UPPER - на верхней высоте или ниже нее
+-- AT_LOWER - на нижней высоте
+-- BETWEEN - между верхней и нижней высотами
+-- RECOMMENDED - рекомендована нижняя высота
+-- EXPECT_LOWER - ожидать нижнюю высоту от службы управлением воздушным движением
+-- AS_ASSIGNED - назначается во время операций (например, службой управления воздушным движением)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
+CREATE TYPE CodeAltitudeUseType AS ENUM ('ABOVE_LOWER', 'BELOW_UPPER', 'AT_LOWER', 'BETWEEN', 'RECOMMENDED','EXPECT_LOWER','AS_ASSIGNED','OTHER');
+
+-- Префикс указателя пути (ИКАО).
+-- K - вертолет
+-- U - верхний
+-- S - сверхзвуковой
+-- T - TACAN Route (военный)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorPrefixType
+CREATE TYPE CodeRouteDesignatorPrefixType AS ENUM ('K', 'U', 'S', 'T', 'OTHER');
+
+-- Однобуквенный указатель для пути
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
+CREATE TYPE CodeRouteDesignatorLetterType AS ENUM ('A','B','G','H','J','L','M','N','P','Q','R','T','V','W','Y','Z','OTHER');
+
+-- A (positive) number of similar items.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_NoNumberType
+CREATE DOMAIN NoNumberType AS INTEGER;
+
+-- Буквы латинского алфавита
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
+CREATE TYPE CodeUpperAlphaType AS ENUM ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','OTHER');
+
+-- Классификация путей на пути ATS и северно-атлантические пути.
+-- ATS - путь ATS описан в ICAO Annex 11.
+-- NAT - северно-атлантический путь (часть организовнной системы путей)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteType
+CREATE TYPE CodeRouteType AS ENUM ('ATS','NAT','OTHER');
+
+-- Правила полета, которые должны соблюдаится воздушным судном.
+-- IFR
+-- VFR
+-- ALL - IFR и VFR
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightRuleType
+CREATE TYPE CodeFlightRuleType AS ENUM ('IFR','VFR','ALL','OTHER');
+
+-- Код, обозначающий, является путь международным или региональным
+-- INTL - международный
+-- DOM - домашний (региональный)
+-- BOTH - и то, и другое
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteOriginType
+CREATE TYPE CodeRouteOriginType AS ENUM ('INTL','DOM','BOTH','OTHER');
+
+-- Код, разделяющий военный и гражданский типы
+-- MIL - военный
+-- CIVIL - гражданский
+-- ALL - и военный, и гражданский
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryStatusType
+CREATE TYPE CodeMilitaryStatusType AS ENUM ('MIL', 'CIVIL','ALL','OTHER');
+
+-- Код, обозначающий тип полета на военном тренировочном пути
+-- IR - тренировочный путь IFR
+-- VR - тренировочный путь VFR
+-- SR - тренировочный путь малой скорости и низкой высоты
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryTrainingType
+CREATE TYPE CodeMilitaryTrainingType AS ENUM ('IR','VR','SR','OTHER');
+
+-- Код, обозначающий первичную активность, имеющую место на воздушном пространстве или причину ее появления
+-- AD_TFC
+-- HELI_TFC
+-- TRAINING
+-- AEROBATICS
+-- AIRSHOW
+-- SPORT
+-- ULM
+-- GLIDING
+-- PARAGLIDER
+-- HANGGLIDING
+-- PARACHUTE
+-- AIR_DROP
+-- BALLOON
+-- RADIOSONDE
+-- SPACE_FLIGHT
+-- и т.д.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceActivityType
+CREATE TYPE CodeAirspaceActivityType AS ENUM ('AD_TFC','HELI_TFC','TRAINING','AEROBATICS','AIRSHOW','SPORT','ULM','GLIDING','PARAGLIDER','HANGGLIDING','PARACHUTE','AIR_DROP','BALLOON','RADIOSONDE','SPACE_FLIGHT','UAV', 'AERIAL_WORK','CROP_DUSTING','FIRE_FIGHTING','MILOPS','REFUEL','JET_CLIMBING','EXERCISE','TOWING','NAVAL_EXER','MISSILES','AIR_GUN','ARTILLERY','SHOOTING','BLASTING','WATER_BLASTING','ANTI_HAIL','BIRD','BIRD_MIGRATION','FIREWORK','HI_RADIO','HI_LIGHT','LASER','NATURE','FAUNA','NO_NOISE','ACCIDENT','POPULATION','VIP','VIP_PRES','VIP_VICE','OIL','GAS','REFINERY','CHEMICAL','NUCLEAR','TECHNICAL','ATS','PROCEDURE','OTHER');
+
+-- Список значений, показывающий состояние активизации воздушного пространства.
+-- AVBL_FOR_ACTIVATION - свойство может быть активировано
+-- ACTIVE - воздушное пространство активно (но оно еще может быть не использовано)
+-- IN_USE - воздушное пространство используется в период активизации
+-- INACTIVE - воздушное пространство не активно
+-- INTERMITTENT - воздушное пространство активно, но имеются периоды когда оно реально не используется
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirspaceType
+CREATE TYPE CodeStatusAirspaceType AS ENUM ('AVBL_FOR_ACTIVATION','ACTIVE','IN_USE','INТACTIVE','INTERMITTENT','OTHER');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -897,8 +1011,8 @@ CREATE TABLE AirportHeliport
   certificationDate           DateType,
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
-  idElevatedPoint             SERIAL REFERENCES ElevatedPoint (id)
--- idElevatedSurface         SERIAL REFERENCES ElevatedSurface (uuid)
+  idElevatedPoint             SERIAL REFERENCES ElevatedPoint (id),
+  idElevatedSurface           SERIAL REFERENCES ElevatedSurface (id)
 );
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
@@ -1350,6 +1464,25 @@ CREATE TABLE SearchRescueService
   type CodeServiceSARType
 );
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
+CREATE TABLE Route
+(
+  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  designatorPrefix CodeRouteDesignatorPrefixType,
+  designatorSecondLetter CodeRouteDesignatorLetterType,
+  designatorNumber NoNumberType,
+  multipleIdentifier CodeUpperAlphaType,
+  locationDesignator TextDesignatorType,
+  name TextNameType,
+  type CodeRouteType,
+  flightRule CodeFlightRuleType,
+  internationalUse CodeRouteOriginType,
+  militaryUse CodeMilitaryStatusType,
+  militaryTrainingType CodeMilitaryTrainingType,
+  uuidOrganisationAuthority uuid REFERENCES OrganisationAuthority(uuid)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Airspace
 CREATE TABLE Airspace
 (
   uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1359,11 +1492,60 @@ CREATE TABLE Airspace
   name TextNameType,
   designatorICAO CodeYesNoType,
   controlType CodeMilitaryOperationsType,
-  upperLowerSeparation ValFLType
+  upperLowerSeparation ValFLType,
+  uuidRoute uuid REFERENCES Route (uuid)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
+CREATE TABLE AirspaceLayerClass
+(
+  id   SERIAL PRIMARY KEY,
+  classification CodeAirspaceClassificationType,
+  uuidAirspace uuid REFERENCES Airspace(uuid)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
+CREATE TABLE AirspaceLayer
+(
+  id   SERIAL PRIMARY KEY,
+  upperLimit ValDistanceVerticalType,
+  upperLimitReference CodeVerticalReferenceType,
+  lowerLimit ValDistanceVerticalType,
+  lowerLimitReference CodeVerticalReferenceType,
+  altitudeInterpretation CodeAltitudeUseType,
+  idAirspaceLayerClass SERIAL REFERENCES AirspaceLayerClass (id),
+  idAirspaceActivation SERIAL REFERENCES AirspaceActivation (id)
 );
 
 
-CREATE TABLE AirspaceLayerClass
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceVolume
+CREATE TABLE AirspaceVolume
 (
-  classification CodeAirspaceClassificationType
+  id   SERIAL PRIMARY KEY,
+  upperLimit ValDistanceVerticalType,
+  upperLimitReference CodeVerticalReferenceType,
+  maximumLimit ValDistanceVerticalType,
+  maximumLimitReference CodeVerticalReferenceType,
+  lowerLimit ValDistanceVerticalType,
+  lowerLimitReference CodeVerticalReferenceType,
+  minimumLimit ValDistanceVerticalType,
+  minimumLimitReference CodeVerticalReferenceType,
+  width ValDistanceType,
+  idSurface SERIAL REFERENCES Surface(id),
+  -- idCurve SERIAL REFERENCES Curve(id), - когда будет создана таблица Curve
+  uuidAirspace UUID REFERENCES Airspace(uuid)
+);
+
+CREATE TABLE AirspaceActivation
+(
+  id   SERIAL PRIMARY KEY,
+  activity CodeAirspaceActivityType,
+  status CodeStatusAirspaceType,
+  uuidAirspace uuid REFERENCES Airspace (uuid)
+);
+
+CREATE TABLE AirspaceActivation_OrganisationAuthority
+(
+  uuidOrganisationAuthority uuid REFERENCES OrganisationAuthority(uuid),
+  idAirspaceActivation SERIAL REFERENCES AirspaceActivation(id)
 );

@@ -48,7 +48,7 @@ OrganisationAuthority
 - F ~~SpecialDate~~
 - F ~~Unit~~
 - C ~~FlightConditionElementChoice~~
-- F ~~Route~~
+- F Route
 - O ~~Note~~
 
 
@@ -56,7 +56,7 @@ OrganisationAuthority
 
 - F ~~OrganisationAuthority~~
 - O ContactInformation
-- O ~~AirspaceActivation~~
+- O AirspaceActivation
 - F ~~RadarSystem~~
 - O ~~PropertiesWithSchedule~~
 - F ~~NavaidEquipment~~

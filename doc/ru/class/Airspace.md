@@ -47,34 +47,39 @@ Airspace
 
 Уровень полета, обозначающий разделение верхнего и нижнего воздушного пространства.
 
+##### uuidRoute
+Сссылка на: Route (uuid)
+
+Путь защищенный воздушным пространством.
 
 ## Связи
 
 ### Один к одному:
 
-- F ~~Route~~
-
 ### Один ко многим:
 
-- O ~~AirspaceLayerClass~~
-- O ~~AirspaceVolume~~
-- O ~~AirspaceActivation~~
+- O AirspaceVolume geometryComponent
+- O AirspaceVolume contributorAirspace
+- O AirspaceActivation
 - F ~~SignificantPointInAirspace~~
-- F ~~AirspaceBorderCrossing~~
+- F ~~AirspaceBorderCrossing exitedAirspace~~
+- F ~~AirspaceBorderCrossing enteredAirspace~~
 - O ~~Note~~
 
 ### Многие ко многим:
 
 - F ~~RulesProcedures~~
 - F ~~StandardLevelSector~~
-- F ~~InformationService~~
-- F ~~AirTrafficControlService~~
+- F InformationService
+- F AirTrafficControlService
 - F ~~AirTrafficManagementService~~
-- F ~~SearchRescueService~~
+- F SearchRescueService
 - F ~~AerialRefuelling~~
 
 ### Многие к одному:
 
+- F Route
 - F ~~AuthorityForAirspace~~
 - C ~~FlightConditionElementChoice~~
 - C ~~FlightRoutingElementChoice~~
+- O AirspaceLayerClass
