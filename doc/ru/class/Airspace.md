@@ -61,7 +61,7 @@ Airspace
 - O AirspaceVolume geometryComponent
 - O ~~AirspaceVolume contributorAirspace~~
 - O AirspaceActivation
-- F ~~SignificantPointInAirspace~~
+- F SignificantPointInAirspace
 - F ~~AirspaceBorderCrossing exitedAirspace~~
 - F ~~AirspaceBorderCrossing enteredAirspace~~
 - O ~~Note~~
@@ -72,7 +72,7 @@ Airspace
 - F ~~StandardLevelSector~~
 - F InformationService
 - F AirTrafficControlService
-- F ~~AirTrafficManagementService~~
+- F AirTrafficManagementService
 - F SearchRescueService
 - F ~~AerialRefuelling~~
 

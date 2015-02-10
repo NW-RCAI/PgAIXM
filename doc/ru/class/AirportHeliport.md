@@ -152,15 +152,20 @@ The altitude at or below which the vertical position of an aircraft is controlle
 
 Как правило, это означает, что соответствующяя организация/орган отвечает за управление аэродромом/вертодромом. Понятие "управление аэропортом" не применяется ко всем аэродромам/вертодромов во всем мире. В этом случае, аэродром/вертодром будет ассоциироваться с государством, несущим ответственность за своих действия.
 
-##### uuidElevatedPoint
-Ссылка на: ElevatedPoint (uuid)
+##### idElevatedPoint
+Ссылка на: ElevatedPoint (id)
 
 Контрольная точка аэродрома.
 
-##### uuidElevatedSurface
-Ссылка на: ElevatedSurface (uuid)
+##### idElevatedSurface
+Ссылка на: ElevatedSurface (id)
 
 Площадь аэродрома/вертодрома, используемая для авиационных операций.
+
+##### idSignificantPoint
+Ссылка на: SignificantPoint (id)
+
+Точка, обозначенная, как центр аэропорта.
 
 ## Связи
 
@@ -189,7 +194,7 @@ The altitude at or below which the vertical position of an aircraft is controlle
 - F ~~GroundTrafficControlService~~
 - F ~~NavigationSystemCheckpoint~~
 - F ~~DesignatedPoint~~
-- C ~~SignificantPoint~~
+- C SignificantPoint
 - F ~~AeronauticalGroundLight~~
 - F ~~Unit~~
 - C ~~ObstacleAreaOrigin~~
@@ -202,9 +207,9 @@ The altitude at or below which the vertical position of an aircraft is controlle
 - O City
 - F AltimeterSource
 - F ~~RulesProcedures~~
-- F ~~AirportGroundService~~
-- F ~~InformationService~~
-- F ~~AirTrafficControlService~~
+- F AirportGroundService
+- F InformationService
+- F AirTrafficControlService
 - F ~~Procedure~~
 - F ~~Navaid~~
 - F ~~SafeAltitudeArea~~
