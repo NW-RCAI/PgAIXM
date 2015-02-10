@@ -58,6 +58,8 @@ Airspace
 
 ### Один ко многим:
 
+- O AirspaceLayerClass
+- O AirspaceLayerClass
 - O AirspaceVolume geometryComponent
 - O ~~AirspaceVolume contributorAirspace~~
 - O AirspaceActivation
@@ -82,4 +84,3 @@ Airspace
 - F ~~AuthorityForAirspace~~
 - C ~~FlightConditionElementChoice~~
 - C ~~FlightRoutingElementChoice~~
-- O AirspaceLayerClass

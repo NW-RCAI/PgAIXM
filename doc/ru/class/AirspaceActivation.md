@@ -38,8 +38,7 @@ AirspaceActivation
 
 ### Многие ко многим:
 
-- F OrganisationAuthority user
-- F OrganisationAuthority specialDateAuthority
+- F OrganisationAuthority
 
 ### Многие к одному:
 
