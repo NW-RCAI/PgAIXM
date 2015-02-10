@@ -59,7 +59,7 @@ Airspace
 ### Один ко многим:
 
 - O AirspaceVolume geometryComponent
-- O AirspaceVolume contributorAirspace
+- O ~~AirspaceVolume contributorAirspace~~
 - O AirspaceActivation
 - F ~~SignificantPointInAirspace~~
 - F ~~AirspaceBorderCrossing exitedAirspace~~
