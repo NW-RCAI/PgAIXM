@@ -144,14 +144,24 @@ RouteSegment
 
 Размер сегмента пути.
 
+##### idEnRouteSegmentPointStart
+Ссылка на: EnRouteSegmentPointStart (id)
+
+Начало сегмента пути.
+
+##### idEnRouteSegmentPointEnd
+Ссылка на: EnRouteSegmentPointEnd (id)
+
+Конец сегмента пути.
+
 ## Связи
 
 ### Один к одному:
 
-- O ~~EnRouteSegmentPoint start~~
-- O ~~EnRouteSegmentPoint end~~
+- O EnRouteSegmentPoint start
+- O EnRouteSegmentPoint end
 - O ~~ObstacleAssessmentArea~~
-- O ~~Curve~~
+- O Curve
 
 ### Один ко многим:
 

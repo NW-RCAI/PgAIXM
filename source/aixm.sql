@@ -38,6 +38,19 @@ DROP TABLE IF EXISTS SearchRescueService CASCADE;
 DROP TABLE IF EXISTS Airspace CASCADE;
 DROP TABLE IF EXISTS AirspaceLayerClass CASCADE;
 DROP TABLE IF EXISTS AirspaceLayer CASCADE;
+DROP TABLE IF EXISTS EnRouteSegmentPoint CASCADE;
+DROP TABLE IF EXISTS RoutePortion CASCADE;
+DROP TABLE IF EXISTS SegmentPoint CASCADE;
+DROP TABLE IF EXISTS RouteSegment CASCADE;
+DROP TABLE IF EXISTS Route CASCADE;
+DROP TABLE IF EXISTS AirspaceVolume CASCADE;
+DROP TABLE IF EXISTS AirspaceActivation CASCADE;
+DROP TABLE IF EXISTS AirspaceActivation_OrganisationAuthority CASCADE;
+DROP TABLE IF EXISTS SignificantPointInAirspace CASCADE;
+DROP TABLE IF EXISTS SignificantPoint CASCADE;
+DROP TABLE IF EXISTS Curve CASCADE;
+DROP TABLE IF EXISTS AirportHeliport_InformationService CASCADE;
+DROP TABLE IF EXISTS AirportHeliport_AirportGroundService CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -985,6 +998,33 @@ CREATE TYPE CodeRouteDesignatorSuffixType AS ENUM ('F', 'G', 'OTHER');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeATCReportingType
 CREATE TYPE CodeATCReportingType AS ENUM ('COMPULSORY', 'ON_REQUEST', 'NO_REPORT', 'OTHERА');
 
+
+-- Классификация точек входа и выхода на свободные зоны полета
+-- PITCH - точка свободного полета PITCH указывает на начало свободного полета
+-- CATCH - точка свободного полета CATCH указывает на конец свободного полета
+--
+--  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFreeFlightType
+CREATE TYPE CodeFreeFlightType AS ENUM ('PITCH', 'CATCH', 'OTHER');
+
+-- Код, показывающий, что у точки есть особенная роль в контексте RVSM (Cокращенный минимум вертикального эшелонирования)
+-- IN - точка входа RVSM
+-- OUT - точка выхода RVSM
+-- IN_OUT - точка входа/выхода RVSM
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRVSMPointRoleType
+CREATE TYPE CodeRVSMPointRoleType AS ENUM ('IN', 'OUT', 'IN_OUT', 'OTHER');
+
+-- Код, указывающий на использование точки на военном тренировочном пути.
+-- S - точка входа (начала)
+-- T - точка возврата
+-- X - точка выхода (конца)
+-- AS - запасная точка входа
+-- AX - запасная точка выхода
+-- ASX - запасная точка входа/выхода
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryRoutePointType
+CREATE TYPE CodeMilitaryRoutePointType AS ENUM ('S', 'T', 'X', 'AS', 'AX', 'ASX', 'OTHER');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -1541,12 +1581,23 @@ CREATE TABLE InformationService
   recorded CodeYesNoType
 );
 
-
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SearchRescueService
 CREATE TABLE SearchRescueService
 (
   uuid id REFERENCES Service,
   type CodeServiceSARType
+);
+
+CREATE TABLE AirportHeliport_InformationService
+(
+  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
+  uuidInformationService id REFERENCES InformationService(uuid)
+);
+
+CREATE TABLE AirportHeliport_AirportGroundService
+(
+  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
+  uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
@@ -1564,7 +1615,7 @@ CREATE TABLE Route
   internationalUse          CodeRouteOriginType,
   militaryUse               CodeMilitaryStatusType,
   militaryTrainingType      CodeMilitaryTrainingType,
-  uuidOrganisationAuthority UUID REFERENCES OrganisationAuthority (uuid)
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RouteSegment
@@ -1595,8 +1646,10 @@ CREATE TABLE RouteSegment
   navigationType                   CodeRouteNavigationType,
   requiredNavigationPerformance    CodeRNPType,
   designatorSuffix                 CodeRouteDesignatorSuffixType,
-  uuidRoute                        UUID REFERENCES Route (uuid),
-  idCurve                          SERIAL REFERENCES Curve (id)
+  uuidRoute                        id REFERENCES Route (uuid),
+  idCurve                          SERIAL REFERENCES Curve (id),
+  idEnRouteSegmentPointStart       SERIAL REFERENCES EnRouteSegmentPoint (id),
+  idEnRouteSegmentPointEnd         SERIAL REFERENCES EnRouteSegmentPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
@@ -1613,7 +1666,20 @@ CREATE TABLE SegmentPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
 CREATE TABLE EnRouteSegmentPoint
 (
+  id                   SERIAL PRIMARY KEY REFERENCES SegmentPoint (id),
+  roleFreeFlight       CodeFreeFlightType,
+  roleRVSM             CodeRVSMPointRoleType,
+  turnRadius           ValDistanceType,
+  roleMilitaryTraining CodeMilitaryRoutePointType
+);
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
+CREATE TABLE RoutePortion
+(
+  id                             SERIAL PRIMARY KEY,
+  idSignificantPointStart        SERIAL REFERENCES SignificantPoint (id),
+  idSignificantPointIntermediate SERIAL REFERENCES SignificantPoint (id),
+  idSignificantPointEnd          SERIAL REFERENCES SignificantPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Airspace
@@ -1627,7 +1693,7 @@ CREATE TABLE Airspace
   designatorICAO       CodeYesNoType,
   controlType          CodeMilitaryOperationsType,
   upperLowerSeparation ValFLType,
-  uuidRoute            UUID REFERENCES Route (uuid)
+  uuidRoute            id REFERENCES Route (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
@@ -1635,7 +1701,7 @@ CREATE TABLE AirspaceLayerClass
 (
   id             SERIAL PRIMARY KEY,
   classification CodeAirspaceClassificationType,
-  uuidAirspace   UUID REFERENCES Airspace (uuid)
+  uuidAirspace   id REFERENCES Airspace (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
@@ -1666,7 +1732,7 @@ CREATE TABLE AirspaceVolume
   width                 ValDistanceType,
   idSurface             SERIAL REFERENCES Surface (id),
   idCurve               SERIAL REFERENCES Curve (id),
-  uuidAirspace          UUID REFERENCES Airspace (uuid)
+  uuidAirspace          id REFERENCES Airspace (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
@@ -1675,12 +1741,12 @@ CREATE TABLE AirspaceActivation
   id           SERIAL PRIMARY KEY,
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
-  uuidAirspace UUID REFERENCES Airspace (uuid)
+  uuidAirspace id REFERENCES Airspace (uuid)
 );
 
 CREATE TABLE AirspaceActivation_OrganisationAuthority
 (
-  uuidOrganisationAuthority UUID REFERENCES OrganisationAuthority (uuid),
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   idAirspaceActivation      SERIAL REFERENCES AirspaceActivation (id)
 );
 
@@ -1690,6 +1756,6 @@ CREATE TABLE SignificantPointInAirspace
   uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
   type               CodeAirspacePointRoleType,
   relativeLocation   CodeAirspacePointPositionType,
-  uuidAirspace       UUID REFERENCES Airspace (uuid),
+  uuidAirspace       id REFERENCES Airspace (uuid),
   idSignificantPoint SERIAL REFERENCES SignificantPoint (id)
 );

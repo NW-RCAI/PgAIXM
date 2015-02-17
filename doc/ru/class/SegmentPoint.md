@@ -10,7 +10,7 @@ SegmentPoint
 
 ### Родительский класс для:
 - O ~~AerialRefuellingPoint~~
-- O ~~EnRouteSegmentPoint~~
+- O EnRouteSegmentPoint
 - O ~~TerminalSegmentPoint~~
 
 ## Атрибуты
