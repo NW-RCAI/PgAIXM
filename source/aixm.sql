@@ -1025,6 +1025,28 @@ CREATE TYPE CodeRVSMPointRoleType AS ENUM ('IN', 'OUT', 'IN_OUT', 'OTHER');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryRoutePointType
 CREATE TYPE CodeMilitaryRoutePointType AS ENUM ('S', 'T', 'X', 'AS', 'AX', 'ASX', 'OTHER');
 
+-- Трехбуквенный код, обозначающий язык (в соответствиии с ISO 639-2)
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLanguageType
+CREATE DOMAIN CodeLanguageType AS VARCHAR(3)
+CHECK (VALUE ~ '[a-z]{3}');
+
+-- Тип канала связи.
+-- HF - высокочастотный голосовой радиоканал
+-- VHF - сверхвысокочастотный голосовой радиоканал с интервалами 25 КГц
+-- VDL1
+-- VDL2
+-- VDL4
+-- AMSS
+-- ADS_B
+-- ADS_B_VD
+-- HFDL
+-- VHF_833
+-- UHF
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
+CREATE TYPE CodeCommunicationModeType AS ENUM ('HF','VHF','VDL1','VDL2','VDL4','AMSS','ADS_B','ADS_B_VD','HFDL','VHF_833','UHF', 'OTHER');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -1558,6 +1580,29 @@ CREATE TABLE Service
   idElevatedPoint  SERIAL REFERENCES ElevatedPoint (id)
 );
 
+CREATE TABLE CallsignDetail
+(
+  id          SERIAL PRIMARY KEY,
+  callSign    TextNameType,
+  language    CodeLanguageType,
+  uuidService id REFERENCES Service (uuid)
+);
+
+CREATE TABLE RadioCommunicationChannel
+(
+  uuid             id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  mode                  CodeCommunicationModeType,
+  rank                  CodeFacilityRankingType,
+  frequencyTransmission ValFrequencyType,
+  frequencyReception    ValFrequencyType,
+  channel               CodeCommunicationChannelType,
+  logon                 TextDesignatorType,
+  emissionType          CodeRadioEmissionType,
+  selectiveCall         CodeYesNoType,
+  flightChecked         CodeYesNoType,
+  trafficDirection      CodeCommunicationDirectionType
+);
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
 CREATE TABLE AirTrafficManagementService
 (
@@ -1590,8 +1635,8 @@ CREATE TABLE SearchRescueService
 
 CREATE TABLE AirportHeliport_InformationService
 (
-  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
-  uuidInformationService id REFERENCES InformationService(uuid)
+  uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
+  uuidInformationService id REFERENCES InformationService (uuid)
 );
 
 CREATE TABLE AirportHeliport_AirportGroundService

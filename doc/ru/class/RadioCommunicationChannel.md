@@ -1,29 +1,19 @@
-Service
+RadioCommunicationChannel
 ===============
-Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Service)
+Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RadioCommunicationChannel)
 
 Тип: Feature
 
-Обеспечение материальными благами, информацией, инструкциями, управлением и т.д. пилотов, полетов, операторов воздушного суда и другой персонал и организации, относящиеся к обеспечению полетов.
-
-## Наследование
-
-### Родительский класс для:
-
-- F ~~AirTrafficManagementService~~
-- F ~~AirportGroundService~~
-- F ~~InformationService~~
-- F ~~SearchRescueService~~
-- F ~~TrafficSeparationService~~
+Полоса радиочастот достаточной ширины и связанная с ней идентификационная информация, использумая для одно- или двухсторонней связи с радиопередатчиком в воздухе или на земле.
 
 ## Атрибуты
 
 ##### uuid
 
-##### flightOperations
-Тип данных: CodeFlightDestinationType
+##### mode
+Тип данных: CodeCommunicationModeType
 
-Цель (прибытие, вылет и т.д.) полетов, для которых предоставляется информация.
+Тип канала связи.
 
 ##### rank
 Тип данных: CodeFacilityRankingType
