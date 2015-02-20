@@ -1,5 +1,5 @@
 SegmentPoint
-===============
+============
 Источник: [AIXM](https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint)
 
 Тип: Object
@@ -10,7 +10,7 @@ SegmentPoint
 
 ### Родительский класс для:
 - O ~~AerialRefuellingPoint~~
-- O EnRouteSegmentPoint
+- O ~~EnRouteSegmentPoint~~
 - O ~~TerminalSegmentPoint~~
 
 ## Атрибуты
