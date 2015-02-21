@@ -196,7 +196,7 @@ The altitude at or below which the vertical position of an aircraft is controlle
 - F ~~DesignatedPoint~~
 - C SignificantPoint
 - F ~~AeronauticalGroundLight~~
-- F ~~Unit~~
+- F Unit
 - C ~~ObstacleAreaOrigin~~
 - C ~~FlightConditionElementChoice~~
 - C ~~FlightRoutingElementChoice~~

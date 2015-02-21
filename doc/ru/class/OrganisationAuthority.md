@@ -46,7 +46,7 @@ OrganisationAuthority
 - F ~~SpecialNavigationSystem~~
 - C ~~ObstacleAreaOrigin~~
 - F ~~SpecialDate~~
-- F ~~Unit~~
+- F Unit
 - C ~~FlightConditionElementChoice~~
 - F Route
 - O ~~Note~~

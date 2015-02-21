@@ -22,6 +22,17 @@ ContactInformation
 
 Официальный заголовок контакта.
 
+##### uuidAirportHeliport
+Ссылка на: AirportHeliport (uuid)
+
+##### uuidOrganisationAuthority
+Ссылка на: OrganisationAuthority (uuid)
+
+##### uuidUnit
+Ссылка на: Unit (uuid)
+
+##### uuidService
+Ссылка на: Service (uuid)
 
 ## Связи
 
@@ -42,8 +53,8 @@ ContactInformation
 - F OrganisationAuthority
 - O ~~UsageCondition~~
 - F ~~RadarEquipment~~
-- F ~~Service~~
-- F ~~Unit~~
+- F Service
+- F Unit
 - O ~~FlightRestrictionRoute~~
 - O ~~Note~~
 

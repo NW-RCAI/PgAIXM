@@ -40,6 +40,16 @@ Service
 
 Свободное текстовое имя, по которому идентифицируется сервис (обслуживание).
 
+##### uuidUnit
+Ссылка на: Unit(uuid)
+
+Объедиение, предоставляющее обслуживание.
+
+##### idElevatedPoint
+Ссылка на: ElevatedPoint (id)
+
+Местоположение, откуда предосталяется обслуживание.
+
 ## Связи
 
 ### Один к одному:
@@ -54,11 +64,11 @@ Service
 
 - O ContactInformation
 - O CallsignDetail
-- F ~~RadioCommunicationChannel~~
+- F RadioCommunicationChannel
 - F ~~VerticalStructure~~
 
 ### Многие к одному:
 
-- F ~~Unit~~
+- F Unit
 - O ~~ServiceOperationalStatus~~
 

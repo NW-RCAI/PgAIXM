@@ -20,21 +20,49 @@ RadioCommunicationChannel
 
 Порядок обслуживания по приоритету, такой как "первоначальный" или "альтернативный".
 
-##### compliantICAO
+##### frequencyTransmission
+Тип данных: ValFrequencyType
+
+Значение частоты передачи.
+
+##### frequencyReception
+Тип данных: ValFrequencyType
+
+Значение частоты приемника.
+
+##### channel
+Тип данных: CodeCommunicationChannelType
+
+Идентификатор радиоканала, по которому осуществляется связь.
+
+##### logon
+Тип данных: TextDesignatorType
+
+Код, используемый для связи данных, на подобии того, что используется для начала сеанса (logon) для объединения ATS.
+
+##### emissionType
+Тип данных: CodeRadioEmissionType
+
+Код, обозначающий тип передачи, как обозначено в 1979 ITU World Administrative Radio Conference.
+
+##### selectiveCall
 Тип данных: CodeYesNoType
 
-Код, обозначающий, совместима ли служба сервиса со стандартами ИКАО и рекомендованными инструкциями, заднными для этого типа обслуживания.
+Код, показывающий работает ли частота с избирательным вызовом цифровым кодом.
 
-##### name
-Тип данных: TextNameType
+##### flightChecked
+Тип данных: CodeYesNoType
 
-Свободное текстовое имя, по которому идентифицируется сервис (обслуживание).
+Показывает, является ли канал связи проверенным полетами (?).
+
+##### trafficDirection
+Тип данных: CodeCommunicationDirectionType
+
+...
 
 ## Связи
 
 ### Один к одному:
-
-- O ElevatedPoint
 
 ### Один ко многим:
 
@@ -42,13 +70,9 @@ RadioCommunicationChannel
 
 ### Многие ко многим:
 
-- O ContactInformation
-- O CallsignDetail
-- F ~~RadioCommunicationChannel~~
-- F ~~VerticalStructure~~
+- F Service
 
 ### Многие к одному:
 
-- F ~~Unit~~
-- O ~~ServiceOperationalStatus~~
+- O ElevatedPoint
 

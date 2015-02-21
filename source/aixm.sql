@@ -1045,7 +1045,121 @@ CHECK (VALUE ~ '[a-z]{3}');
 -- UHF
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
-CREATE TYPE CodeCommunicationModeType AS ENUM ('HF','VHF','VDL1','VDL2','VDL4','AMSS','ADS_B','ADS_B_VD','HFDL','VHF_833','UHF', 'OTHER');
+CREATE TYPE CodeCommunicationModeType AS ENUM ('HF', 'VHF', 'VDL1', 'VDL2', 'VDL4', 'AMSS', 'ADS_B', 'ADS_B_VD', 'HFDL', 'VHF_833', 'UHF', 'OTHER');
+
+-- HZ - Гц
+-- KHZ - кГц
+-- MHZ - МГц
+-- GHZ - ГГц
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFrequencyType
+CREATE TYPE UomFrequencyType AS ENUM ('HZ', 'KHZ', 'MHZ', 'GHZ', 'OTHER');
+
+-- Значение частоты (радио) навигационной системы
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrequencyType
+CREATE DOMAIN ValFrequencyBaseType AS DECIMAL
+CHECK (VALUE > 0);
+CREATE TYPE ValFrequencyType AS (
+  value ValFrequencyBaseType,
+  unit  UomFrequencyType
+);
+
+-- Код, обозначающий тип передачи, как определено в 1979 ITU World Administrative Radio Conference.
+-- A2 - телеграфный, не голосовой
+-- A3A
+-- A3B
+-- A3E
+-- A3H
+-- A3J
+-- A3L
+-- A3U
+-- J3E
+-- NONA1A
+-- NONA2A
+-- PON
+-- A8W
+-- A9W
+-- NOX
+-- G1D
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRadioEmissionType
+CREATE TYPE CodeRadioEmissionType AS ENUM ('A2', 'A3A', 'A3B', 'A3E', 'A3H', 'A3J', 'A3L', 'A3U', 'J3E', 'NONA1A', 'NONA2A', 'PON', 'A8W', 'A9W', 'NOX', 'G1D', 'OTHER');
+
+-- Идентификатор радиоканала, по которому осуществляется связь.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationChannelType
+CREATE DOMAIN CodeCommunicationChannelType AS VARCHAR;
+
+-- Код - индикатор для направленности канала связи
+-- UPLINK
+-- DOWNLINK
+-- BIDIRECTIONAL
+-- UPCAST
+-- DOWNCAST
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
+CREATE TYPE CodeCommunicationDirectionType AS ENUM ('UPLINK', 'DOWNLINK', 'BIDIRECTIONAL', 'UPCAST', 'DOWNCAST', 'OTHER');
+
+-- Объединение, предоставляющее отдельный вид обслуживания воздушного движения (ОВД).
+-- ACC - Районное диспетчерское обслуживание
+-- ADSU
+-- ADVC
+-- ALPS
+-- AOF
+-- APP
+-- APP_ARR
+-- APP_DEP
+-- ARO
+-- ATCC
+-- ATFMU
+-- ATMU
+-- ATSU
+-- BOF
+-- BS
+-- COM
+-- FCST
+-- FIC
+-- GCA
+-- MET
+-- MWO
+-- NOF
+-- OAC
+-- PAR
+-- RAD
+-- RAFC
+-- RCC
+-- RSC
+-- SAR
+-- SMC
+-- SMR
+-- SRA
+-- SSR
+-- TAR
+-- TWR
+-- UAC
+-- UDF
+-- UIC
+-- VDF
+-- WAFC
+-- ARTCC
+-- FSS
+-- TRACON
+-- MIL
+-- MILOPS
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
+CREATE TYPE CodeUnitType AS ENUM
+('ACC','ADSU','ADVC','ALPS','AOF','APP','APP_ARR','APP_DEP','ARO','ATCC','ATFMU','ATMU','ATSU','BOF','BS','COM','FCST','FIC','GCA','MET','MWO','NOF','OAC','PAR',
+  'RAD','RAFC','RCC','RSC','SAR','SMC','SMR','SRA','SSR','TAR','TWR','UAC','UDF','UIC','VDF','WAFC','ARTCC','FSS','TRACON','MIL','MILOPS','OTHER');
+
+-- Вид зависимости между объединением и связанным с ним объединением
+-- OWNER - связанное объединение (RelatedUnit) - владелец объединения (Unit)
+-- PROVIDER - объединение (Unit) пользуется обслуживание связанного объединения (RelatedUnit)
+-- ALTERNATE - связанное объединение (RelatedUnit) предоставляет запасное (альтернативное) обслуживание взамен обслуживания текущего объединения
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
+CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER','OWNER','ALTERNATE','OTHER');
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -1153,59 +1267,7 @@ CREATE TABLE AirportHeliport
   idElevatedSurface           SERIAL REFERENCES ElevatedSurface (id),
   idSignificantPoint          SERIAL REFERENCES SignificantPoint (id)
 );
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
-CREATE TABLE ContactInformation
-(
-  id                        SERIAL PRIMARY KEY,
-  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
-  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  name                      TextNameType,
-  title                     TextNameType
-);
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
-CREATE TABLE PostalAddress (
-  id                 SERIAL PRIMARY KEY,
-  deliveryPoint      TextAddressType,
-  city               TextNameType,
-  administrativeArea TextNameType,
-  postalCode         TextNameType,
-  country            TextNameType
-);
-
-CREATE TABLE ContactInformationPostalAddress
-(
-  idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idPostalAddress      SERIAL REFERENCES PostalAddress (id)
-);
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
-
-CREATE TABLE OnlineContact (
-  id       SERIAL PRIMARY KEY,
-  network  CodeTelecomNetworkType,
-  linkage  TextAddressType,
-  protocol TextNameType,
-  eMail    TextAddressType
-);
-
-CREATE TABLE ContactInformationOnlineContact
-(
-  idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idOnlineContact      SERIAL REFERENCES OnlineContact (id)
-);
-
-CREATE TABLE TelephoneContact (
-  id        SERIAL PRIMARY KEY,
-  voice     TextPhoneType,
-  facsimile TextPhoneType
-);
-
-CREATE TABLE ContactInformationTelephoneContact
-(
-  idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idTelephoneContact   SERIAL REFERENCES TelephoneContact (id)
-);
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
@@ -1569,6 +1631,29 @@ CREATE VIEW AIRP_MAP AS
 --CREATE RULE airp_table_insert as on INSERT TO AIRP_MAP
  -- DO INSTEAD INSERT INTO AirportHeliport VALUES (new.uuid, new.designator, new.name, new.controltype)
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
+CREATE TABLE Unit
+(
+  uuid          id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name          TextNameType,
+  type          CodeUnitType,
+  compliantICAO CodeYesNoType,
+  designator    CodeOrganisationDesignatorType,
+  military      CodeMilitaryOperationsType,
+  idElevatedPoint  SERIAL REFERENCES ElevatedPoint (id),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_UnitDependency
+CREATE TABLE UnitDependency
+(
+  id          SERIAL PRIMARY KEY,
+  uuidUnit         id REFERENCES Unit (uuid),
+  uuidRelatedUnit         id REFERENCES Unit (uuid),
+  type	CodeUnitDependencyType
+);
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Service
 CREATE TABLE Service
 (
@@ -1577,7 +1662,8 @@ CREATE TABLE Service
   rank             CodeFacilityRankingType,
   compliantICAO    CodeYesNoType,
   name             TextNameType,
-  idElevatedPoint  SERIAL REFERENCES ElevatedPoint (id)
+  idElevatedPoint  SERIAL REFERENCES ElevatedPoint (id),
+  uuidUnit         id REFERENCES Unit (uuid)
 );
 
 CREATE TABLE CallsignDetail
@@ -1588,9 +1674,67 @@ CREATE TABLE CallsignDetail
   uuidService id REFERENCES Service (uuid)
 );
 
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
+CREATE TABLE ContactInformation
+(
+  id                        SERIAL PRIMARY KEY,
+  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  uuidUnit         id REFERENCES Unit (uuid),
+  uuidService id REFERENCES Service (uuid),
+  name                      TextNameType,
+  title                     TextNameType
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
+CREATE TABLE PostalAddress (
+  id                 SERIAL PRIMARY KEY,
+  deliveryPoint      TextAddressType,
+  city               TextNameType,
+  administrativeArea TextNameType,
+  postalCode         TextNameType,
+  country            TextNameType
+);
+
+CREATE TABLE ContactInformationPostalAddress
+(
+  idContactInformation SERIAL REFERENCES ContactInformation (id),
+  idPostalAddress      SERIAL REFERENCES PostalAddress (id)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
+
+CREATE TABLE OnlineContact (
+  id       SERIAL PRIMARY KEY,
+  network  CodeTelecomNetworkType,
+  linkage  TextAddressType,
+  protocol TextNameType,
+  eMail    TextAddressType
+);
+
+CREATE TABLE ContactInformationOnlineContact
+(
+  idContactInformation SERIAL REFERENCES ContactInformation (id),
+  idOnlineContact      SERIAL REFERENCES OnlineContact (id)
+);
+
+CREATE TABLE TelephoneContact (
+  id        SERIAL PRIMARY KEY,
+  voice     TextPhoneType,
+  facsimile TextPhoneType
+);
+
+CREATE TABLE ContactInformationTelephoneContact
+(
+  idContactInformation SERIAL REFERENCES ContactInformation (id),
+  idTelephoneContact   SERIAL REFERENCES TelephoneContact (id)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RadioCommunicationChannel
 CREATE TABLE RadioCommunicationChannel
 (
-  uuid             id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuid                  id PRIMARY KEY DEFAULT uuid_generate_v4(),
   mode                  CodeCommunicationModeType,
   rank                  CodeFacilityRankingType,
   frequencyTransmission ValFrequencyType,
@@ -1600,7 +1744,14 @@ CREATE TABLE RadioCommunicationChannel
   emissionType          CodeRadioEmissionType,
   selectiveCall         CodeYesNoType,
   flightChecked         CodeYesNoType,
-  trafficDirection      CodeCommunicationDirectionType
+  trafficDirection      CodeCommunicationDirectionType,
+  idElevatedPoint       SERIAL REFERENCES ElevatedPoint (id)
+);
+
+CREATE TABLE Service_RadioCommunicationChannel
+(
+  uuidService                   id REFERENCES Service (uuid),
+  uuidRadioCommunicationChannel id REFERENCES RadioCommunicationChannel (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
