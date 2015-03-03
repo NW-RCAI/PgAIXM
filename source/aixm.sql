@@ -51,6 +51,11 @@ DROP TABLE IF EXISTS SignificantPoint CASCADE;
 DROP TABLE IF EXISTS Curve CASCADE;
 DROP TABLE IF EXISTS AirportHeliport_InformationService CASCADE;
 DROP TABLE IF EXISTS AirportHeliport_AirportGroundService CASCADE;
+DROP TABLE IF EXISTS Unit CASCADE ;
+DROP TABLE IF EXISTS UnitDependency CASCADE ;
+DROP TABLE IF EXISTS CallsignDetail CASCADE ;
+DROP TABLE IF EXISTS radiocommunicationchannel CASCADE ;
+DROP TABLE IF EXISTS service_radiocommunicationchannel CASCADE ;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -74,7 +79,11 @@ coderunwaymarkingtype, textphonetype, codetelecomnetworktype, CodeFlightDestinat
 CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType,
 CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType,
 CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType, CodeRouteOriginType, CodeMilitaryStatusType,
-CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType CASCADE;
+CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType,
+codeunitdependencytype, codeairspacepointpositiontype, codeleveltype, coderoutesegmentpathtype, coderoutenavigationtype,
+codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype, codefreeflighttype, codervsmpointroletype,
+codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype, uomfrequencytype, valfrequencybasetype,
+valfrequencytype, coderadioemissiontype, codecommunicationchanneltype, codecommunicationdirectiontype, codeunittype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -1150,8 +1159,8 @@ CREATE TYPE CodeCommunicationDirectionType AS ENUM ('UPLINK', 'DOWNLINK', 'BIDIR
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
 CREATE TYPE CodeUnitType AS ENUM
-('ACC','ADSU','ADVC','ALPS','AOF','APP','APP_ARR','APP_DEP','ARO','ATCC','ATFMU','ATMU','ATSU','BOF','BS','COM','FCST','FIC','GCA','MET','MWO','NOF','OAC','PAR',
-  'RAD','RAFC','RCC','RSC','SAR','SMC','SMR','SRA','SSR','TAR','TWR','UAC','UDF','UIC','VDF','WAFC','ARTCC','FSS','TRACON','MIL','MILOPS','OTHER');
+('ACC', 'ADSU', 'ADVC', 'ALPS', 'AOF', 'APP', 'APP_ARR', 'APP_DEP', 'ARO', 'ATCC', 'ATFMU', 'ATMU', 'ATSU', 'BOF', 'BS', 'COM', 'FCST', 'FIC', 'GCA', 'MET', 'MWO', 'NOF', 'OAC', 'PAR',
+  'RAD', 'RAFC', 'RCC', 'RSC', 'SAR', 'SMC', 'SMR', 'SRA', 'SSR', 'TAR', 'TWR', 'UAC', 'UDF', 'UIC', 'VDF', 'WAFC', 'ARTCC', 'FSS', 'TRACON', 'MIL', 'MILOPS', 'OTHER');
 
 -- Вид зависимости между объединением и связанным с ним объединением
 -- OWNER - связанное объединение (RelatedUnit) - владелец объединения (Unit)
@@ -1159,7 +1168,7 @@ CREATE TYPE CodeUnitType AS ENUM
 -- ALTERNATE - связанное объединение (RelatedUnit) предоставляет запасное (альтернативное) обслуживание взамен обслуживания текущего объединения
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
-CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER','OWNER','ALTERNATE','OTHER');
+CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'OTHER');
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -1628,30 +1637,45 @@ CREATE VIEW AIRP_MAP AS
     abandoned
   FROM airportheliport;
 
+CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
+DO INSTEAD
+  INSERT INTO AirportHeliport VALUES (
+    NEW.uuid,
+    NEW.designator,
+    NEW.name);
+
+CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
+DO INSTEAD
+  UPDATE AirportHeliport
+  SET uuid     = NEW.uuid,
+    designator = NEW.designator,
+    name       = NEW.name;
+
+
 --CREATE RULE airp_table_insert as on INSERT TO AIRP_MAP
  -- DO INSTEAD INSERT INTO AirportHeliport VALUES (new.uuid, new.designator, new.name, new.controltype)
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
 CREATE TABLE Unit
 (
-  uuid          id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name          TextNameType,
-  type          CodeUnitType,
-  compliantICAO CodeYesNoType,
-  designator    CodeOrganisationDesignatorType,
-  military      CodeMilitaryOperationsType,
-  idElevatedPoint  SERIAL REFERENCES ElevatedPoint (id),
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
+  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name                      TextNameType,
+  type                      CodeUnitType,
+  compliantICAO             CodeYesNoType,
+  designator                CodeOrganisationDesignatorType,
+  military                  CodeMilitaryOperationsType,
+  idElevatedPoint           SERIAL REFERENCES ElevatedPoint (id),
+  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_UnitDependency
 CREATE TABLE UnitDependency
 (
-  id          SERIAL PRIMARY KEY,
-  uuidUnit         id REFERENCES Unit (uuid),
-  uuidRelatedUnit         id REFERENCES Unit (uuid),
-  type	CodeUnitDependencyType
+  id              SERIAL PRIMARY KEY,
+  uuidUnit        id REFERENCES Unit (uuid),
+  uuidRelatedUnit id REFERENCES Unit (uuid),
+  type            CodeUnitDependencyType
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Service
@@ -1681,8 +1705,8 @@ CREATE TABLE ContactInformation
   id                        SERIAL PRIMARY KEY,
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  uuidUnit         id REFERENCES Unit (uuid),
-  uuidService id REFERENCES Service (uuid),
+  uuidUnit                  id REFERENCES Unit (uuid),
+  uuidService               id REFERENCES Service (uuid),
   name                      TextNameType,
   title                     TextNameType
 );
@@ -1784,16 +1808,39 @@ CREATE TABLE SearchRescueService
   type CodeServiceSARType
 );
 
-CREATE TABLE AirportHeliport_InformationService
+-- ВОПРОС:
+--CREATE TABLE AirportHeliport_InformationService
+--(
+  --uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
+  --uuidInformationService id REFERENCES InformationService (uuid)
+--);
+
+--CREATE TABLE AirportHeliport_AirportGroundService
+--(
+ -- uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
+ -- uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
+--);
+
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
+CREATE TABLE SegmentPoint
 (
-  uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
-  uuidInformationService id REFERENCES InformationService (uuid)
+  id                 SERIAL PRIMARY KEY,
+  reportingATC       CodeATCReportingType,
+  flyOver            CodeYesNoType,
+  waypoint           CodeYesNoType,
+  radarGuidance      CodeYesNoType,
+  idSignificantPoint SERIAL REFERENCES SignificantPoint (id)
 );
 
-CREATE TABLE AirportHeliport_AirportGroundService
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
+CREATE TABLE EnRouteSegmentPoint
 (
-  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
-  uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
+  id                   SERIAL PRIMARY KEY REFERENCES SegmentPoint (id),
+  roleFreeFlight       CodeFreeFlightType,
+  roleRVSM             CodeRVSMPointRoleType,
+  turnRadius           ValDistanceType,
+  roleMilitaryTraining CodeMilitaryRoutePointType
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
@@ -1848,27 +1895,6 @@ CREATE TABLE RouteSegment
   idEnRouteSegmentPointEnd         SERIAL REFERENCES EnRouteSegmentPoint (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
-CREATE TABLE SegmentPoint
-(
-  id                 SERIAL PRIMARY KEY,
-  reportingATC       CodeATCReportingType,
-  flyOver            CodeYesNoType,
-  waypoint           CodeYesNoType,
-  radarGuidance      CodeYesNoType,
-  idSignificantPoint SERIAL REFERENCES SignificantPoint (id)
-);
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
-CREATE TABLE EnRouteSegmentPoint
-(
-  id                   SERIAL PRIMARY KEY REFERENCES SegmentPoint (id),
-  roleFreeFlight       CodeFreeFlightType,
-  roleRVSM             CodeRVSMPointRoleType,
-  turnRadius           ValDistanceType,
-  roleMilitaryTraining CodeMilitaryRoutePointType
-);
-
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
 CREATE TABLE RoutePortion
 (
@@ -1890,6 +1916,21 @@ CREATE TABLE Airspace
   controlType          CodeMilitaryOperationsType,
   upperLowerSeparation ValFLType,
   uuidRoute            id REFERENCES Route (uuid)
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
+CREATE TABLE AirspaceActivation
+(
+  id           SERIAL PRIMARY KEY,
+  activity     CodeAirspaceActivityType,
+  status       CodeStatusAirspaceType,
+  uuidAirspace id REFERENCES Airspace (uuid)
+);
+
+CREATE TABLE AirspaceActivation_OrganisationAuthority
+(
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  idAirspaceActivation      SERIAL REFERENCES AirspaceActivation (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
@@ -1929,21 +1970,6 @@ CREATE TABLE AirspaceVolume
   idSurface             SERIAL REFERENCES Surface (id),
   idCurve               SERIAL REFERENCES Curve (id),
   uuidAirspace          id REFERENCES Airspace (uuid)
-);
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
-CREATE TABLE AirspaceActivation
-(
-  id           SERIAL PRIMARY KEY,
-  activity     CodeAirspaceActivityType,
-  status       CodeStatusAirspaceType,
-  uuidAirspace id REFERENCES Airspace (uuid)
-);
-
-CREATE TABLE AirspaceActivation_OrganisationAuthority
-(
-  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  idAirspaceActivation      SERIAL REFERENCES AirspaceActivation (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace

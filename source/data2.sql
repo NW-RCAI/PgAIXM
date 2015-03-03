@@ -1,0 +1,1 @@
+INSERT INTO airp_map (uuid, designator, name, type, length,  geom) VALUES ('fd2748fc-2b16-4ae7-a6e2-cdf0c15d8e85', 'IKAA', 'IGLOA','JOINT', '957.00',  '0101000020E6100000B29F31EEE2FF44403DBF21F2A8FF2340' );
