@@ -10,7 +10,7 @@ Service
 
 ### Родительский класс для:
 
-- F ~~AirTrafficManagementService~~
+- F AirTrafficManagementService
 - F ~~AirportGroundService~~
 - F ~~InformationService~~
 - F ~~SearchRescueService~~

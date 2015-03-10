@@ -1112,17 +1112,17 @@ CREATE TYPE CodeCommunicationDirectionType AS ENUM ('UPLINK', 'DOWNLINK', 'BIDIR
 
 -- Объединение, предоставляющее отдельный вид обслуживания воздушного движения (ОВД).
 -- ACC - Районное диспетчерское обслуживание
--- ADSU
--- ADVC
--- ALPS
--- AOF
--- APP
--- APP_ARR
--- APP_DEP
--- ARO
--- ATCC
+-- ADSU - полуавтоматическая система наблюдения за-воздушной обстановкой (службы УВД) , система ADS-B
+-- ADVC - консультативный центр
+-- ALPS - пост аварийного оповещения
+-- AOF - офис службы аэронавигационной информации
+-- APP - диспетчерский пункт управления заходом на посадку
+-- APP_ARR - диспетчерский пункт управления заходом на посадку (прибытие)
+-- APP_DEP - диспетчерский пункт управления заходом на посадку (вылет)
+-- ARO - пункт сбора информации о полете
+-- ATCC - центр управления воздушным движением, центр УВД
 -- ATFMU
--- ATMU
+-- ATMU - служба управления воздушным движением
 -- ATSU
 -- BOF
 -- BS
@@ -1169,6 +1169,19 @@ CREATE TYPE CodeUnitType AS ENUM
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
 CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'OTHER');
+
+-- Классификация служб эшелонирования полетов и наземного контроля
+-- ACS - служба контроля территории маршрутных полетов
+-- UAC - служба контроля верхней зоны полетов
+-- OACS - служба контроля океанической зоны
+-- APP - служба контроля зоны посадки (зоны прибытия и вылета)
+-- TWR - башенная служба контроля аэродрома
+-- ADVS - консультационная служба
+-- EFAS - консультационная служба маршрутных полетов
+-- CTAF - общая полетная консультационная частотная служба
+--
+--  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
+CREATE TYPE CodeServiceATCType AS ENUM ('ACS','UAC','OACS','APP','TWR','ADVS','CTAF','OTHER');
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -1808,6 +1821,21 @@ CREATE TABLE SearchRescueService
   type CodeServiceSARType
 );
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TrafficSeparationService
+CREATE TABLE TrafficSeparationService
+(
+  uuid id REFERENCES Service,
+  radarAssisted	CodeYesNoType	,
+  dataLinkEnabled	CodeYesNoType,
+dataLinkChannel	CodeCommunicationChannelType
+);
+
+CREATE TABLE AirTrafficControlService
+(
+  uuid id REFERENCES TrafficSeparationService,
+  type CodeServiceATCType
+);
+
 -- ВОПРОС:
 --CREATE TABLE AirportHeliport_InformationService
 --(
@@ -1916,6 +1944,12 @@ CREATE TABLE Airspace
   controlType          CodeMilitaryOperationsType,
   upperLowerSeparation ValFLType,
   uuidRoute            id REFERENCES Route (uuid)
+);
+
+CREATE TABLE Airspace_AirTrafficManagementService
+(
+  uuidAirspace id REFERENCES Airspace (uuid),
+  uuidAirTrafficManagementService id REFERENCES AirTrafficManagementService(uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation

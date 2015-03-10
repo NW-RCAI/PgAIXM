@@ -4,7 +4,7 @@ AirTrafficManagementService
 
 Тип: Feature
 
-Разновидность обслуживания, обеспечивающая планирование полетов и регулирование потоков.
+Службы УВД (управления воздушным движением). Разновидность обслуживания, обеспечивающая планирование полетов и регулирование потоков.
 
 ## Наследование
 
@@ -56,15 +56,15 @@ AirTrafficManagementService
 ### Многие ко многим:
 
 - O ContactInformation
-- O ~~CallsignDetail~~
-- F ~~RadioCommunicationChannel~~
+- O CallsignDetail
+- F RadioCommunicationChannel
 - F ~~VerticalStructure~~
-- F ~~Airspace~~
+- F Airspace
 - F ~~AerialRefuelling~~
 - O ~~RoutePortion~~
 
 ### Многие к одному:
 
-- F ~~Unit~~
+- F Unit
 - O ~~ServiceOperationalStatus~~
 
