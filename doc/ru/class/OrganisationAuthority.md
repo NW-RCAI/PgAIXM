@@ -41,7 +41,7 @@ OrganisationAuthority
 ### Один ко многим:
 
 - F AirportHeliport
-- F ~~AuthorityForAirspace~~
+- F AuthorityForAirspace
 - F ~~SpecialNavigationStation~~
 - F ~~SpecialNavigationSystem~~
 - C ~~ObstacleAreaOrigin~~

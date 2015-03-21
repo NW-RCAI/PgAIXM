@@ -51,11 +51,15 @@ DROP TABLE IF EXISTS SignificantPoint CASCADE;
 DROP TABLE IF EXISTS Curve CASCADE;
 DROP TABLE IF EXISTS AirportHeliport_InformationService CASCADE;
 DROP TABLE IF EXISTS AirportHeliport_AirportGroundService CASCADE;
-DROP TABLE IF EXISTS Unit CASCADE ;
-DROP TABLE IF EXISTS UnitDependency CASCADE ;
-DROP TABLE IF EXISTS CallsignDetail CASCADE ;
-DROP TABLE IF EXISTS radiocommunicationchannel CASCADE ;
-DROP TABLE IF EXISTS service_radiocommunicationchannel CASCADE ;
+DROP TABLE IF EXISTS Unit CASCADE;
+DROP TABLE IF EXISTS UnitDependency CASCADE;
+DROP TABLE IF EXISTS CallsignDetail CASCADE;
+DROP TABLE IF EXISTS radiocommunicationchannel CASCADE;
+DROP TABLE IF EXISTS service_radiocommunicationchannel CASCADE;
+DROP TABLE IF EXISTS trafficseparationservice CASCADE;
+DROP TABLE IF EXISTS airspace_airtrafficmanagementservice CASCADE;
+DROP TABLE IF EXISTS airtrafficcontrolservice CASCADE;
+DROP TABLE IF EXISTS AuthorityForAirspace CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -83,7 +87,8 @@ CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType, Code
 codeunitdependencytype, codeairspacepointpositiontype, codeleveltype, coderoutesegmentpathtype, coderoutenavigationtype,
 codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype, codefreeflighttype, codervsmpointroletype,
 codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype, uomfrequencytype, valfrequencybasetype,
-valfrequencytype, coderadioemissiontype, codecommunicationchanneltype, codecommunicationdirectiontype, codeunittype CASCADE;
+valfrequencytype, coderadioemissiontype, codecommunicationchanneltype, codecommunicationdirectiontype, codeunittype,
+codeserviceatctype, CodeAuthorityType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -1181,7 +1186,15 @@ CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'O
 -- CTAF - общая полетная консультационная частотная служба
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
-CREATE TYPE CodeServiceATCType AS ENUM ('ACS','UAC','OACS','APP','TWR','ADVS','CTAF','OTHER');
+CREATE TYPE CodeServiceATCType AS ENUM ('ACS', 'UAC', 'OACS', 'APP', 'TWR', 'ADVS', 'CTAF', 'OTHER');
+
+-- Тип ответственности, которую организация нест за аэронавигационный объект (например, за воздушное пространство)
+-- OWN - у организации есть законные права на владение и право собственности на объект.
+-- DLGT - организации назначили или поручили нести ответственности за объект.
+-- AIS - организация ответственна за предоставление аэронавишационной информации на данном объекте.
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
+CREATE TYPE CodeAuthorityType AS ENUM ('OWN', 'DLGT', 'AIS', 'OTHER');
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -1650,19 +1663,135 @@ CREATE VIEW AIRP_MAP AS
     abandoned
   FROM airportheliport;
 
-CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
-DO INSTEAD
-  INSERT INTO AirportHeliport VALUES (
-    NEW.uuid,
-    NEW.designator,
-    NEW.name);
+CREATE VIEW AIRP_MAP_2 AS
+  SELECT
+    uuid,
+    designator,
+    name,
+            controltype AS type,
+    (SELECT elevation AS height
+     FROM elevatedpoint
+     WHERE airportheliport.idelevatedpoint = elevatedpoint.id),
+    (SELECT max((nominallength).value) AS length
+     FROM runway
+     WHERE runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT surfacecharacteristics.composition AS hydroaerodrom
+     FROM surfacecharacteristics, runway
+     WHERE
+       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       AND surfacecharacteristics.composition IN ('WATER')),
+    (SELECT max(truebearing) AS angle
+     FROM runwaydirection, runway
+     WHERE runwaydirection.uuidrunway = runway.uuid AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT count(runwaydirectionlightsystem.position) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+-- если count(runwaydirectionlightsystem.position) > 0 - значит у аэропорта есть система освещения
+    (SELECT point.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    abandoned
+  FROM airportheliport;
 
-CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
-DO INSTEAD
-  UPDATE AirportHeliport
-  SET uuid     = NEW.uuid,
-    designator = NEW.designator,
-    name       = NEW.name;
+-- first
+--CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
+--DO INSTEAD
+  --INSERT INTO AirportHeliport VALUES (
+  --  NEW.uuid,
+  --  NEW.designator,
+ --   NEW.name);
+
+--CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
+--DO INSTEAD
+ -- UPDATE AirportHeliport
+ -- SET uuid     = NEW.uuid,
+  --  designator = NEW.designator,
+  --  name       = NEW.name;
+
+-- second
+CREATE OR REPLACE FUNCTION arp_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
+    INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
+-- агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
+    INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
+-- в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
+    INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
+-- в view агрегатная функция max(truebearing):
+    INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
+-- и снова агрегатная - count(runwaydirectionlightsystem.position)
+    INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
+    INSERT INTO Point VALUES (NEW.id, NEW.geom);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE AirportHeliport
+      SET uuid    = NEW.uuid, designator = NEW.designator, name = NEW.name, controltype = NEW.controltype,
+        abandoned = NEW.abandoned
+      WHERE uuid = OLD.uuid;
+      UPDATE elevatedpoint
+      SET id = NEW.id, elevation = NEW.elevation
+      WHERE id = OLD.id;
+      UPDATE Runway
+      SET uuid = NEW.uuid, (nominallength).VALUE = NEW.(nominallength).value WHERE UUID = OLD.uuid;
+      UPDATE SurfaceCharacteristics
+      SET id = NEW.id, composition = NEW.composition
+      WHERE id = OLD.id;
+      UPDATE RunwayDirection
+      SET uuid = NEW.uuid, truebearing = NEW.truebearing
+      WHERE uuid = OLD.uuid;
+      UPDATE RunwayDirectionLightSystem
+      SET uuid = NEW.uuid, position = NEW.position
+      WHERE uuid = OLD.uuid;
+      UPDATE Point
+      SET id = NEW.id, geom = NEW.geom
+      WHERE id = OLD.id;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM AirportHeliport
+      WHERE uuid = OLD.uuid;
+      DELETE FROM elevatedpoint
+      WHERE id = OLD.id;
+      DELETE FROM Runway
+      WHERE uuid = OLD.uuid;
+      DELETE FROM SurfaceCharacteristics
+      WHERE id = OLD.id;
+      DELETE FROM RunwayDirection
+      WHERE uuid = OLD.uuid;
+      DELETE FROM RunwayDirectionLightSystem
+      WHERE uuid = OLD.uuid;
+      DELETE FROM Point
+      WHERE id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER arp_trig
+INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+
+
+--CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
+--DO INSTEAD
+  --INSERT INTO AirportHeliport VALUES (
+  --  NEW.uuid,
+   -- NEW.designator,
+  --  NEW.name);
+
+--CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
+--DO INSTEAD
+--  UPDATE AirportHeliport
+ -- SET uuid     = NEW.uuid,
+  --  designator = NEW.designator,
+  --  name       = NEW.name;
 
 
 --CREATE RULE airp_table_insert as on INSERT TO AIRP_MAP
@@ -1794,7 +1923,7 @@ CREATE TABLE Service_RadioCommunicationChannel
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
 CREATE TABLE AirTrafficManagementService
 (
-  uuid id REFERENCES Service,
+  uuid id PRIMARY KEY REFERENCES Service,
   type CodeServiceATFMType
 );
 
@@ -1824,15 +1953,15 @@ CREATE TABLE SearchRescueService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TrafficSeparationService
 CREATE TABLE TrafficSeparationService
 (
-  uuid id REFERENCES Service,
-  radarAssisted	CodeYesNoType	,
-  dataLinkEnabled	CodeYesNoType,
-dataLinkChannel	CodeCommunicationChannelType
+  uuid            id PRIMARY KEY REFERENCES Service (uuid),
+  radarAssisted   CodeYesNoType,
+  dataLinkEnabled CodeYesNoType,
+  dataLinkChannel CodeCommunicationChannelType
 );
 
 CREATE TABLE AirTrafficControlService
 (
-  uuid id REFERENCES TrafficSeparationService,
+  uuid id REFERENCES TrafficSeparationService (uuid),
   type CodeServiceATCType
 );
 
@@ -1948,8 +2077,8 @@ CREATE TABLE Airspace
 
 CREATE TABLE Airspace_AirTrafficManagementService
 (
-  uuidAirspace id REFERENCES Airspace (uuid),
-  uuidAirTrafficManagementService id REFERENCES AirTrafficManagementService(uuid)
+  uuidAirspace                    id REFERENCES Airspace (uuid),
+  uuidAirTrafficManagementService id REFERENCES AirTrafficManagementService (uuid)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
@@ -2015,3 +2144,58 @@ CREATE TABLE SignificantPointInAirspace
   uuidAirspace       id REFERENCES Airspace (uuid),
   idSignificantPoint SERIAL REFERENCES SignificantPoint (id)
 );
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
+CREATE TABLE AuthorityForAirspace
+(
+  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type                      CodeAuthorityType,
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  uuidAirspace              id REFERENCES Airspace (uuid)
+);
+
+CREATE VIEW CTA_CTR AS
+  SELECT
+    uuid,
+    (SELECT upperlimit AS top
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT upperLimitReference AS format_top
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimit AS bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimitReference AS format_bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
+    (SELECT callSign AS cs
+     FROM CallsignDetail, Service, unit, OrganisationAuthority, AuthorityForAirspace
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+    (SELECT RadioCommunicationChannel.channel AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, unit, OrganisationAuthority,
+       AuthorityForAirspace
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+    (SELECT Unit.type AS tp_unit
+     FROM Unit, OrganisationAuthority, AuthorityForAirspace
+     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace;

@@ -81,6 +81,6 @@ Airspace
 ### Многие к одному:
 
 - F Route
-- F ~~AuthorityForAirspace~~
+- F AuthorityForAirspace
 - C ~~FlightConditionElementChoice~~
 - C ~~FlightRoutingElementChoice~~
