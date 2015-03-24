@@ -60,13 +60,14 @@ DROP TABLE IF EXISTS trafficseparationservice CASCADE;
 DROP TABLE IF EXISTS airspace_airtrafficmanagementservice CASCADE;
 DROP TABLE IF EXISTS airtrafficcontrolservice CASCADE;
 DROP TABLE IF EXISTS AuthorityForAirspace CASCADE;
+DROP TABLE IF EXISTS Navaid CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
 CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
 TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType,
-textaddresstype, CodeAirspaceDesignatorType, NoNumberType CASCADE;
+textaddresstype, CodeAirspaceDesignatorType, NoNumberType, codenavaiddesignatortype CASCADE;
 
 DROP TYPE IF EXISTS
 CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
@@ -88,7 +89,8 @@ codeunitdependencytype, codeairspacepointpositiontype, codeleveltype, coderoutes
 codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype, codefreeflighttype, codervsmpointroletype,
 codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype, uomfrequencytype, valfrequencybasetype,
 valfrequencytype, coderadioemissiontype, codecommunicationchanneltype, codecommunicationdirectiontype, codeunittype,
-codeserviceatctype, CodeAuthorityType CASCADE;
+codeserviceatctype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype, codesignalperformanceilstype,
+codecoursequalityilstype, codeintegritylevelilstype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -1196,6 +1198,65 @@ CREATE TYPE CodeServiceATCType AS ENUM ('ACS', 'UAC', 'OACS', 'APP', 'TWR', 'ADV
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
 CREATE TYPE CodeAuthorityType AS ENUM ('OWN', 'DLGT', 'AIS', 'OTHER');
 
+-- Типы служб навигационных средств
+-- VOR - курсовой всенаправленный радиомаяк ОВЧ-диапазона
+-- DME - дальномерная система DME
+-- NDB - ненаправленный радиомаяк
+-- TACAN - радионавигационная система "Такан"
+-- MKR - маркерный радиомаяк, МРМ
+-- ILS - система слепой посадки
+-- ILS_DME - система слепой посадки с размещенной дальномерной системой DME
+-- MLS - СВЧ-система инструментальной посадки
+-- MLS_DME
+-- VORTAC - система "Вортак" (угломерно-дальномерная радионавигационная система)
+-- VOR_DME
+-- NDB_DME
+-- TLS
+-- LOC
+-- LOC_DME
+-- NDB_MKR
+-- DF - (радио)пеленгатор
+-- SDF
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidServiceType
+CREATE TYPE CodeNavaidServiceType AS ENUM ('VOR', 'DME', 'NDB', 'TACAN', 'MKR', 'ILS', 'ILS_DME', 'MLS', 'MLS_DME', 'VORTAC', 'VOR_DME',
+  'NDB_DME', 'TLS', 'LOC', 'LOC_DME', 'NDB_MKR', 'DF', 'OTHER');
+
+-- Идентификатор РНС
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidDesignatorType
+CREATE DOMAIN CodeNavaidDesignatorType AS VARCHAR(4)
+CHECK (VALUE ~ '([A-Z]|\d)*');
+
+-- Использование РНС:
+-- TERMINAL - для использования в зоне терминала, для процедур приближения, посадки и вылета.
+-- ENROUTE - маршрутные РНС
+-- ALL - для любых целей
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidPurposeType
+CREATE TYPE CodeNavaidPurposeType AS ENUM ('TERMINAL', 'ENROUTE', 'ALL', 'OTHER');
+
+-- ...
+-- I
+-- II
+-- III
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSignalPerformanceILSType
+CREATE TYPE CodeSignalPerformanceILSType AS ENUM ('I', 'II', 'III', 'OTHER');
+
+-- A
+-- B
+-- C
+-- D
+-- E
+-- T
+--
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCourseQualityILSType
+CREATE TYPE CodeCourseQualityILSType AS ENUM ('A', 'B', 'C', 'D', 'E', 'T', 'OTHER');
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
+CREATE TYPE CodeIntegrityLevelILSType AS ENUM ('1', '2', '3', '4', 'OTHER');
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -1720,13 +1781,13 @@ BEGIN
     INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
     INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
 -- агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
-    INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
+    --INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
 -- в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
-    INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
+    --INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
 -- в view агрегатная функция max(truebearing):
-    INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
+    --INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
 -- и снова агрегатная - count(runwaydirectionlightsystem.position)
-    INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
+   -- INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
     INSERT INTO Point VALUES (NEW.id, NEW.geom);
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
@@ -1738,17 +1799,17 @@ BEGIN
       UPDATE elevatedpoint
       SET id = NEW.id, elevation = NEW.elevation
       WHERE id = OLD.id;
-      UPDATE Runway
-      SET uuid = NEW.uuid, (nominallength).VALUE = NEW.(nominallength).value WHERE UUID = OLD.uuid;
-      UPDATE SurfaceCharacteristics
-      SET id = NEW.id, composition = NEW.composition
-      WHERE id = OLD.id;
-      UPDATE RunwayDirection
-      SET uuid = NEW.uuid, truebearing = NEW.truebearing
-      WHERE uuid = OLD.uuid;
-      UPDATE RunwayDirectionLightSystem
-      SET uuid = NEW.uuid, position = NEW.position
-      WHERE uuid = OLD.uuid;
+-- UPDATE Runway
+-- SET uuid = NEW.uuid, (nominallength).VALUE = NEW.(nominallength).value WHERE UUID = OLD.uuid;
+-- UPDATE SurfaceCharacteristics
+ --SET id = NEW.id, composition = NEW.composition
+-- WHERE id = OLD.id;
+ --UPDATE RunwayDirection
+ --SET uuid = NEW.uuid, truebearing = NEW.truebearing
+ --WHERE uuid = OLD.uuid;
+-- UPDATE RunwayDirectionLightSystem
+-- SET uuid = NEW.uuid, position = NEW.position
+--  WHERE uuid = OLD.uuid;
       UPDATE Point
       SET id = NEW.id, geom = NEW.geom
       WHERE id = OLD.id;
@@ -1759,14 +1820,14 @@ BEGIN
       WHERE uuid = OLD.uuid;
       DELETE FROM elevatedpoint
       WHERE id = OLD.id;
-      DELETE FROM Runway
-      WHERE uuid = OLD.uuid;
-      DELETE FROM SurfaceCharacteristics
-      WHERE id = OLD.id;
-      DELETE FROM RunwayDirection
-      WHERE uuid = OLD.uuid;
-      DELETE FROM RunwayDirectionLightSystem
-      WHERE uuid = OLD.uuid;
+--  DELETE FROM Runway
+ -- WHERE uuid = OLD.uuid;
+ -- DELETE FROM SurfaceCharacteristics
+--   WHERE id = OLD.id;
+--    DELETE FROM RunwayDirection
+--   WHERE uuid = OLD.uuid;
+--   DELETE FROM RunwayDirectionLightSystem
+--  WHERE uuid = OLD.uuid;
       DELETE FROM Point
       WHERE id = OLD.id;
       RETURN NULL;
@@ -2154,7 +2215,7 @@ CREATE TABLE AuthorityForAirspace
   uuidAirspace              id REFERENCES Airspace (uuid)
 );
 
-CREATE VIEW CTA_CTR AS
+CREATE VIEW DRA AS
   SELECT
     uuid,
     (SELECT upperlimit AS top
@@ -2177,19 +2238,19 @@ CREATE VIEW CTA_CTR AS
             name        AS nl,
             controlType AS tp,
     (SELECT callSign AS cs
-     FROM CallsignDetail, Service, unit, OrganisationAuthority, AuthorityForAirspace
-     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
     (SELECT RadioCommunicationChannel.channel AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, unit, OrganisationAuthority,
-       AuthorityForAirspace
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
      WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
+-- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
      FROM Unit, OrganisationAuthority, AuthorityForAirspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
@@ -2198,4 +2259,220 @@ CREATE VIEW CTA_CTR AS
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace;
+  FROM Airspace
+  WHERE Airspace.type IN ('D');
+
+CREATE VIEW PRA AS
+  SELECT
+    uuid,
+    (SELECT upperlimit AS top
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT upperLimitReference AS format_top
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimit AS bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimitReference AS format_bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
+    (SELECT callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
+    (SELECT RadioCommunicationChannel.channel AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
+-- правильно ли то что ниже (связь)?
+    (SELECT Unit.type AS tp_unit
+     FROM Unit, OrganisationAuthority, AuthorityForAirspace
+     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type IN ('P');
+
+CREATE VIEW RSA AS
+  SELECT
+    uuid,
+    (SELECT upperlimit AS top
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT upperLimitReference AS format_top
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimit AS bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimitReference AS format_bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
+    (SELECT callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
+    (SELECT RadioCommunicationChannel.channel AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
+-- правильно ли то что ниже (связь)?
+    (SELECT Unit.type AS tp_unit
+     FROM Unit, OrganisationAuthority, AuthorityForAirspace
+     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type IN ('R');
+
+CREATE VIEW CTA AS
+  SELECT
+    AirspaceLayer.id,
+            AirspaceLayer.upperlimit          AS top,
+            AirspaceLayer.upperLimitReference AS format_top,
+            AirspaceLayer.lowerLimit          AS bottom,
+            AirspaceLayer.lowerLimitReference AS format_bottom,
+    (SELECT Airspace.designator AS nm
+     FROM Airspace, AirspaceLayerClass
+     WHERE
+       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT Airspace.controlType AS tp
+     FROM Airspace, AirspaceLayerClass
+     WHERE
+       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT Airspace.name AS nl
+     FROM Airspace, AirspaceLayerClass
+     WHERE
+       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT callSign AS cs
+     FROM
+       CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService, AirspaceLayerClass,
+       Airspace
+     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT RadioCommunicationChannel.channel AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService, AirspaceLayerClass, Airspace
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+-- правильно ли то что ниже (связь)?
+    (SELECT Unit.type AS tp_unit
+     FROM Unit, OrganisationAuthority, AuthorityForAirspace, AirspaceLayerClass, Airspace
+     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid AND Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume, AirspaceLayerClass, Airspace
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid AND
+           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id)
+  FROM AirspaceLayer, Airspace
+  WHERE Airspace.type IN ('CTA');
+
+
+CREATE VIEW CTR AS
+  SELECT
+    AirspaceLayer.id,
+            AirspaceLayer.upperlimit          AS top,
+            AirspaceLayer.upperLimitReference AS format_top,
+            AirspaceLayer.lowerLimit          AS bottom,
+            AirspaceLayer.lowerLimitReference AS format_bottom,
+    (SELECT Airspace.designator AS nm
+     FROM Airspace, AirspaceLayerClass
+     WHERE
+       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT Airspace.controlType AS tp
+     FROM Airspace, AirspaceLayerClass
+     WHERE
+       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT Airspace.name AS nl
+     FROM Airspace, AirspaceLayerClass
+     WHERE
+       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT callSign AS cs
+     FROM
+       CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService, AirspaceLayerClass,
+       Airspace
+     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT RadioCommunicationChannel.channel AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService, AirspaceLayerClass, Airspace
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           AirTrafficManagementService.uuid = Service.uuid
+           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+-- правильно ли то что ниже (связь)?
+    (SELECT Unit.type AS tp_unit
+     FROM Unit, OrganisationAuthority, AuthorityForAirspace, AirspaceLayerClass, Airspace
+     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
+           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid AND Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume, AirspaceLayerClass, Airspace
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid AND
+           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
+           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id)
+  FROM AirspaceLayer, Airspace
+  WHERE Airspace.type IN ('CTR');
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Navaid
+CREATE TABLE Navaid
+(
+  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type              CodeNavaidServiceType,
+  designator        CodeNavaidDesignatorType,
+  name              TextNameType,
+  flightChecked     CodeYesNoType,
+  purpose           CodeNavaidPurposeType,
+  signalPerformance CodeSignalPerformanceILSType,
+  courseQuality     CodeCourseQualityILSType,
+  integrityLevel    CodeIntegrityLevelILSType
+);
