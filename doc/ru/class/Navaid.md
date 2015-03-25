@@ -4,7 +4,7 @@ Navaid
 
 Тип: Feature
 
-Служба, предоставляющая руководящую информацию или данные о местоположении для эффективных и безопасных операций на воздушном судне, обеспеченная одним или более радионавигационным средством.
+Радионавигационное средство, предоставляющее руководящую информацию или данные о местоположении для эффективной и безопасной эксплуатации воздушного судна, состоящий из одного или более компонентов.
 
 ## Атрибуты
 
@@ -13,7 +13,7 @@ Navaid
 ##### type
 Тип данных: CodeNavaidServiceType
 
-Типы служб навигационных средств.
+Тип РНС (ILS, MLS, VORTAC, VOR/DME и др.).
 
 ##### designator
 Тип данных: CodeNavaidDesignatorType
@@ -23,22 +23,22 @@ Navaid
 ##### name
 Тип данных: TextNameType
 
-Полное наименование сложного РНС.
+Полное наименование составного РНС.
 
 ##### flightChecked
 Тип данных: CodeYesNoType
 
-Проверено ли РНС полетами.
+Индикатор, который показывает был ли РНС опробовон в полете.
 
 ##### purpose
 Тип данных: CodeNavaidPurposeType
 
-Цели использования РНС (маршрутные или терминальные).
+Цели использования РНС (маршрутные или аэродромные).
 
 ##### signalPerformance
 Тип данных: CodeSignalPerformanceILSType
 
-Уровень исполнения сигнала, показывающий точность ILS или MLS систем.
+Уровень Производительности сигнала, показывающий точность ILS или MLS систем.
 
 ##### courseQuality
 Тип данных: CodeCourseQualityILSType
@@ -48,7 +48,7 @@ Navaid
 ##### integrityLevel
 Тип данных: CodeIntegrityLevelILSType
 
-...
+That quality which relates to the trust which can be placed in the correctness of the information supplied by the ILS facility.
 
 ## Связи
 
@@ -58,13 +58,15 @@ Navaid
 
 ### Один ко многим:
 
-- F ~~NavaidEquipment~~
 - F ~~NavaidOperationalStatus~~
 - O ~~Note~~
 
 ### Многие ко многим:
 
 - F AirportHeliport
+- F TouchDownLiftOff
+- F ~~NavaidEquipment~~
+- F ~~RunwayDirection~~
 
 ### Многие к одному:
 
