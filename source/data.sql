@@ -42,6 +42,6 @@ INSERT INTO runwaydirectionlightsystem (uuid, uuidrunwaydirection, "position") V
 INSERT INTO runwaydirectionlightsystem (uuid, uuidrunwaydirection, "position") VALUES ('deb70ea0-f543-4b40-bbbf-0dd00526a54f', 'c4ee7d9a-7698-408c-beac-95ce27d1876f', 'DESIG');
 INSERT INTO runwaydirectionlightsystem (uuid, uuidrunwaydirection, "position") VALUES ('f10d8536-3503-4c07-ac3a-b0f3a84b2bc2', 'e92d28e8-770d-4141-b578-207b1f2a9d02', 'CL');
 
-INSERT INTO point (id, latitude, longtitude, srid, horizontalaccuracy) VALUES (4, 22.000000000000000, 2.000000000000000, 4284, '(0.20000000000000000000,M)');
-     INSERT INTO elevatedpoint (id) VALUES (4);
-INSERT INTO airportheliport (uuid, designator, name, locationindicatoricao, designatoriata,   idelevatedpoint) VALUES ('1e32ebb3-e877-454c-b3e0-519972f9ea44','IKAT','NAME', 'ICAO', 'IAT', 4);
+--INSERT INTO point (id, latitude, longtitude, srid, horizontalaccuracy) VALUES (4, 22.000000000000000, 2.000000000000000, 4284, '(0.20000000000000000000,M)');
+  --   INSERT INTO elevatedpoint (id) VALUES (4);
+--INSERT INTO airportheliport (uuid, designator, name, locationindicatoricao, designatoriata,   idelevatedpoint) VALUES ('1e32ebb3-e877-454c-b3e0-519972f9ea44','IKAT','NAME', 'ICAO', 'IAT', 4);

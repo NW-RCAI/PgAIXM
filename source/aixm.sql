@@ -95,6 +95,8 @@ codecoursequalityilstype, codeintegritylevelilstype CASCADE;
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
 
+
+
 DROP VIEW IF EXISTS airports;
 
 -- В качестве id используем UUID Type
@@ -1257,6 +1259,35 @@ CREATE TYPE CodeCourseQualityILSType AS ENUM ('A', 'B', 'C', 'D', 'E', 'T', 'OTH
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
 CREATE TYPE CodeIntegrityLevelILSType AS ENUM ('1', '2', '3', '4', 'OTHER');
 
+
+DROP SEQUENCE IF EXISTS auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
+auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
+auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
+auto_id_segment_point, auto_id_route_portion, auto_id_airspace_activation, auto_id_airspace_layer_class, auto_id_airspace_layer,
+auto_id_airspace_volume, auto_id_telephone_contact CASCADE;
+CREATE SEQUENCE auto_id_city;
+CREATE SEQUENCE auto_id_point;
+CREATE SEQUENCE auto_id_significant_point;
+CREATE SEQUENCE auto_id_curve;
+CREATE SEQUENCE auto_id_surface;
+CREATE SEQUENCE auto_id_altimeter_source_status;
+CREATE SEQUENCE auto_id_surface_contamination;
+CREATE SEQUENCE auto_id_surface_arp_availability;
+CREATE SEQUENCE auto_id_surface_characteristics;
+CREATE SEQUENCE auto_id_cartography_label;
+CREATE SEQUENCE auto_id_unit_dependency;
+CREATE SEQUENCE auto_id_callsign;
+CREATE SEQUENCE auto_id_contact_information;
+CREATE SEQUENCE auto_id_postal_address;
+CREATE SEQUENCE auto_id_online_contact;
+CREATE SEQUENCE auto_id_segment_point;
+CREATE SEQUENCE auto_id_route_portion;
+CREATE SEQUENCE auto_id_airspace_activation;
+CREATE SEQUENCE auto_id_airspace_layer_class;
+CREATE SEQUENCE auto_id_airspace_layer;
+CREATE SEQUENCE auto_id_airspace_volume;
+CREATE SEQUENCE auto_id_telephone_contact;
+
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
@@ -1267,10 +1298,11 @@ CREATE TABLE OrganisationAuthority
   military   CodeMilitaryOperationsType
 );
 
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
-  id                 SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_point'),
   latitude           latitude,
   longtitude         longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
@@ -1282,7 +1314,7 @@ CREATE TABLE Point
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  id               SERIAL PRIMARY KEY REFERENCES Point (id),
+  id               INTEGER NOT NULL PRIMARY KEY REFERENCES Point (id),
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -1292,14 +1324,14 @@ CREATE TABLE ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
 CREATE TABLE SignificantPoint
 (
-  id      SERIAL PRIMARY KEY,
-  idPoint SERIAL REFERENCES Point (id)
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_significant_point'),
+  idPoint INTEGER NOT NULL REFERENCES Point (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
 CREATE TABLE Curve
 (
-  id                 SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_curve'),
   latitude           latitude,
   longtitude         longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
@@ -1311,7 +1343,7 @@ CREATE TABLE Curve
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
-  id                 SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface'),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POLYGON, 4326)
 );
@@ -1320,7 +1352,7 @@ CREATE TABLE Surface
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
-  id               SERIAL PRIMARY KEY REFERENCES Surface (id),
+  id               INTEGER NOT NULL PRIMARY KEY REFERENCES Surface (id),
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -1359,23 +1391,26 @@ CREATE TABLE AirportHeliport
   certificationDate           DateType,
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
-  idElevatedPoint             SERIAL REFERENCES ElevatedPoint (id),
-  idElevatedSurface           SERIAL REFERENCES ElevatedSurface (id),
-  idSignificantPoint          SERIAL REFERENCES SignificantPoint (id)
+  idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id),
+  idElevatedSurface           INTEGER NOT NULL REFERENCES ElevatedSurface (id),
+  idSignificantPoint          INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
+
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  id   SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_city'),
   name TextNameType
 );
+
+INSERT INTO City (name) VALUES ('Spb'), ('Msk');
 
 CREATE TABLE AirportHeliportCity
 (
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-  idCity              SERIAL REFERENCES City (id)
+  idCity              INTEGER NOT NULL REFERENCES City (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
@@ -1383,7 +1418,7 @@ CREATE TABLE SurveyControlPoint
 (
   uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-  idElevatedPoint     SERIAL REFERENCES Point (id),
+  idElevatedPoint     INTEGER NOT NULL REFERENCES Point (id),
   designator          TextNameType
 );
 
@@ -1392,7 +1427,7 @@ CREATE TABLE SurveyControlPoint
 CREATE TABLE AirportHotSpot
 (
   uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  idElevatedSurface   SERIAL REFERENCES Surface (id),
+  idElevatedSurface   INTEGER NOT NULL REFERENCES Surface (id),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   designator          TextDesignatorType,
   instruction         TextInstructionType
@@ -1418,7 +1453,7 @@ CREATE TABLE AltimeterSourceAirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
-  id                  SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_altimeter_source_status'),
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
 );
@@ -1426,7 +1461,7 @@ CREATE TABLE AltimeterSourceStatus
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
-  id                    SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface_contamination'),
   observationTime       DateTimeType,
   depth                 ValDepthType,
   frictionCoefficient   ValFrictionType,
@@ -1443,7 +1478,7 @@ CREATE TABLE SurfaceContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
-  id                  SERIAL PRIMARY KEY REFERENCES SurfaceContamination (id),
+  id                  INTEGER NOT NULL PRIMARY KEY REFERENCES SurfaceContamination (id),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
@@ -1451,7 +1486,7 @@ CREATE TABLE AirportHeliportContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
-  id                  SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface_arp_availability'),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
@@ -1461,7 +1496,7 @@ CREATE TABLE AirportHeliportAvailability
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
 CREATE TABLE SurfaceCharacteristics
 (
-  id                  SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface_characteristics'),
   composition         CodeSurfaceCompositionType,
   preparation         CodeSurfacePreparationType,
   surfaceCondition    CodeSurfaceConditionType,
@@ -1481,7 +1516,7 @@ CREATE TABLE Runway
 (
   uuid                     id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
-  idSurfaceCharacteristics SERIAL REFERENCES SurfaceCharacteristics (id),
+  idSurfaceCharacteristics INTEGER NOT NULL REFERENCES SurfaceCharacteristics (id),
   designator               TextDesignatorType,
   type                     CodeRunwayType,
   nominalLength            ValDistanceType,
@@ -1500,7 +1535,7 @@ CREATE TABLE Runway
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayContamination
 CREATE TABLE RunwayContamination
 (
-  id                     SERIAL PRIMARY KEY REFERENCES SurfaceContamination (id),
+  id                     INTEGER NOT NULL PRIMARY KEY REFERENCES SurfaceContamination (id),
   uuidRunway             id REFERENCES Runway (uuid),
   clearedLength          ValDistanceType,
   clearedWidth           ValDistanceType,
@@ -1516,7 +1551,7 @@ CREATE TABLE RunwayContamination
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwaySectionContamination
 CREATE TABLE RunwaySectionContamination
 (
-  id         SERIAL PRIMARY KEY REFERENCES SurfaceContamination (id),
+  id         INTEGER NOT NULL PRIMARY KEY REFERENCES SurfaceContamination (id),
   uuidRunway id REFERENCES Runway (uuid),
   section    CodeRunwaySectionType
 );
@@ -1559,7 +1594,7 @@ CREATE TABLE RunwayDirectionLightSystem
 
 CREATE TABLE CartographyLabel
 (
-  id                  SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_cartography_label'),
   xlbl                latitude,
   ylbl                longitude,
   rotation            ValAngleType,
@@ -1875,7 +1910,7 @@ CREATE TABLE Unit
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_UnitDependency
 CREATE TABLE UnitDependency
 (
-  id              SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_unit_dependency'),
   uuidUnit        id REFERENCES Unit (uuid),
   uuidRelatedUnit id REFERENCES Unit (uuid),
   type            CodeUnitDependencyType
@@ -1889,13 +1924,13 @@ CREATE TABLE Service
   rank             CodeFacilityRankingType,
   compliantICAO    CodeYesNoType,
   name             TextNameType,
-  idElevatedPoint  SERIAL REFERENCES ElevatedPoint (id),
+  idElevatedPoint  INTEGER NOT NULL REFERENCES ElevatedPoint (id),
   uuidUnit         id REFERENCES Unit (uuid)
 );
 
 CREATE TABLE CallsignDetail
 (
-  id          SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_callsign'),
   callSign    TextNameType,
   language    CodeLanguageType,
   uuidService id REFERENCES Service (uuid)
@@ -1905,7 +1940,7 @@ CREATE TABLE CallsignDetail
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  id                        SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_contact_information'),
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   uuidUnit                  id REFERENCES Unit (uuid),
@@ -1916,7 +1951,7 @@ CREATE TABLE ContactInformation
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
 CREATE TABLE PostalAddress (
-  id                 SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_postal_address'),
   deliveryPoint      TextAddressType,
   city               TextNameType,
   administrativeArea TextNameType,
@@ -1926,14 +1961,14 @@ CREATE TABLE PostalAddress (
 
 CREATE TABLE ContactInformationPostalAddress
 (
-  idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idPostalAddress      SERIAL REFERENCES PostalAddress (id)
+  idContactInformation INTEGER NOT NULL REFERENCES ContactInformation (id),
+  idPostalAddress      INTEGER NOT NULL REFERENCES PostalAddress (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
 
 CREATE TABLE OnlineContact (
-  id       SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_online_contact'),
   network  CodeTelecomNetworkType,
   linkage  TextAddressType,
   protocol TextNameType,
@@ -1942,20 +1977,20 @@ CREATE TABLE OnlineContact (
 
 CREATE TABLE ContactInformationOnlineContact
 (
-  idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idOnlineContact      SERIAL REFERENCES OnlineContact (id)
+  idContactInformation INTEGER NOT NULL REFERENCES ContactInformation (id),
+  idOnlineContact      INTEGER NOT NULL REFERENCES OnlineContact (id)
 );
 
 CREATE TABLE TelephoneContact (
-  id        SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_telephone_contact'),
   voice     TextPhoneType,
   facsimile TextPhoneType
 );
 
 CREATE TABLE ContactInformationTelephoneContact
 (
-  idContactInformation SERIAL REFERENCES ContactInformation (id),
-  idTelephoneContact   SERIAL REFERENCES TelephoneContact (id)
+  idContactInformation INTEGER NOT NULL REFERENCES ContactInformation (id),
+  idTelephoneContact   INTEGER NOT NULL REFERENCES TelephoneContact (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RadioCommunicationChannel
@@ -1972,7 +2007,7 @@ CREATE TABLE RadioCommunicationChannel
   selectiveCall         CodeYesNoType,
   flightChecked         CodeYesNoType,
   trafficDirection      CodeCommunicationDirectionType,
-  idElevatedPoint       SERIAL REFERENCES ElevatedPoint (id)
+  idElevatedPoint       INTEGER NOT NULL REFERENCES ElevatedPoint (id)
 );
 
 CREATE TABLE Service_RadioCommunicationChannel
@@ -2043,18 +2078,18 @@ CREATE TABLE AirTrafficControlService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
 CREATE TABLE SegmentPoint
 (
-  id                 SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_segment_point'),
   reportingATC       CodeATCReportingType,
   flyOver            CodeYesNoType,
   waypoint           CodeYesNoType,
   radarGuidance      CodeYesNoType,
-  idSignificantPoint SERIAL REFERENCES SignificantPoint (id)
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
 CREATE TABLE EnRouteSegmentPoint
 (
-  id                   SERIAL PRIMARY KEY REFERENCES SegmentPoint (id),
+  id                   INTEGER NOT NULL PRIMARY KEY REFERENCES SegmentPoint (id),
   roleFreeFlight       CodeFreeFlightType,
   roleRVSM             CodeRVSMPointRoleType,
   turnRadius           ValDistanceType,
@@ -2108,18 +2143,18 @@ CREATE TABLE RouteSegment
   requiredNavigationPerformance    CodeRNPType,
   designatorSuffix                 CodeRouteDesignatorSuffixType,
   uuidRoute                        id REFERENCES Route (uuid),
-  idCurve                          SERIAL REFERENCES Curve (id),
-  idEnRouteSegmentPointStart       SERIAL REFERENCES EnRouteSegmentPoint (id),
-  idEnRouteSegmentPointEnd         SERIAL REFERENCES EnRouteSegmentPoint (id)
+  idCurve                          INTEGER NOT NULL REFERENCES Curve (id),
+  idEnRouteSegmentPointStart       INTEGER NOT NULL REFERENCES EnRouteSegmentPoint (id),
+  idEnRouteSegmentPointEnd         INTEGER NOT NULL REFERENCES EnRouteSegmentPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
 CREATE TABLE RoutePortion
 (
-  id                             SERIAL PRIMARY KEY,
-  idSignificantPointStart        SERIAL REFERENCES SignificantPoint (id),
-  idSignificantPointIntermediate SERIAL REFERENCES SignificantPoint (id),
-  idSignificantPointEnd          SERIAL REFERENCES SignificantPoint (id)
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_route_portion'),
+  idSignificantPointStart        INTEGER NOT NULL REFERENCES SignificantPoint (id),
+  idSignificantPointIntermediate INTEGER NOT NULL REFERENCES SignificantPoint (id),
+  idSignificantPointEnd          INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Airspace
@@ -2145,7 +2180,7 @@ CREATE TABLE Airspace_AirTrafficManagementService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id           SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_activation'),
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid)
@@ -2154,13 +2189,13 @@ CREATE TABLE AirspaceActivation
 CREATE TABLE AirspaceActivation_OrganisationAuthority
 (
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  idAirspaceActivation      SERIAL REFERENCES AirspaceActivation (id)
+  idAirspaceActivation      INTEGER NOT NULL REFERENCES AirspaceActivation (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
 CREATE TABLE AirspaceLayerClass
 (
-  id             SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_layer_class'),
   classification CodeAirspaceClassificationType,
   uuidAirspace   id REFERENCES Airspace (uuid)
 );
@@ -2168,20 +2203,20 @@ CREATE TABLE AirspaceLayerClass
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
 CREATE TABLE AirspaceLayer
 (
-  id                     SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_layer'),
   upperLimit             ValDistanceVerticalType,
   upperLimitReference    CodeVerticalReferenceType,
   lowerLimit             ValDistanceVerticalType,
   lowerLimitReference    CodeVerticalReferenceType,
   altitudeInterpretation CodeAltitudeUseType,
-  idAirspaceLayerClass   SERIAL REFERENCES AirspaceLayerClass (id),
-  idAirspaceActivation   SERIAL REFERENCES AirspaceActivation (id)
+  idAirspaceLayerClass   INTEGER NOT NULL REFERENCES AirspaceLayerClass (id),
+  idAirspaceActivation   INTEGER NOT NULL REFERENCES AirspaceActivation (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceVolume
 CREATE TABLE AirspaceVolume
 (
-  id                    SERIAL PRIMARY KEY,
+  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_volume'),
   upperLimit            ValDistanceVerticalType,
   upperLimitReference   CodeVerticalReferenceType,
   maximumLimit          ValDistanceVerticalType,
@@ -2191,8 +2226,8 @@ CREATE TABLE AirspaceVolume
   minimumLimit          ValDistanceVerticalType,
   minimumLimitReference CodeVerticalReferenceType,
   width                 ValDistanceType,
-  idSurface             SERIAL REFERENCES Surface (id),
-  idCurve               SERIAL REFERENCES Curve (id),
+  idSurface             INTEGER NOT NULL REFERENCES Surface (id),
+  idCurve               INTEGER NOT NULL REFERENCES Curve (id),
   uuidAirspace          id REFERENCES Airspace (uuid)
 );
 
@@ -2203,7 +2238,7 @@ CREATE TABLE SignificantPointInAirspace
   type               CodeAirspacePointRoleType,
   relativeLocation   CodeAirspacePointPositionType,
   uuidAirspace       id REFERENCES Airspace (uuid),
-  idSignificantPoint SERIAL REFERENCES SignificantPoint (id)
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
