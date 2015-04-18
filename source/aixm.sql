@@ -61,6 +61,7 @@ DROP TABLE IF EXISTS airspace_airtrafficmanagementservice CASCADE;
 DROP TABLE IF EXISTS airtrafficcontrolservice CASCADE;
 DROP TABLE IF EXISTS AuthorityForAirspace CASCADE;
 DROP TABLE IF EXISTS Navaid CASCADE;
+DROP TABLE IF EXISTS GroundLightingAvailability CASCADE;
 
 DROP DOMAIN IF EXISTS
 id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
@@ -1264,7 +1265,7 @@ DROP SEQUENCE IF EXISTS auto_id_city, auto_id_point, auto_id_significant_point, 
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
 auto_id_segment_point, auto_id_route_portion, auto_id_airspace_activation, auto_id_airspace_layer_class, auto_id_airspace_layer,
-auto_id_airspace_volume, auto_id_telephone_contact CASCADE;
+auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability CASCADE;
 CREATE SEQUENCE auto_id_city;
 CREATE SEQUENCE auto_id_point;
 CREATE SEQUENCE auto_id_significant_point;
@@ -1287,6 +1288,7 @@ CREATE SEQUENCE auto_id_airspace_layer_class;
 CREATE SEQUENCE auto_id_airspace_layer;
 CREATE SEQUENCE auto_id_airspace_volume;
 CREATE SEQUENCE auto_id_telephone_contact;
+CREATE SEQUENCE auto_ground_lighting_availability;
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -1315,7 +1317,8 @@ CREATE TABLE Point
 CREATE TABLE ElevatedPoint
 (
   id               INTEGER NOT NULL PRIMARY KEY REFERENCES Point (id),
-  elevation        ValDistanceVerticalType,
+  --elevation        ValDistanceVerticalType,
+  elevation ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
   verticalAccuracy ValDistanceType
@@ -1392,8 +1395,8 @@ CREATE TABLE AirportHeliport
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
   idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id),
-  idElevatedSurface           INTEGER NOT NULL REFERENCES ElevatedSurface (id),
-  idSignificantPoint          INTEGER NOT NULL REFERENCES SignificantPoint (id)
+  idElevatedSurface           INTEGER REFERENCES ElevatedSurface (id),
+ idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
 );
 
 
@@ -1516,7 +1519,7 @@ CREATE TABLE Runway
 (
   uuid                     id PRIMARY KEY DEFAULT uuid_generate_v4(),
   uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
-  idSurfaceCharacteristics INTEGER NOT NULL REFERENCES SurfaceCharacteristics (id),
+  idSurfaceCharacteristics INTEGER REFERENCES SurfaceCharacteristics (id),
   designator               TextDesignatorType,
   type                     CodeRunwayType,
   nominalLength            ValDistanceType,
@@ -1584,6 +1587,14 @@ CREATE TABLE GroundLightSystem
   colour            CodeColourType
 );
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightingAvailability
+CREATE TABLE GroundLightingAvailability
+(
+    id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_ground_lighting_availability'),
+    uuidGroundLightSystem                id REFERENCES GroundLightSystem (uuid),
+    operationalStatus	CodeStatusOperationsType
+);
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
@@ -1599,7 +1610,7 @@ CREATE TABLE CartographyLabel
   ylbl                longitude,
   rotation            ValAngleType,
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
-  uuidairportheliport UUID REFERENCES AirportHeliport,
+  uuidairportheliport id REFERENCES AirportHeliport,
   geom                GEOMETRY(POINT, 4326)
 );
 
