@@ -1,78 +1,24 @@
-﻿DROP TABLE IF EXISTS AirportHeliport CASCADE;
-DROP TABLE IF EXISTS City CASCADE;
-DROP TABLE IF EXISTS Surface CASCADE;
-DROP TABLE IF EXISTS Point CASCADE;
-DROP TABLE IF EXISTS ElevatedPoint CASCADE;
-DROP TABLE IF EXISTS SurveyControlPoint CASCADE;
-DROP TABLE IF EXISTS ElevatedSurface CASCADE;
-DROP TABLE IF EXISTS AirportHotSpot CASCADE;
-DROP TABLE IF EXISTS AltimeterSourceAirportHeliport CASCADE;
-DROP TABLE IF EXISTS AltimeterSource CASCADE;
-DROP TABLE IF EXISTS AltimeterSourceStatus CASCADE;
-DROP TABLE IF EXISTS OrganisationAuthority CASCADE;
-DROP TABLE IF EXISTS ContactInformation CASCADE;
-DROP TABLE IF EXISTS SurfaceContamination CASCADE;
-DROP TABLE IF EXISTS AirportHeliportContamination CASCADE;
-DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE;
-DROP TABLE IF EXISTS Runway CASCADE;
-DROP TABLE IF EXISTS SurfaceCharacteristics CASCADE;
-DROP TABLE IF EXISTS RunwayContamination CASCADE;
-DROP TABLE IF EXISTS RunwaySectionContamination CASCADE;
-DROP TABLE IF EXISTS RunwayDirection CASCADE;
-DROP TABLE IF EXISTS GroundLightSystem CASCADE;
-DROP TABLE IF EXISTS RunwayDirectionLightSystem CASCADE;
-DROP TABLE IF EXISTS PostalAddress CASCADE;
-DROP TABLE IF EXISTS OnlineContact CASCADE;
-DROP TABLE IF EXISTS TelephoneContact CASCADE;
-DROP TABLE IF EXISTS ContactInformationOnlineContact CASCADE;
-DROP TABLE IF EXISTS ContactInformationTelephoneContact CASCADE;
-DROP TABLE IF EXISTS ContactInformationPostalAddress CASCADE;
-DROP TABLE IF EXISTS CartographyLabel CASCADE;
-DROP TABLE IF EXISTS AirportHeliportCity CASCADE;
-DROP TABLE IF EXISTS Service CASCADE;
-DROP TABLE IF EXISTS AirTrafficManagementService CASCADE;
-DROP TABLE IF EXISTS AirportGroundService CASCADE;
-DROP TABLE IF EXISTS InformationService CASCADE;
-DROP TABLE IF EXISTS SearchRescueService CASCADE;
-DROP TABLE IF EXISTS Airspace CASCADE;
-DROP TABLE IF EXISTS AirspaceLayerClass CASCADE;
-DROP TABLE IF EXISTS AirspaceLayer CASCADE;
-DROP TABLE IF EXISTS EnRouteSegmentPoint CASCADE;
-DROP TABLE IF EXISTS RoutePortion CASCADE;
-DROP TABLE IF EXISTS SegmentPoint CASCADE;
-DROP TABLE IF EXISTS RouteSegment CASCADE;
-DROP TABLE IF EXISTS Route CASCADE;
-DROP TABLE IF EXISTS AirspaceVolume CASCADE;
-DROP TABLE IF EXISTS AirspaceActivation CASCADE;
-DROP TABLE IF EXISTS AirspaceActivation_OrganisationAuthority CASCADE;
-DROP TABLE IF EXISTS SignificantPointInAirspace CASCADE;
-DROP TABLE IF EXISTS SignificantPoint CASCADE;
-DROP TABLE IF EXISTS Curve CASCADE;
-DROP TABLE IF EXISTS AirportHeliport_InformationService CASCADE;
-DROP TABLE IF EXISTS AirportHeliport_AirportGroundService CASCADE;
-DROP TABLE IF EXISTS Unit CASCADE;
-DROP TABLE IF EXISTS UnitDependency CASCADE;
-DROP TABLE IF EXISTS CallsignDetail CASCADE;
-DROP TABLE IF EXISTS radiocommunicationchannel CASCADE;
-DROP TABLE IF EXISTS service_radiocommunicationchannel CASCADE;
-DROP TABLE IF EXISTS trafficseparationservice CASCADE;
-DROP TABLE IF EXISTS airspace_airtrafficmanagementservice CASCADE;
-DROP TABLE IF EXISTS airtrafficcontrolservice CASCADE;
-DROP TABLE IF EXISTS AuthorityForAirspace CASCADE;
-DROP TABLE IF EXISTS Navaid CASCADE;
-DROP TABLE IF EXISTS GroundLightingAvailability CASCADE;
+﻿DROP TABLE IF EXISTS AirportHeliport, City, Surface, Point, ElevatedPoint, SurveyControlPoint, ElevatedSurface,
+AirportHotSpot, AltimeterSourceAirportHeliport, AltimeterSource, AltimeterSourceStatus, OrganisationAuthority,
+ContactInformation, SurfaceContamination, AirportHeliportContamination, AirportHeliportAvailability, Runway,
+SurfaceCharacteristics, RunwayContamination, RunwaySectionContamination, RunwayDirection, GroundLightSystem,
+RunwayDirectionLightSystem, PostalAddress, OnlineContact, TelephoneContact, ContactInformationOnlineContact,
+ContactInformationTelephoneContact, ContactInformationPostalAddress, CartographyLabel, AirportHeliportCity, Service,
+AirTrafficManagementService, AirportGroundService, InformationService, SearchRescueService, Airspace, AirspaceLayerClass,
+AirspaceLayer, EnRouteSegmentPoint, RoutePortion, SegmentPoint, RouteSegment, Route, AirspaceVolume, AirspaceActivation,
+AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, SignificantPoint, Curve, AirportHeliport_InformationService,
+AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
+trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
+GroundLightingAvailability CASCADE;
 
-DROP DOMAIN IF EXISTS
-id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
-ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
-CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
-TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType,
-textaddresstype, CodeAirspaceDesignatorType, NoNumberType, codenavaiddesignatortype,
-CodeMilitaryStatusType, CodeMilitaryOperationsType, CodeRunwaySectionType,
-CodeSideType, CodeDirectionTurnType, CodeRunwayMarkingType, CodeMarkingConditionType,
-CodeLightingJARType, CodeApproachGuidanceType, CodeLightIntensityType, CodeColourType, CodeTelecomNetworkType,
-CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType,
-CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
+DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
+ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
+TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType, TimeType, ValPercentType, latitude, longitude,
+ValLCNType, ValWeightBaseType, ValBearingType, textaddresstype, CodeAirspaceDesignatorType, NoNumberType, codenavaiddesignatortype,
+CodeMilitaryStatusType, CodeMilitaryOperationsType, CodeRunwaySectionType, CodeSideType, CodeDirectionTurnType,
+CodeRunwayMarkingType, CodeMarkingConditionType, CodeLightingJARType, CodeApproachGuidanceType, CodeLightIntensityType,
+CodeColourType, CodeTelecomNetworkType, CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType,
+CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
 CodeRouteOriginType, CodeMilitaryStatusType CASCADE;
 
@@ -84,29 +30,26 @@ CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, C
 CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeMilitaryStatusType,
 */
 
-DROP TYPE IF EXISTS
-CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
-uomdepthtype, CodeYesNoType, UomDistanceVerticalType, ValDistanceVerticalType,
-valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType,
-ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType,
-CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType, ValSlopeType,
-UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
+DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
+uomdepthtype, CodeYesNoType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,
+valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType,
+CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType,
+ValSlopeType, UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
 CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
 codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
-valfrictiontype, CodePCNPavementType, valpressuretype, textphonetype,
-CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType,
-codeunitdependencytype, codeairspacepointpositiontype, codeleveltype, coderoutesegmentpathtype, coderoutenavigationtype,
-codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype, codefreeflighttype, codervsmpointroletype,
-codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype, uomfrequencytype, valfrequencybasetype,
-valfrequencytype, coderadioemissiontype, codecommunicationchanneltype, codecommunicationdirectiontype, codeunittype,
-codeserviceatctype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype, codesignalperformanceilstype,
-codecoursequalityilstype, codeintegritylevelilstype CASCADE;
+valfrictiontype, CodePCNPavementType, valpressuretype, textphonetype, CodeMilitaryTrainingType, CodeAirspaceActivityType,
+CodeStatusAirspaceType, CodeAirspacePointRoleType, codeunitdependencytype, codeairspacepointpositiontype, codeleveltype,
+coderoutesegmentpathtype, coderoutenavigationtype, codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype,
+codefreeflighttype, codervsmpointroletype, codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype,
+uomfrequencytype, valfrequencybasetype, valfrequencytype, coderadioemissiontype, codecommunicationchanneltype,
+codecommunicationdirectiontype, codeunittype, codeserviceatctype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
+codesignalperformanceilstype, codecoursequalityilstype, codeintegritylevelilstype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
 
+DROP VIEW IF EXISTS airports, AIRP_TABLE, AIRP_MAP, AIRP_MAP_2, CRA, CTR, DRA, PRA, RSA ;
 
-DROP VIEW IF EXISTS airports;
 
 -- В качестве id используем UUID Type
 --
