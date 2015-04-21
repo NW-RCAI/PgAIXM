@@ -1,6 +1,6 @@
-INSERT INTO point (id, latitude, longtitude, srid, horizontalaccuracy, geom) VALUES (1, 12.000000000000000, 12.000000000000000, 4284, '(0.28000000000000000000,M)', '0101000020E61000000E430D0071FF274058FA977898FF2740');
-INSERT INTO point (id, latitude, longtitude, srid, horizontalaccuracy, geom) VALUES (2, 50.000000000000000, 6.000000000000000, 4284, '(0.25000000000000000000,M)', '0101000020E610000099285EB92DFE1740609DE143ECFF4840');
-INSERT INTO point (id, latitude, longtitude, srid, horizontalaccuracy, geom) VALUES (3, 10.000000000000000, 42.000000000000000, 4284, '(0.20000000000000000000,M)', '0101000020E6100000B29F31EEE2FF44403DBF21F2A8FF2340');
+INSERT INTO point (id, latitude, longitude, srid, horizontalaccuracy, geom) VALUES (1, 12.000000000000000, 12.000000000000000, 4284, '(0.28000000000000000000,M)', '0101000020E61000000E430D0071FF274058FA977898FF2740');
+INSERT INTO point (id, latitude, longitude, srid, horizontalaccuracy, geom) VALUES (2, 50.000000000000000, 6.000000000000000, 4284, '(0.25000000000000000000,M)', '0101000020E610000099285EB92DFE1740609DE143ECFF4840');
+INSERT INTO point (id, latitude, longitude, srid, horizontalaccuracy, geom) VALUES (3, 10.000000000000000, 42.000000000000000, 4284, '(0.20000000000000000000,M)', '0101000020E6100000B29F31EEE2FF44403DBF21F2A8FF2340');
 
 INSERT INTO elevatedpoint (id, elevation, geoidundulation, verticaldatum, verticalaccuracy) VALUES (1, '(12.2000,UNL,M)', '(1.30000000000000000000,M)', 'AHD', '(0.11000000000000000000,M)');
 INSERT INTO elevatedpoint (id, elevation, geoidundulation, verticaldatum, verticalaccuracy) VALUES (2, '(14.5000,UNL,M)', '(1.30000000000000000000,M)', 'AHD', '(0.14000000000000000000,M)');
@@ -42,6 +42,6 @@ INSERT INTO runwaydirectionlightsystem (uuid, uuidrunwaydirection, "position") V
 INSERT INTO runwaydirectionlightsystem (uuid, uuidrunwaydirection, "position") VALUES ('deb70ea0-f543-4b40-bbbf-0dd00526a54f', 'c4ee7d9a-7698-408c-beac-95ce27d1876f', 'DESIG');
 INSERT INTO runwaydirectionlightsystem (uuid, uuidrunwaydirection, "position") VALUES ('f10d8536-3503-4c07-ac3a-b0f3a84b2bc2', 'e92d28e8-770d-4141-b578-207b1f2a9d02', 'CL');
 
---INSERT INTO point (id, latitude, longtitude, srid, horizontalaccuracy) VALUES (4, 22.000000000000000, 2.000000000000000, 4284, '(0.20000000000000000000,M)');
+--INSERT INTO point (id, latitude, longitude, srid, horizontalaccuracy) VALUES (4, 22.000000000000000, 2.000000000000000, 4284, '(0.20000000000000000000,M)');
   --   INSERT INTO elevatedpoint (id) VALUES (4);
 --INSERT INTO airportheliport (uuid, designator, name, locationindicatoricao, designatoriata,   idelevatedpoint) VALUES ('1e32ebb3-e877-454c-b3e0-519972f9ea44','IKAT','NAME', 'ICAO', 'IAT', 4);

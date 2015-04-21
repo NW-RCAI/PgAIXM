@@ -14,7 +14,6 @@ DROP TABLE IF EXISTS ContactInformation CASCADE;
 DROP TABLE IF EXISTS SurfaceContamination CASCADE;
 DROP TABLE IF EXISTS AirportHeliportContamination CASCADE;
 DROP TABLE IF EXISTS AirportHeliportAvailability CASCADE;
-
 DROP TABLE IF EXISTS Runway CASCADE;
 DROP TABLE IF EXISTS SurfaceCharacteristics CASCADE;
 DROP TABLE IF EXISTS RunwayContamination CASCADE;
@@ -75,7 +74,7 @@ CodeLightingJARType, CodeApproachGuidanceType, CodeLightIntensityType, CodeColou
 CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType,
 CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
-CodeRouteOriginType,CodeMilitaryStatusType CASCADE;
+CodeRouteOriginType, CodeMilitaryStatusType CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -94,7 +93,7 @@ CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAir
 UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
 CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
 codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
-valfrictiontype, CodePCNPavementType,  valpressuretype, textphonetype,
+valfrictiontype, CodePCNPavementType, valpressuretype, textphonetype,
 CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType,
 codeunitdependencytype, codeairspacepointpositiontype, codeleveltype, coderoutesegmentpathtype, coderoutenavigationtype,
 codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype, codefreeflighttype, codervsmpointroletype,
@@ -105,7 +104,6 @@ codecoursequalityilstype, codeintegritylevelilstype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
-
 
 
 DROP VIEW IF EXISTS airports;
@@ -617,7 +615,8 @@ CHECK (VALUE ~ '((LEFT|RIGHT|BOTH|EITHER)|OTHER: [A-Z]{30})');
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
 CREATE DOMAIN CodeRunwaySectionType AS VARCHAR(40)
-CHECK (VALUE ~ '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT',
 -- 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
 
@@ -694,7 +693,8 @@ CHECK (VALUE ~ '((FALS|IALS|BALS|NALS)|OTHER: [A-Z]{30})');
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
 CREATE DOMAIN CodeApproachGuidanceType AS VARCHAR(40)
-CHECK (VALUE ~ '((NON_PRECISION|ILS_PRECISION_CAT_I|ILS_PRECISION_CAT_II|ILS_PRECISION_CAT_IIIA|ILS_PRECISION_CAT_IIIB|ILS_PRECISION_CAT_IIIC|ILS_PRECISION_CAT_IIID|MLS_PRECISION)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '((NON_PRECISION|ILS_PRECISION_CAT_I|ILS_PRECISION_CAT_II|ILS_PRECISION_CAT_IIIA|ILS_PRECISION_CAT_IIIB|ILS_PRECISION_CAT_IIIC|ILS_PRECISION_CAT_IIID|MLS_PRECISION)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION', 'ILS_PRECISION_CAT_I',
 -- 'ILS_PRECISION_CAT_II', 'ILS_PRECISION_CAT_IIIA', 'ILS_PRECISION_CAT_IIIB', 'ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
 
@@ -714,7 +714,8 @@ CHECK (VALUE ~ '((LIL|LIM|LIH|LIL_LIH|PREDETERMINED)|OTHER: [A-Z]{30})');
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
 CREATE DOMAIN CodeColourType AS VARCHAR(40)
-CHECK (VALUE ~ '((YELLOW|RED|WHITE|BLUE|GREEN|PURPLE|ORANGE|AMBER|BLACK|BROWN|GREY|LIGHT_GREY|MAGENTA|PINK|VIOLET)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '((YELLOW|RED|WHITE|BLUE|GREEN|PURPLE|ORANGE|AMBER|BLACK|BROWN|GREY|LIGHT_GREY|MAGENTA|PINK|VIOLET)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', 'PURPLE',
 -- 'ORANGE', 'AMBER', 'BLACK', 'BROWN', 'GREY', 'LIGHT_GREY', 'MAGENTA', 'PINK', 'VIOLET', 'OTHER');
 
@@ -795,7 +796,8 @@ CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
 CREATE DOMAIN CodeServiceInformationType AS VARCHAR(40)
-CHECK (VALUE ~ '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeServiceInformationType AS ENUM ('AFIS', 'AIS', 'ATIS', 'BRIEFING', 'FIS', 'OFIS_VHF', 'OFIS_HF',
 -- 'INFO', 'RAF', 'METAR', 'SIGMET', 'TWEB', 'TAF', 'VOLMET', 'ALTIMETER', 'ASOS', 'AWOS', 'OTHER');
 
@@ -885,7 +887,8 @@ CHECK (VALUE ~ '((ALRS|SAR|RCC)|OTHER: [A-Z]{30})');
 --
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
 CREATE DOMAIN CodeAirspaceType AS VARCHAR(40)
-CHECK (VALUE ~ '((NAS|FIR|FIR_P|UIR|UIR_P|CTA|CTA_P|OCA|OCA_P|UTA|UTA_P|TMA|TMA_P|CTR|CTR_P|OTA|SECTOR|SECTOR_C|TSA|CBA|RCA|RAS|AWY|MTR|P|R|D|ADIZ|NO_FIR|PART|CLASS|POLITICAL|D_OTHER|TRA|A|W|PROTECT|AMA|ASR|ADV|UADV|ATZ|ATZ_P|HTZ|NAS_P)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '((NAS|FIR|FIR_P|UIR|UIR_P|CTA|CTA_P|OCA|OCA_P|UTA|UTA_P|TMA|TMA_P|CTR|CTR_P|OTA|SECTOR|SECTOR_C|TSA|CBA|RCA|RAS|AWY|MTR|P|R|D|ADIZ|NO_FIR|PART|CLASS|POLITICAL|D_OTHER|TRA|A|W|PROTECT|AMA|ASR|ADV|UADV|ATZ|ATZ_P|HTZ|NAS_P)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeAirspaceType AS ENUM ('NAS', 'FIR', 'FIR_P', 'UIR', 'UIR_P', 'CTA', 'CTA_P', 'OCA', 'OCA_P',
 -- 'UTA', 'UTA_P', 'TMA', 'TMA_P', 'CTR', 'CTR_P', 'OTA', 'SECTOR', 'SECTOR_C', 'TSA', 'CBA', 'RCA', 'RAS', 'AWY', 'MTR', 'P', 'R', 'D', 'ADIZ', 'NO_FIR', 'PART', 'CLASS', 'POLITICAL', 'D_OTHER', 'TRA', 'A', 'W', 'PROTECT', 'AMA', 'ASR', 'ADV', 'UADV', 'ATZ', 'ATZ_P', 'HTZ', 'NAS_P', 'OTHER');
 
@@ -1346,6 +1349,7 @@ auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
 auto_id_segment_point, auto_id_route_portion, auto_id_airspace_activation, auto_id_airspace_layer_class, auto_id_airspace_layer,
 auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability CASCADE;
+
 CREATE SEQUENCE auto_id_city;
 CREATE SEQUENCE auto_id_point;
 CREATE SEQUENCE auto_id_significant_point;
@@ -1384,9 +1388,9 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_point'),
+  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_point'),
   latitude           latitude,
-  longtitude         longitude,
+  longitude          longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POINT, 4326)
@@ -1398,7 +1402,7 @@ CREATE TABLE ElevatedPoint
 (
   id               INTEGER NOT NULL PRIMARY KEY REFERENCES Point (id),
   --elevation        ValDistanceVerticalType,
-  elevation ValDistanceVerticalType,
+  elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
   verticalAccuracy ValDistanceType
@@ -1407,16 +1411,16 @@ CREATE TABLE ElevatedPoint
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
 CREATE TABLE SignificantPoint
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_significant_point'),
+  id      INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_significant_point'),
   idPoint INTEGER NOT NULL REFERENCES Point (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
 CREATE TABLE Curve
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_curve'),
+  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_curve'),
   latitude           latitude,
-  longtitude         longitude,
+  longitude          longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(LINESTRING, 4326)
@@ -1426,7 +1430,7 @@ CREATE TABLE Curve
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface'),
+  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface'),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(POLYGON, 4326)
 );
@@ -1476,15 +1480,14 @@ CREATE TABLE AirportHeliport
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
   idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id),
   idElevatedSurface           INTEGER REFERENCES ElevatedSurface (id),
- idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
+  idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
 );
-
 
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_city'),
+  id   INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_city'),
   name TextNameType
 );
 
@@ -1536,7 +1539,7 @@ CREATE TABLE AltimeterSourceAirportHeliport
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_altimeter_source_status'),
+  id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_altimeter_source_status'),
   uuidAltimeterSource id REFERENCES AltimeterSource (uuid),
   operationalStatus   CodeStatusOperationsType
 );
@@ -1544,7 +1547,7 @@ CREATE TABLE AltimeterSourceStatus
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface_contamination'),
+  id                    INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface_contamination'),
   observationTime       DateTimeType,
   depth                 ValDepthType,
   frictionCoefficient   ValFrictionType,
@@ -1569,7 +1572,7 @@ CREATE TABLE AirportHeliportContamination
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface_arp_availability'),
+  id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface_arp_availability'),
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
   operationalStatus   CodeStatusAirportType,
   warning             CodeAirportWarningType
@@ -1579,7 +1582,7 @@ CREATE TABLE AirportHeliportAvailability
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
 CREATE TABLE SurfaceCharacteristics
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_surface_characteristics'),
+  id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface_characteristics'),
   composition         CodeSurfaceCompositionType,
   preparation         CodeSurfacePreparationType,
   surfaceCondition    CodeSurfaceConditionType,
@@ -1670,9 +1673,9 @@ CREATE TABLE GroundLightSystem
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightingAvailability
 CREATE TABLE GroundLightingAvailability
 (
-    id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_ground_lighting_availability'),
-    uuidGroundLightSystem                id REFERENCES GroundLightSystem (uuid),
-    operationalStatus	CodeStatusOperationsType
+  id                    INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_ground_lighting_availability'),
+  uuidGroundLightSystem id REFERENCES GroundLightSystem (uuid),
+  operationalStatus     CodeStatusOperationsType
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
@@ -1685,7 +1688,7 @@ CREATE TABLE RunwayDirectionLightSystem
 
 CREATE TABLE CartographyLabel
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_cartography_label'),
+  id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_cartography_label'),
   xlbl                latitude,
   ylbl                longitude,
   rotation            ValAngleType,
@@ -1701,7 +1704,7 @@ BEGIN
     ((SELECT latitude
       FROM Point, ElevatedPoint
       WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
-     (SELECT longtitude
+     (SELECT longitude
       FROM Point, ElevatedPoint
       WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
      (SELECT srid
@@ -1724,13 +1727,13 @@ CREATE FUNCTION trigger_insert()
   RETURNS TRIGGER AS $$
 BEGIN
   IF (TG_OP = 'INSERT' OR
-      (TG_OP = 'UPDATE' AND (NEW.longtitude <> OLD.longtitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
+      (TG_OP = 'UPDATE' AND (NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
   THEN
     IF (NEW.srid = 4326)
     THEN
-      NEW.geom = st_setsrid(st_makepoint(NEW.longtitude, NEW.latitude), NEW.srid);
+      NEW.geom = st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid);
     ELSE
-      NEW.geom = st_transform(st_setsrid(st_makepoint(NEW.longtitude, NEW.latitude), NEW.srid), 4326);
+      NEW.geom = st_transform(st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid), 4326);
     END IF;
   END IF;
   RETURN NEW;
@@ -1751,16 +1754,16 @@ CREATE VIEW airports AS
     AirportHeliport.type,
     AirportHeliport.controlType,
     airportheliport.abandoned,
---elevatedpoint.elevation,
+    --elevatedpoint.elevation,
     runwayMax.lenght,
     Point.latitude,
-    Point.longtitude,
+    Point.longitude,
 
--- runway.designator AS runway_design,
+    -- runway.designator AS runway_design,
     runwaydirection.truebearing,
     surfacecharacteristics.composition,
---runwaydirectionlightsystem.lightsystem,
---runwaydirectionlightsystem.position
+    --runwaydirectionlightsystem.lightsystem,
+    --runwaydirectionlightsystem.position
     Point.geom
   FROM airportheliport
     LEFT JOIN (
@@ -1812,7 +1815,7 @@ CREATE VIEW AIRP_TABLE AS
     (SELECT point.latitude
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.longtitude
+    (SELECT point.longitude
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
     (SELECT POINT.geom
@@ -1874,7 +1877,7 @@ CREATE VIEW AIRP_MAP_2 AS
      FROM runwaydirectionlightsystem, runwaydirection, runway
      WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
            runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
--- если count(runwaydirectionlightsystem.position) > 0 - значит у аэропорта есть система освещения
+    -- если count(runwaydirectionlightsystem.position) > 0 - значит у аэропорта есть система освещения
     (SELECT point.geom
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
@@ -1908,14 +1911,14 @@ BEGIN
   THEN
     INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
     INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
--- агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
-    --INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
--- в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
-    --INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
--- в view агрегатная функция max(truebearing):
-    --INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
--- и снова агрегатная - count(runwaydirectionlightsystem.position)
-   -- INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
+    -- агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
+        --INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
+    -- в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
+        --INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
+    -- в view агрегатная функция max(truebearing):
+        --INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
+    -- и снова агрегатная - count(runwaydirectionlightsystem.position)
+       -- INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
     INSERT INTO Point VALUES (NEW.id, NEW.geom);
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
@@ -1927,17 +1930,17 @@ BEGIN
       UPDATE elevatedpoint
       SET id = NEW.id, elevation = NEW.elevation
       WHERE id = OLD.id;
--- UPDATE Runway
--- SET uuid = NEW.uuid, (nominallength).VALUE = NEW.(nominallength).value WHERE UUID = OLD.uuid;
--- UPDATE SurfaceCharacteristics
- --SET id = NEW.id, composition = NEW.composition
--- WHERE id = OLD.id;
- --UPDATE RunwayDirection
- --SET uuid = NEW.uuid, truebearing = NEW.truebearing
- --WHERE uuid = OLD.uuid;
--- UPDATE RunwayDirectionLightSystem
--- SET uuid = NEW.uuid, position = NEW.position
---  WHERE uuid = OLD.uuid;
+      -- UPDATE Runway
+      -- SET uuid = NEW.uuid, (nominallength).VALUE = NEW.(nominallength).value WHERE UUID = OLD.uuid;
+      -- UPDATE SurfaceCharacteristics
+       --SET id = NEW.id, composition = NEW.composition
+      -- WHERE id = OLD.id;
+       --UPDATE RunwayDirection
+       --SET uuid = NEW.uuid, truebearing = NEW.truebearing
+       --WHERE uuid = OLD.uuid;
+      -- UPDATE RunwayDirectionLightSystem
+      -- SET uuid = NEW.uuid, position = NEW.position
+      --  WHERE uuid = OLD.uuid;
       UPDATE Point
       SET id = NEW.id, geom = NEW.geom
       WHERE id = OLD.id;
@@ -1948,14 +1951,14 @@ BEGIN
       WHERE uuid = OLD.uuid;
       DELETE FROM elevatedpoint
       WHERE id = OLD.id;
---  DELETE FROM Runway
- -- WHERE uuid = OLD.uuid;
- -- DELETE FROM SurfaceCharacteristics
---   WHERE id = OLD.id;
---    DELETE FROM RunwayDirection
---   WHERE uuid = OLD.uuid;
---   DELETE FROM RunwayDirectionLightSystem
---  WHERE uuid = OLD.uuid;
+      --  DELETE FROM Runway
+       -- WHERE uuid = OLD.uuid;
+       -- DELETE FROM SurfaceCharacteristics
+      --   WHERE id = OLD.id;
+      --    DELETE FROM RunwayDirection
+      --   WHERE uuid = OLD.uuid;
+      --   DELETE FROM RunwayDirectionLightSystem
+      --  WHERE uuid = OLD.uuid;
       DELETE FROM Point
       WHERE id = OLD.id;
       RETURN NULL;
@@ -1966,25 +1969,6 @@ $function$;
 
 CREATE TRIGGER arp_trig
 INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
-
-
---CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
---DO INSTEAD
-  --INSERT INTO AirportHeliport VALUES (
-  --  NEW.uuid,
-   -- NEW.designator,
-  --  NEW.name);
-
---CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
---DO INSTEAD
---  UPDATE AirportHeliport
- -- SET uuid     = NEW.uuid,
-  --  designator = NEW.designator,
-  --  name       = NEW.name;
-
-
---CREATE RULE airp_table_insert as on INSERT TO AIRP_MAP
- -- DO INSTEAD INSERT INTO AirportHeliport VALUES (new.uuid, new.designator, new.name, new.controltype)
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
 CREATE TABLE Unit
@@ -2003,7 +1987,7 @@ CREATE TABLE Unit
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_UnitDependency
 CREATE TABLE UnitDependency
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_unit_dependency'),
+  id              INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_unit_dependency'),
   uuidUnit        id REFERENCES Unit (uuid),
   uuidRelatedUnit id REFERENCES Unit (uuid),
   type            CodeUnitDependencyType
@@ -2023,7 +2007,7 @@ CREATE TABLE Service
 
 CREATE TABLE CallsignDetail
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_callsign'),
+  id          INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_callsign'),
   callSign    TextNameType,
   language    CodeLanguageType,
   uuidService id REFERENCES Service (uuid)
@@ -2033,7 +2017,7 @@ CREATE TABLE CallsignDetail
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_contact_information'),
+  id                        INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_contact_information'),
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   uuidUnit                  id REFERENCES Unit (uuid),
@@ -2044,7 +2028,7 @@ CREATE TABLE ContactInformation
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
 CREATE TABLE PostalAddress (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_postal_address'),
+  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_postal_address'),
   deliveryPoint      TextAddressType,
   city               TextNameType,
   administrativeArea TextNameType,
@@ -2061,7 +2045,7 @@ CREATE TABLE ContactInformationPostalAddress
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
 
 CREATE TABLE OnlineContact (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_online_contact'),
+  id       INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_online_contact'),
   network  CodeTelecomNetworkType,
   linkage  TextAddressType,
   protocol TextNameType,
@@ -2075,7 +2059,7 @@ CREATE TABLE ContactInformationOnlineContact
 );
 
 CREATE TABLE TelephoneContact (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_telephone_contact'),
+  id        INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_telephone_contact'),
   voice     TextPhoneType,
   facsimile TextPhoneType
 );
@@ -2163,6 +2147,7 @@ CREATE TABLE AirTrafficControlService
 
 --CREATE TABLE AirportHeliport_AirportGroundService
 --(
+
  -- uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
  -- uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
 --);
@@ -2171,7 +2156,7 @@ CREATE TABLE AirTrafficControlService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
 CREATE TABLE SegmentPoint
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_segment_point'),
+  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_segment_point'),
   reportingATC       CodeATCReportingType,
   flyOver            CodeYesNoType,
   waypoint           CodeYesNoType,
@@ -2244,7 +2229,7 @@ CREATE TABLE RouteSegment
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
 CREATE TABLE RoutePortion
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_route_portion'),
+  id                             INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_route_portion'),
   idSignificantPointStart        INTEGER NOT NULL REFERENCES SignificantPoint (id),
   idSignificantPointIntermediate INTEGER NOT NULL REFERENCES SignificantPoint (id),
   idSignificantPointEnd          INTEGER NOT NULL REFERENCES SignificantPoint (id)
@@ -2273,7 +2258,7 @@ CREATE TABLE Airspace_AirTrafficManagementService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_activation'),
+  id           INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_activation'),
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid)
@@ -2288,7 +2273,7 @@ CREATE TABLE AirspaceActivation_OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
 CREATE TABLE AirspaceLayerClass
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_layer_class'),
+  id             INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer_class'),
   classification CodeAirspaceClassificationType,
   uuidAirspace   id REFERENCES Airspace (uuid)
 );
@@ -2296,7 +2281,7 @@ CREATE TABLE AirspaceLayerClass
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
 CREATE TABLE AirspaceLayer
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_layer'),
+  id                     INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer'),
   upperLimit             ValDistanceVerticalType,
   upperLimitReference    CodeVerticalReferenceType,
   lowerLimit             ValDistanceVerticalType,
@@ -2309,7 +2294,7 @@ CREATE TABLE AirspaceLayer
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceVolume
 CREATE TABLE AirspaceVolume
 (
-  id   INTEGER NOT NULL PRIMARY KEY default nextval('auto_id_airspace_volume'),
+  id                    INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_volume'),
   upperLimit            ValDistanceVerticalType,
   upperLimitReference   CodeVerticalReferenceType,
   maximumLimit          ValDistanceVerticalType,
@@ -2378,7 +2363,7 @@ CREATE VIEW DRA AS
            AirTrafficManagementService.uuid = Service.uuid
            AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
            AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
--- правильно ли то что ниже (связь)?
+    -- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
      FROM Unit, OrganisationAuthority, AuthorityForAirspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
@@ -2425,7 +2410,7 @@ CREATE VIEW PRA AS
            AirTrafficManagementService.uuid = Service.uuid
            AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
            AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
--- правильно ли то что ниже (связь)?
+    -- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
      FROM Unit, OrganisationAuthority, AuthorityForAirspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
@@ -2472,7 +2457,7 @@ CREATE VIEW RSA AS
            AirTrafficManagementService.uuid = Service.uuid
            AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
            AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
--- правильно ли то что ниже (связь)?
+    -- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
      FROM Unit, OrganisationAuthority, AuthorityForAirspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
@@ -2522,7 +2507,7 @@ CREATE VIEW CTA AS
            AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
            Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
            AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
--- правильно ли то что ниже (связь)?
+    -- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
      FROM Unit, OrganisationAuthority, AuthorityForAirspace, AirspaceLayerClass, Airspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
@@ -2576,7 +2561,7 @@ CREATE VIEW CTR AS
            AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
            Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
            AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
--- правильно ли то что ниже (связь)?
+    -- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
      FROM Unit, OrganisationAuthority, AuthorityForAirspace, AirspaceLayerClass, Airspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
