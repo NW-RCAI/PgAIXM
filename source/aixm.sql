@@ -68,23 +68,33 @@ id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType,
 CodeOrganisationDesignatorType, TextDesignatorType, TextInstructionType, DateTimeType, ValFrictionType,
 TimeType, ValPercentType, latitude, longitude, ValLCNType, ValWeightBaseType, ValBearingType,
-textaddresstype, CodeAirspaceDesignatorType, NoNumberType, codenavaiddesignatortype CASCADE;
+textaddresstype, CodeAirspaceDesignatorType, NoNumberType, codenavaiddesignatortype,
+CodeMilitaryStatusType, CodeMilitaryOperationsType, CodeRunwaySectionType,
+CodeSideType, CodeDirectionTurnType, CodeRunwayMarkingType, CodeMarkingConditionType,
+CodeLightingJARType, CodeApproachGuidanceType, CodeLightIntensityType, CodeColourType, CodeTelecomNetworkType,
+CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType,
+CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
+CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
+CodeRouteOriginType,CodeMilitaryStatusType CASCADE;
+
+/*
+coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
+CodeApproachGuidanceType, CodeLightIntensityType,CodeColourType, codetelecomnetworktype, CodeFlightDestinationType, CodeFacilityRankingType,
+CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType,CodeAirspaceType, CodeAirspaceClassificationType,
+CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType,
+CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeMilitaryStatusType,
+*/
 
 DROP TYPE IF EXISTS
 CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
-uomdepthtype, CodeYesNoType, CodeMilitaryOperationsType, UomDistanceVerticalType, ValDistanceVerticalType,
+uomdepthtype, CodeYesNoType, UomDistanceVerticalType, ValDistanceVerticalType,
 valdistanceverticalbasetype, valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType,
 ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType, CodeOrganisationType, ValDepthType,
 CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType, ValSlopeType,
 UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
 CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
 codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
-valfrictiontype, CodePCNPavementType, coderunwaysectiontype, codesidetype, valpressuretype, CodeLightingJARType,
-CodeDirectionTurnType, CodeMarkingConditionType, CodeApproachGuidanceType, CodeColourType, CodeLightIntensityType,
-coderunwaymarkingtype, textphonetype, codetelecomnetworktype, CodeFlightDestinationType, CodeFacilityRankingType,
-CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType,
-CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType,
-CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType, CodeRouteOriginType, CodeMilitaryStatusType,
+valfrictiontype, CodePCNPavementType,  valpressuretype, textphonetype,
 CodeMilitaryTrainingType, CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType,
 codeunitdependencytype, codeairspacepointpositiontype, codeleveltype, coderoutesegmentpathtype, coderoutenavigationtype,
 codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype, codefreeflighttype, codervsmpointroletype,
@@ -127,33 +137,43 @@ CREATE DOMAIN TextAddressType AS VARCHAR(500);
 CREATE DOMAIN CodeICAOType AS CHAR(4)
 CHECK (VALUE ~ '[A-Z]{4}');
 
--- Трехбуквенный индекс аэродрома IATA (http://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code)
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
+/*
+Трехбуквенный индекс аэродрома IATA (http://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code)
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
+*/
 CREATE DOMAIN CodeIATAType AS CHAR(3)
 CHECK (VALUE ~ '[A-Z]{3}');
 
--- Тип объекта AirportHeliport:
--- AD - только аэродром
--- АН - аэродром и вертодром
--- НР - только вертодром
--- LS - посадочная площадка
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
+/*
+Тип объекта AirportHeliport:
+AD - только аэродром
+АН - аэродром и вертодром
+НР - только вертодром
+LS - посадочная площадка
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
+*/
 CREATE TYPE CodeAirportHeliportType AS ENUM ('AD', 'AH', 'HP', 'LS', 'OTHER');
 
---  Тип данных для хранения значений: Да или Нет
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
+/*
+Тип данных для хранения значений: Да или Нет
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
+*/
 CREATE TYPE CodeYesNoType AS ENUM ('Yes', 'No', 'Other');
 
--- Признак принадлежности к военным:
--- CIVIL - только гражданская авиация
--- MIL - только военная авиация
--- JOINT - совместного использования
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
-CREATE TYPE CodeMilitaryOperationsType AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER');
+/*
+Признак принадлежности к военным:
+CIVIL - только гражданская авиация
+MIL - только военная авиация
+JOINT - совместного использования
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
+*/
+CREATE DOMAIN CodeMilitaryOperationsType AS VARCHAR(60)
+CHECK (VALUE ~ '(MIL|CIVIL|ALL|OTHER)*');
+-- AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER');
 
 -- A unit of measurement for a vertical distance:
 -- FT - feet
@@ -575,7 +595,9 @@ CREATE TYPE ValPressureType AS (
 -- BOTH - распределено по двум сторонам оси
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
-CREATE TYPE CodeSideType AS ENUM ('LEFT', 'RIGHT', 'BOTH', 'OTHER');
+CREATE DOMAIN CodeSideType AS VARCHAR(40)
+CHECK (VALUE ~ '((LEFT|RIGHT|BOTH|EITHER)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeSideType AS ENUM ('LEFT', 'RIGHT', 'BOTH', 'OTHER');
 
 -- Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
 -- TDZ - зона приземления
@@ -594,7 +616,10 @@ CREATE TYPE CodeSideType AS ENUM ('LEFT', 'RIGHT', 'BOTH', 'OTHER');
 -- 3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
-CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT', 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
+CREATE DOMAIN CodeRunwaySectionType AS VARCHAR(40)
+CHECK (VALUE ~ '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT',
+-- 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
 
 -- Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
 -- Угол измеряется по часовой стрелке от 0 до 360 градусов. Значение может быть радиалом всенаправленного азимутального радиомаяка (РМА, VHF). Например, направление на запад выражается как 270 градусов.
@@ -609,7 +634,9 @@ CHECK ( VALUE >= 0 AND VALUE <= 360);
 -- EITHER	- любое левое или правое направление
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDirectionTurnType
-CREATE TYPE CodeDirectionTurnType AS ENUM ('LEFT', 'RIGHT', 'EITHER', 'OTHER');
+CREATE DOMAIN CodeDirectionTurnType AS VARCHAR(40)
+CHECK (VALUE ~ '((LEFT|RIGHT|EITHER)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeDirectionTurnType AS ENUM ('LEFT', 'RIGHT', 'EITHER', 'OTHER');
 
 -- Значение наклона или градиента восхождения/спуска, выраженное в процентах
 --
@@ -629,7 +656,9 @@ CHECK ( VALUE >= -100 AND VALUE <= 100);
 -- HELIPORT - специфичная маркировка для вертолетов
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
-CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION', 'NONPRECISION', 'BASIC', 'NONE', 'RUNWAY_NUMBERS', 'NON_STANDARD', 'HELIPORT', 'OTHER');
+CREATE DOMAIN CodeRunwayMarkingType AS VARCHAR(40)
+CHECK (VALUE ~ '((PRECISION|NONPRECISION|BASIC|NONE|RUNWAY_NUMBERS|NON_STANDARD|HELIPORT)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION', 'NONPRECISION', 'BASIC', 'NONE', 'RUNWAY_NUMBERS', 'NON_STANDARD', 'HELIPORT', 'OTHER');
 
 -- Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
 -- GOOD - маркировка в хорошем состоянии
@@ -638,7 +667,9 @@ CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION', 'NONPRECISION', 'BASIC',
 -- EXCELLENT - маркировка в прекрасном состоянии
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
-CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'EXCELLENT', 'OTHER');
+CREATE DOMAIN CodeMarkingConditionType AS VARCHAR(40)
+CHECK (VALUE ~ '((GOOD|FAIR|POOR|EXCELLENT)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'EXCELLENT', 'OTHER');
 
 -- Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
 -- FALS - полныое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
@@ -647,7 +678,9 @@ CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'EXCELLENT
 -- NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
-CREATE TYPE CodeLightingJARType AS ENUM ('FALS', 'IALS', 'BALS', 'NALS', 'OTHER');
+CREATE DOMAIN CodeLightingJARType AS VARCHAR(40)
+CHECK (VALUE ~ '((FALS|IALS|BALS|NALS)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeLightingJARType AS ENUM ('FALS', 'IALS', 'BALS', 'NALS', 'OTHER');
 
 -- Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
 -- NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
@@ -660,7 +693,10 @@ CREATE TYPE CodeLightingJARType AS ENUM ('FALS', 'IALS', 'BALS', 'NALS', 'OTHER'
 -- MLS_PRECISION - микроволновая точностная система захода на посадки
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
-CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION', 'ILS_PRECISION_CAT_I', 'ILS_PRECISION_CAT_II', 'ILS_PRECISION_CAT_IIIA', 'ILS_PRECISION_CAT_IIIB', 'ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
+CREATE DOMAIN CodeApproachGuidanceType AS VARCHAR(40)
+CHECK (VALUE ~ '((NON_PRECISION|ILS_PRECISION_CAT_I|ILS_PRECISION_CAT_II|ILS_PRECISION_CAT_IIIA|ILS_PRECISION_CAT_IIIB|ILS_PRECISION_CAT_IIIC|ILS_PRECISION_CAT_IIID|MLS_PRECISION)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION', 'ILS_PRECISION_CAT_I',
+-- 'ILS_PRECISION_CAT_II', 'ILS_PRECISION_CAT_IIIA', 'ILS_PRECISION_CAT_IIIB', 'ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
 
 -- Код, идентифицирующий уровень интенсивности источника света
 -- LIL - низкая интенсивность света
@@ -670,12 +706,17 @@ CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION', 'ILS_PRECISION_CA
 -- PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
-CREATE TYPE CodeLightIntensityType AS ENUM ('LIL', 'LIM', 'LIH', 'LIL_LIH', 'PREDETERMINED', 'OTHER');
+CREATE DOMAIN CodeLightIntensityType AS VARCHAR(40)
+CHECK (VALUE ~ '((LIL|LIM|LIH|LIL_LIH|PREDETERMINED)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeLightIntensityType AS ENUM ('LIL', 'LIM', 'LIH', 'LIL_LIH', 'PREDETERMINED', 'OTHER');
 
 -- Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
-CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', 'PURPLE', 'ORANGE', 'AMBER', 'BLACK', 'BROWN', 'GREY', 'LIGHT_GREY', 'MAGENTA', 'PINK', 'VIOLET', 'OTHER');
+CREATE DOMAIN CodeColourType AS VARCHAR(40)
+CHECK (VALUE ~ '((YELLOW|RED|WHITE|BLUE|GREEN|PURPLE|ORANGE|AMBER|BLACK|BROWN|GREY|LIGHT_GREY|MAGENTA|PINK|VIOLET)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', 'PURPLE',
+-- 'ORANGE', 'AMBER', 'BLACK', 'BROWN', 'GREY', 'LIGHT_GREY', 'MAGENTA', 'PINK', 'VIOLET', 'OTHER');
 
 -- Codelist containing the Telecom Networks that can be used to address an organisation.
 -- AFTN - The data interchange in the AFS is performed by the Aeronautical Fixed Telecommunications Network, AFTN. This is a message handling network running according to ICAO Standards documented in Annex 10 to the ICAO Convention
@@ -687,7 +728,9 @@ CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', '
 -- RESURFACING - работы по асфальтированию
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTelecomNetworkType
-CREATE TYPE CodeTelecomNetworkType AS ENUM ('AFTN', 'AMHS', 'INTERNET', 'SITA', 'ACARS', 'ADNS', 'OTHER');
+CREATE DOMAIN CodeTelecomNetworkType AS VARCHAR(40)
+CHECK (VALUE ~ '((AFTN|AMHS|INTERNET|SITA|ACARS|ADNS)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeTelecomNetworkType AS ENUM ('AFTN', 'AMHS', 'INTERNET', 'SITA', 'ACARS', 'ADNS', 'OTHER');
 
 -- A phone or facsimile number.
 --
@@ -702,7 +745,9 @@ CHECK (VALUE ~ '(\+)?[0-9\s\-\(\)]+');
 -- ALL - все типы
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightDestinationType
-CREATE TYPE CodeFlightDestinationType AS ENUM ('ARR', 'DEP', 'OVERFLY', 'ALL', 'OTHER');
+CREATE DOMAIN CodeFlightDestinationType AS VARCHAR(40)
+CHECK (VALUE ~ '((ARR|DEP|OVERFLY|ALL)|OTHER: [A-Z]{30})');
+-- CREATE TYPE CodeFlightDestinationType AS ENUM ('ARR', 'DEP', 'OVERFLY', 'ALL', 'OTHER');
 
 -- Список очередности обслуживания внутри последовательности анологичных видов обслуживания: первичная, вторичная, альтернативная
 -- PRIMARY
@@ -712,7 +757,9 @@ CREATE TYPE CodeFlightDestinationType AS ENUM ('ARR', 'DEP', 'OVERFLY', 'ALL', '
 -- GUARD - защитная
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFacilityRankingType
-CREATE TYPE CodeFacilityRankingType AS ENUM ('PRIMARY', 'SECONDARY', 'ALTERNATE', 'EMERG', 'GUARD', 'OTHER');
+CREATE DOMAIN CodeFacilityRankingType AS VARCHAR(40)
+CHECK (VALUE ~ '((PRIMARY|SECONDARY|ALTERNATE|EMERG|GUARD)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeFacilityRankingType AS ENUM ('PRIMARY', 'SECONDARY', 'ALTERNATE', 'EMERG', 'GUARD', 'OTHER');
 
 -- Список значений, используемых для определения сервиса по плнированию полетов и регулированию потоков
 -- FPL - служба, предоставляющая одобрение и распределение планирования полетов, относящееся к ATC Unites (к объединениям Контроля Воздушного Движения -?)
@@ -722,7 +769,9 @@ CREATE TYPE CodeFacilityRankingType AS ENUM ('PRIMARY', 'SECONDARY', 'ALTERNATE'
 -- SCHED - служба, составляющая расписание и распределение временных интервалов
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATFMType
-CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SCHED', 'OTHER');
+CREATE DOMAIN CodeServiceATFMType AS VARCHAR(40)
+CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SCHED', 'OTHER');
 
 -- Список значений, используемых для определения сервиса по предоставлению информации
 -- AFIS - служба полетной информации аэродрома, как дано в ICAO Annex 11
@@ -745,7 +794,10 @@ CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SC
 -- AWOS - автоматизированная служба обследования погоды
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
-CREATE TYPE CodeServiceInformationType AS ENUM ('AFIS', 'AIS', 'ATIS', 'BRIEFING', 'FIS', 'OFIS_VHF', 'OFIS_HF', 'INFO', 'RAF', 'METAR', 'SIGMET', 'TWEB', 'TAF', 'VOLMET', 'ALTIMETER', 'ASOS', 'AWOS', 'OTHER');
+CREATE DOMAIN CodeServiceInformationType AS VARCHAR(40)
+CHECK (VALUE ~ '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeServiceInformationType AS ENUM ('AFIS', 'AIS', 'ATIS', 'BRIEFING', 'FIS', 'OFIS_VHF', 'OFIS_HF',
+-- 'INFO', 'RAF', 'METAR', 'SIGMET', 'TWEB', 'TAF', 'VOLMET', 'ALTIMETER', 'ASOS', 'AWOS', 'OTHER');
 
 -- Список значений, используемых для определения сервиса по поиску и спасению
 -- ALRS - служба предупреждения
@@ -753,7 +805,9 @@ CREATE TYPE CodeServiceInformationType AS ENUM ('AFIS', 'AIS', 'ATIS', 'BRIEFING
 -- RCC - служба по координации спасательных операций
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceSARType
-CREATE TYPE CodeServiceSARType AS ENUM ('ALRS', 'SAR', 'RCC', 'OTHER');
+CREATE DOMAIN CodeServiceSARType AS VARCHAR(40)
+CHECK (VALUE ~ '((ALRS|SAR|RCC)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeServiceSARType AS ENUM ('ALRS', 'SAR', 'RCC', 'OTHER');
 
 --Список значений, идентифицирующих тип воздушного пространства
 -- NAS - национальная система воздушного пространства.
@@ -830,7 +884,10 @@ CREATE TYPE CodeServiceSARType AS ENUM ('ALRS', 'SAR', 'RCC', 'OTHER');
 -- NAS_P - часть национальной системы воздушного пространства
 --
 --https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
-CREATE TYPE CodeAirspaceType AS ENUM ('NAS', 'FIR', 'FIR_P', 'UIR', 'UIR_P', 'CTA', 'CTA_P', 'OCA', 'OCA_P', 'UTA', 'UTA_P', 'TMA', 'TMA_P', 'CTR', 'CTR_P', 'OTA', 'SECTOR', 'SECTOR_C', 'TSA', 'CBA', 'RCA', 'RAS', 'AWY', 'MTR', 'P', 'R', 'D', 'ADIZ', 'NO_FIR', 'PART', 'CLASS', 'POLITICAL', 'D_OTHER', 'TRA', 'A', 'W', 'PROTECT', 'AMA', 'ASR', 'ADV', 'UADV', 'ATZ', 'ATZ_P', 'HTZ', 'NAS_P', 'OTHER');
+CREATE DOMAIN CodeAirspaceType AS VARCHAR(40)
+CHECK (VALUE ~ '((NAS|FIR|FIR_P|UIR|UIR_P|CTA|CTA_P|OCA|OCA_P|UTA|UTA_P|TMA|TMA_P|CTR|CTR_P|OTA|SECTOR|SECTOR_C|TSA|CBA|RCA|RAS|AWY|MTR|P|R|D|ADIZ|NO_FIR|PART|CLASS|POLITICAL|D_OTHER|TRA|A|W|PROTECT|AMA|ASR|ADV|UADV|ATZ|ATZ_P|HTZ|NAS_P)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeAirspaceType AS ENUM ('NAS', 'FIR', 'FIR_P', 'UIR', 'UIR_P', 'CTA', 'CTA_P', 'OCA', 'OCA_P',
+-- 'UTA', 'UTA_P', 'TMA', 'TMA_P', 'CTR', 'CTR_P', 'OTA', 'SECTOR', 'SECTOR_C', 'TSA', 'CBA', 'RCA', 'RAS', 'AWY', 'MTR', 'P', 'R', 'D', 'ADIZ', 'NO_FIR', 'PART', 'CLASS', 'POLITICAL', 'D_OTHER', 'TRA', 'A', 'W', 'PROTECT', 'AMA', 'ASR', 'ADV', 'UADV', 'ATZ', 'ATZ_P', 'HTZ', 'NAS_P', 'OTHER');
 
 -- Допустимый тип воздушного пространства
 --
@@ -847,13 +904,17 @@ CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*'
 -- G - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП и получают службу полетной информации по требованию.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceClassificationType
-CREATE TYPE CodeAirspaceClassificationType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'OTHER');
+CREATE DOMAIN CodeAirspaceClassificationType AS VARCHAR(40)
+CHECK (VALUE ~ '((A|B|C|D|E|F|G)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeAirspaceClassificationType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'OTHER');
 
 -- SFC - расстояние, измеренное от поверхности Земли (эквивалентно AGL - над уровнем Земли)
 -- MSL - расстояние, измеренное от среднего уровня моря (эквивалентно высоте)
 -- W84 - расстояние, измеренное от эллипсоида WGS84
 -- STD - вертикальное расстояние, измеренное с помощью альтиметра, установленного по стандартной атмосфере
-CREATE TYPE CodeVerticalReferenceType AS ENUM ('SFC', 'MSL', 'W84', 'STD', 'OTHER');
+CREATE DOMAIN CodeVerticalReferenceType AS VARCHAR(40)
+CHECK (VALUE ~ '((SFC|MSL|W84|STD)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeVerticalReferenceType AS ENUM ('SFC', 'MSL', 'W84', 'STD', 'OTHER');
 
 -- ABOVE_LOWER - на нижней высоте или выше нее
 -- BELOW_UPPER - на верхней высоте или ниже нее
@@ -864,7 +925,10 @@ CREATE TYPE CodeVerticalReferenceType AS ENUM ('SFC', 'MSL', 'W84', 'STD', 'OTHE
 -- AS_ASSIGNED - назначается во время операций (например, службой управления воздушным движением)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
-CREATE TYPE CodeAltitudeUseType AS ENUM ('ABOVE_LOWER', 'BELOW_UPPER', 'AT_LOWER', 'BETWEEN', 'RECOMMENDED', 'EXPECT_LOWER', 'AS_ASSIGNED', 'OTHER');
+CREATE DOMAIN CodeAltitudeUseType AS VARCHAR(40)
+CHECK (VALUE ~ '((ABOVE_LOWER|BELOW_UPPER|AT_LOWER|BETWEEN|RECOMMENDED|EXPECT_LOWER|AS_ASSIGNED)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeAltitudeUseType AS ENUM ('ABOVE_LOWER', 'BELOW_UPPER', 'AT_LOWER', 'BETWEEN',
+-- 'RECOMMENDED', 'EXPECT_LOWER', 'AS_ASSIGNED', 'OTHER');
 
 -- Префикс указателя пути (ИКАО).
 -- K - вертолетная МВТ
@@ -873,12 +937,17 @@ CREATE TYPE CodeAltitudeUseType AS ENUM ('ABOVE_LOWER', 'BELOW_UPPER', 'AT_LOWER
 -- T - TACAN Route (военный)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorPrefixType
-CREATE TYPE CodeRouteDesignatorPrefixType AS ENUM ('K', 'U', 'S', 'T', 'OTHER');
+CREATE DOMAIN CodeRouteDesignatorPrefixType AS VARCHAR(40)
+CHECK (VALUE ~ '((K|U|S|T)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeRouteDesignatorPrefixType AS ENUM ('K', 'U', 'S', 'T', 'OTHER');
 
 -- Однобуквенный указатель для пути
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
-CREATE TYPE CodeRouteDesignatorLetterType AS ENUM ('A', 'B', 'G', 'H', 'J', 'L', 'M', 'N', 'P', 'Q', 'R', 'T', 'V', 'W', 'Y', 'Z', 'OTHER');
+CREATE DOMAIN CodeRouteDesignatorLetterType AS VARCHAR(40)
+CHECK (VALUE ~ '((A|B|G|H|J|L|M|N|P|Q|R|T|V|W|Y|Z)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeRouteDesignatorLetterType AS ENUM ('A', 'B', 'G', 'H', 'J', 'L', 'M', 'N', 'P', 'Q', 'R',
+--  'T', 'V', 'W', 'Y', 'Z', 'OTHER');
 
 -- A (positive) number of similar items.
 --
@@ -888,21 +957,28 @@ CREATE DOMAIN NoNumberType AS INTEGER;
 -- Буквы латинского алфавита
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
-CREATE TYPE CodeUpperAlphaType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'OTHER');
+CREATE DOMAIN CodeUpperAlphaType AS VARCHAR(40)
+CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeUpperAlphaType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+-- 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'OTHER');
 
 -- Классификация путей на пути ATS и северно-атлантические пути.
 -- ATS - участки, используемые с разрешения службы движения при повышенном внимании (путь ATS описан в ICAO Annex 11).
 -- NAT - маршрут выхода на северо - атлантический трек (часть организовнной системы путей)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteType
-CREATE TYPE CodeRouteType AS ENUM ('ATS', 'NAT', 'OTHER');
+CREATE DOMAIN CodeRouteType AS VARCHAR(40)
+CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
+--CREATE TYPE CodeRouteType AS ENUM ('ATS', 'NAT', 'OTHER');
 
 -- Правила полета, которые должны соблюдаится воздушным судном.
 -- IFR
 -- VFR
 -- ALL - IFR и VFR
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightRuleType
-CREATE TYPE CodeFlightRuleType AS ENUM ('IFR', 'VFR', 'ALL', 'OTHER');
+CREATE DOMAIN CodeFlightRuleType AS VARCHAR(40)
+CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
+-- --CREATE TYPE CodeFlightRuleType AS ENUM ('IFR', 'VFR', 'ALL', 'OTHER');
 
 -- Код, обозначающий, является путь международным или региональным (местным)
 -- INTL - международный
@@ -910,14 +986,18 @@ CREATE TYPE CodeFlightRuleType AS ENUM ('IFR', 'VFR', 'ALL', 'OTHER');
 -- BOTH - и то, и другое
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteOriginType
-CREATE TYPE CodeRouteOriginType AS ENUM ('INTL', 'DOM', 'BOTH', 'OTHER');
+--CREATE TYPE CodeRouteOriginType AS ENUM ('INTL', 'DOM', 'BOTH', 'OTHER');
+CREATE DOMAIN CodeRouteOriginType AS VARCHAR(40)
+CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
 
 -- Код, разделяющий военный и гражданский типы
 -- MIL - военный
 -- CIVIL - гражданский
 -- ALL - и военный, и гражданский
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryStatusType
-CREATE TYPE CodeMilitaryStatusType AS ENUM ('MIL', 'CIVIL', 'ALL', 'OTHER');
+CREATE DOMAIN CodeMilitaryStatusType AS VARCHAR(40)
+CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
+--AS ENUM ('MIL', 'CIVIL', 'ALL', 'OTHER');
 
 -- Код, обозначающий тип полета на военном тренировочном пути
 -- IR - тренировочный путь IFR
@@ -1699,7 +1779,7 @@ CREATE VIEW airports AS
         runway
         JOIN (runwaydirection
         JOIN (SELECT
-                array_agg(runwaydirectionlightsystem.position) AS lightsystem,
+                array_agg(runwaydirectionlightsystem.uuid) AS lightsystem,
                 runwaydirectionlightsystem.uuidrunwaydirection
               FROM runwaydirectionlightsystem
               GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
@@ -1719,7 +1799,7 @@ CREATE VIEW AIRP_TABLE AS
     uuid,
     name,
     designator,
-    (SELECT array_agg(runwaydirectionlightsystem.position) AS lightsystem
+    (SELECT array_agg(runwaydirectionlightsystem.uuid) AS lightsystem
      FROM runwaydirectionlightsystem, runwaydirection, runway
      WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
            runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
@@ -1801,20 +1881,22 @@ CREATE VIEW AIRP_MAP_2 AS
     abandoned
   FROM airportheliport;
 
--- first
---CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
---DO INSTEAD
-  --INSERT INTO AirportHeliport VALUES (
-  --  NEW.uuid,
-  --  NEW.designator,
- --   NEW.name);
+/*
+first
+CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
+DO INSTEAD
+INSERT INTO AirportHeliport VALUES (
+    NEW.uuid,
+    NEW.designator,
+    NEW.name);
 
---CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
---DO INSTEAD
- -- UPDATE AirportHeliport
- -- SET uuid     = NEW.uuid,
-  --  designator = NEW.designator,
-  --  name       = NEW.name;
+CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
+DO INSTEAD
+  UPDATE AirportHeliport
+  SET uuid     = NEW.uuid,
+    designator = NEW.designator,
+    name       = NEW.name;
+*/
 
 -- second
 CREATE OR REPLACE FUNCTION arp_function()
