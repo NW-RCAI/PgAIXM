@@ -1396,7 +1396,7 @@ CREATE TABLE Point
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  id               INTEGER NOT NULL PRIMARY KEY REFERENCES Point (id),
+  id               INTEGER PRIMARY KEY REFERENCES Point (id),
   --elevation        ValDistanceVerticalType,
   elevation ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
@@ -2017,7 +2017,7 @@ CREATE TABLE Service
   rank             CodeFacilityRankingType,
   compliantICAO    CodeYesNoType,
   name             TextNameType,
-  idElevatedPoint  INTEGER NOT NULL REFERENCES ElevatedPoint (id),
+  idElevatedPoint  INTEGER REFERENCES ElevatedPoint (id),
   uuidUnit         id REFERENCES Unit (uuid)
 );
 
@@ -2100,7 +2100,7 @@ CREATE TABLE RadioCommunicationChannel
   selectiveCall         CodeYesNoType,
   flightChecked         CodeYesNoType,
   trafficDirection      CodeCommunicationDirectionType,
-  idElevatedPoint       INTEGER NOT NULL REFERENCES ElevatedPoint (id)
+  idElevatedPoint       INTEGER REFERENCES ElevatedPoint (id)
 );
 
 CREATE TABLE Service_RadioCommunicationChannel
