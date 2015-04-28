@@ -9,7 +9,7 @@ AirspaceLayer, EnRouteSegmentPoint, RoutePortion, SegmentPoint, RouteSegment, Ro
 AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, SignificantPoint, Curve, AirportHeliport_InformationService,
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
-GroundLightingAvailability CASCADE;
+GroundLightingAvailability, CodeServiceGroundControlType, CodeAircraftGroundServiceType CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -20,14 +20,14 @@ CodeRunwayMarkingType, CodeMarkingConditionType, CodeLightingJARType, CodeApproa
 CodeColourType, CodeTelecomNetworkType, CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType,
 CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
-CodeRouteOriginType, CodeMilitaryStatusType CASCADE;
+CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
 CodeApproachGuidanceType, CodeLightIntensityType,CodeColourType, codetelecomnetworktype, CodeFlightDestinationType, CodeFacilityRankingType,
 CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType,CodeAirspaceType, CodeAirspaceClassificationType,
 CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType,
-CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeMilitaryStatusType,
+CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype,
 */
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
@@ -41,7 +41,7 @@ valfrictiontype, CodePCNPavementType, valpressuretype, textphonetype, CodeMilita
 CodeStatusAirspaceType, CodeAirspacePointRoleType, codeunitdependencytype, codeairspacepointpositiontype, codeleveltype,
 coderoutesegmentpathtype, coderoutenavigationtype, codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype,
 codefreeflighttype, codervsmpointroletype, codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype,
-uomfrequencytype, valfrequencybasetype, valfrequencytype, coderadioemissiontype, codecommunicationchanneltype,
+ valfrequencybasetype, valfrequencytype, coderadioemissiontype, codecommunicationchanneltype,
 codecommunicationdirectiontype, codeunittype, codeserviceatctype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
 codesignalperformanceilstype, codecoursequalityilstype, codeintegritylevelilstype CASCADE;
 
@@ -705,14 +705,16 @@ CREATE DOMAIN CodeFacilityRankingType AS VARCHAR(40)
 CHECK (VALUE ~ '((PRIMARY|SECONDARY|ALTERNATE|EMERG|GUARD)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeFacilityRankingType AS ENUM ('PRIMARY', 'SECONDARY', 'ALTERNATE', 'EMERG', 'GUARD', 'OTHER');
 
--- Список значений, используемых для определения сервиса по плнированию полетов и регулированию потоков
--- FPL - служба, предоставляющая одобрение и распределение планирования полетов, относящееся к ATC Unites (к объединениям Контроля Воздушного Движения -?)
--- FPLV - служба, предоставляющая утверждение планирования полетов
--- ATFM - служба управления воздушными потоками
--- CLEARANCE - служба, предоставляющая разрешения (вход, посадка, перелет, выход и т.д.) в данной точке
--- SCHED - служба, составляющая расписание и распределение временных интервалов
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATFMType
+/*
+Список значений, используемых для определения сервиса по плнированию полетов и регулированию потоков
+FPL - служба, предоставляющая одобрение и распределение планирования полетов, относящееся к ATC Unites (к объединениям Контроля Воздушного Движения -?)
+FPLV - служба, предоставляющая утверждение планирования полетов
+ATFM - служба управления воздушными потоками
+CLEARANCE - служба, предоставляющая разрешения (вход, посадка, перелет, выход и т.д.) в данной точке
+SCHED - служба, составляющая расписание и распределение временных интервалов
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATFMType
+*/
 CREATE DOMAIN CodeServiceATFMType AS VARCHAR(40)
 CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SCHED', 'OTHER');
@@ -730,7 +732,7 @@ CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
 -- RAF - служба регионального прогноза
 -- METAR - регулярный авиационный отчет по погоде
 -- SIGMET - информация, издаваемая службой метеоролического наблюдения, касающаяся появления или ожидаемого появлени указанного проходящего погодного явления, котрое может повлиять на безопасность операций воздушного судна
--- TWEB - служба передачи погоды (?)
+-- TWEB - служба вещания записей о погоде
 -- TAF - служба метеорологического прогноза в области терминала
 -- VOLMET - служба передачи метеорологической информации для воздушного судна в полете
 -- ALTIMETER - служба предоставления информации настроек альтиметра
@@ -1098,11 +1100,12 @@ CREATE TYPE CodeCommunicationModeType AS ENUM ('HF', 'VHF', 'VDL1', 'VDL2', 'VDL
 -- GHZ - ГГц
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFrequencyType
-CREATE TYPE UomFrequencyType AS ENUM ('HZ', 'KHZ', 'MHZ', 'GHZ', 'OTHER');
-
+--CREATE TYPE UomFrequencyType AS ENUM ('HZ', 'KHZ', 'MHZ', 'GHZ', 'OTHER');
+CREATE DOMAIN UomFrequencyType AS VARCHAR(60);
 -- Значение частоты (радио) навигационной системы
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrequencyType
+
 CREATE DOMAIN ValFrequencyBaseType AS DECIMAL
 CHECK (VALUE > 0);
 CREATE TYPE ValFrequencyType AS (
@@ -1285,6 +1288,28 @@ CREATE TYPE CodeCourseQualityILSType AS ENUM ('A', 'B', 'C', 'D', 'E', 'T', 'OTH
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
 CREATE TYPE CodeIntegrityLevelILSType AS ENUM ('1', '2', '3', '4', 'OTHER');
+
+/*
+TWR - диспетчерская служба с аэродромной вышки
+SMGCS - диспетчерская служба передвижений по поверхности
+TAXI - служба разрешения рулежки (?)
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceGroundControlType
+*/
+CREATE DOMAIN CodeServiceGroundControlType AS VARCHAR(40)
+CHECK (VALUE ~ '((TWR|SMGCS|TAXI)|OTHER: [A-Z]{30})');
+
+/*
+DEICE - служба по защите от обледенения
+HAND - служба обработки сообщений
+HANGAR - служба укрытия (?)
+REPAIR - ремонтная службы
+REMOVE - вывоз непригодных воздухных суден
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAircraftGroundServiceType
+*/
+CREATE DOMAIN CodeAircraftGroundServiceType AS VARCHAR(40)
+CHECK (VALUE ~ '((DEICE|HAND|HANGAR|REPAIR|REMOVE)|OTHER: [A-Z]{30})');
 
 
 DROP SEQUENCE IF EXISTS auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
@@ -1725,7 +1750,7 @@ CREATE VIEW airports AS
         runway
         JOIN (runwaydirection
         JOIN (SELECT
-                array_agg(runwaydirectionlightsystem.uuid) AS lightsystem,
+                count(runwaydirectionlightsystem.uuid) AS lightsystem,
                 runwaydirectionlightsystem.uuidrunwaydirection
               FROM runwaydirectionlightsystem
               GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
@@ -1745,7 +1770,7 @@ CREATE VIEW AIRP_TABLE AS
     uuid,
     name,
     designator,
-    (SELECT array_agg(runwaydirectionlightsystem.uuid) AS lightsystem
+    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
      FROM runwaydirectionlightsystem, runwaydirection, runway
      WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
            runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
@@ -1854,14 +1879,16 @@ BEGIN
   THEN
     INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
     INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
-    -- агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
-        --INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
-    -- в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
-        --INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
-    -- в view агрегатная функция max(truebearing):
-        --INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
-    -- и снова агрегатная - count(runwaydirectionlightsystem.position)
-       -- INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
+    /*
+    агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
+        INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
+     в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
+        INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
+     в view агрегатная функция max(truebearing):
+        INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
+     и снова агрегатная - count(runwaydirectionlightsystem.position)
+        INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
+       */
     INSERT INTO Point VALUES (NEW.id, NEW.geom);
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
@@ -1873,17 +1900,6 @@ BEGIN
       UPDATE elevatedpoint
       SET id = NEW.id, elevation = NEW.elevation
       WHERE id = OLD.id;
-      -- UPDATE Runway
-      -- SET uuid = NEW.uuid, (nominallength).VALUE = NEW.(nominallength).value WHERE UUID = OLD.uuid;
-      -- UPDATE SurfaceCharacteristics
-       --SET id = NEW.id, composition = NEW.composition
-      -- WHERE id = OLD.id;
-       --UPDATE RunwayDirection
-       --SET uuid = NEW.uuid, truebearing = NEW.truebearing
-       --WHERE uuid = OLD.uuid;
-      -- UPDATE RunwayDirectionLightSystem
-      -- SET uuid = NEW.uuid, position = NEW.position
-      --  WHERE uuid = OLD.uuid;
       UPDATE Point
       SET id = NEW.id, geom = NEW.geom
       WHERE id = OLD.id;
@@ -1894,14 +1910,6 @@ BEGIN
       WHERE uuid = OLD.uuid;
       DELETE FROM elevatedpoint
       WHERE id = OLD.id;
-      --  DELETE FROM Runway
-       -- WHERE uuid = OLD.uuid;
-       -- DELETE FROM SurfaceCharacteristics
-      --   WHERE id = OLD.id;
-      --    DELETE FROM RunwayDirection
-      --   WHERE uuid = OLD.uuid;
-      --   DELETE FROM RunwayDirectionLightSystem
-      --  WHERE uuid = OLD.uuid;
       DELETE FROM Point
       WHERE id = OLD.id;
       RETURN NULL;
@@ -2049,6 +2057,14 @@ CREATE TABLE AirportGroundService
   uuid id REFERENCES Service
 );
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AircraftGroundService
+CREATE TABLE AircraftGroundService
+(
+  uuid id REFERENCES AirportGroundService (uuid),
+  type CodeAircraftGroundServiceType
+);
+
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_InformationService
 CREATE TABLE InformationService
 (
@@ -2081,20 +2097,28 @@ CREATE TABLE AirTrafficControlService
   type CodeServiceATCType
 );
 
+CREATE TABLE GroundTrafficControlService
+(
+  uuid id REFERENCES TrafficSeparationService (uuid),
+  type CodeServiceGroundControlType
+);
+
+
+
 -- ВОПРОС:
---CREATE TABLE AirportHeliport_InformationService
---(
-  --uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
-  --uuidInformationService id REFERENCES InformationService (uuid)
---);
+/*
+CREATE TABLE AirportHeliport_InformationService
+(
+  uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
+  uuidInformationService id PRIMARY KEY REFERENCES InformationService (uuid)
+);
 
---CREATE TABLE AirportHeliport_AirportGroundService
---(
-
- -- uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
- -- uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
---);
-
+CREATE TABLE AirportHeliport_AirportGroundService
+(
+ uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
+ uuidAirportGroundService id PRIMARY KEY REFERENCES AirportGroundService (uuid)
+);
+*/
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
 CREATE TABLE SegmentPoint
