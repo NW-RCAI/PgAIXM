@@ -9,7 +9,7 @@ AirspaceLayer, EnRouteSegmentPoint, RoutePortion, SegmentPoint, RouteSegment, Ro
 AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, SignificantPoint, Curve, AirportHeliport_InformationService,
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
-GroundLightingAvailability, CodeServiceGroundControlType, CodeAircraftGroundServiceType CASCADE;
+GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -20,7 +20,7 @@ CodeRunwayMarkingType, CodeMarkingConditionType, CodeLightingJARType, CodeApproa
 CodeColourType, CodeTelecomNetworkType, CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType,
 CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
-CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype CASCADE;
+CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType, CodeAircraftGroundServiceType CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -1356,7 +1356,7 @@ CREATE TABLE OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
-  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_point'),
+  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_point'),
   latitude           latitude,
   longitude          longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
@@ -1930,7 +1930,7 @@ CREATE TABLE Unit
   compliantICAO             CodeYesNoType,
   designator                CodeOrganisationDesignatorType,
   military                  CodeMilitaryOperationsType,
-  idElevatedPoint           SERIAL REFERENCES ElevatedPoint (id),
+  idElevatedPoint           INTEGER REFERENCES ElevatedPoint (id),
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
@@ -2054,13 +2054,13 @@ CREATE TABLE AirTrafficManagementService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportGroundService
 CREATE TABLE AirportGroundService
 (
-  uuid id REFERENCES Service
+  uuid id PRIMARY KEY REFERENCES Service
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AircraftGroundService
 CREATE TABLE AircraftGroundService
 (
-  uuid id REFERENCES AirportGroundService (uuid),
+  uuidAirportGroundService id PRIMARY KEY REFERENCES AirportGroundService (uuid),
   type CodeAircraftGroundServiceType
 );
 
@@ -2091,12 +2091,14 @@ CREATE TABLE TrafficSeparationService
   dataLinkChannel CodeCommunicationChannelType
 );
 
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficControlService
 CREATE TABLE AirTrafficControlService
 (
   uuid id REFERENCES TrafficSeparationService (uuid),
   type CodeServiceATCType
 );
 
+-- https://extranet.eurocontrol.int/redirect/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundTrafficControlService
 CREATE TABLE GroundTrafficControlService
 (
   uuid id REFERENCES TrafficSeparationService (uuid),
