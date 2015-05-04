@@ -20,7 +20,7 @@ CodeRunwayMarkingType, CodeMarkingConditionType, CodeLightingJARType, CodeApproa
 CodeColourType, CodeTelecomNetworkType, CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType,
 CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
-CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType, CodeAircraftGroundServiceType CASCADE;
+CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,  CodeAircraftGroundServiceType CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -32,7 +32,7 @@ CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeM
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
 uomdepthtype, CodeYesNoType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,
-valdistanceverticalbasetypenonnumeric, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType,
+ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType,
 CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType,
 ValSlopeType, UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
 CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
@@ -42,11 +42,12 @@ CodeStatusAirspaceType, CodeAirspacePointRoleType, codeunitdependencytype, codea
 coderoutesegmentpathtype, coderoutenavigationtype, codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype,
 codefreeflighttype, codervsmpointroletype, codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype,
  valfrequencybasetype, valfrequencytype, coderadioemissiontype, codecommunicationchanneltype,
-codecommunicationdirectiontype, codeunittype, codeserviceatctype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
+codecommunicationdirectiontype, codeunittype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
 codesignalperformanceilstype, codecoursequalityilstype, codeintegritylevelilstype CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
+DROP FUNCTION IF EXISTS trigger_insert_polygon();
 
 DROP VIEW IF EXISTS airports, AIRP_TABLE, AIRP_MAP, AIRP_MAP_2, CRA, CTR, DRA, PRA, RSA ;
 
@@ -125,21 +126,24 @@ CHECK (VALUE ~ '(MIL|CIVIL|ALL|OTHER)*');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceVerticalType
 CREATE TYPE UomDistanceVerticalType AS ENUM ('FT', 'M', 'FL', 'SM', 'OTHER');
 
--- Значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства).
--- Этот тип данных также допускает некоторые специфические не числовые значения:
--- GND - значение "Поверхность Земли"
--- UNL - значение "неограниченный"
--- FLOOR - значение "основание (дно) воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной нижней границей
--- CEILING - значение "верх воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной верхней границей
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
+/*
+Значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства).
+Этот тип данных также допускает некоторые специфические не числовые значения:
+GND - значение "Поверхность Земли"
+UNL - значение "неограниченный"
+FLOOR - значение "основание (дно) воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной нижней границей
+CEILING - значение "верх воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной верхней границей
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
+*/
 CREATE DOMAIN ValDistanceVerticalBaseType AS DECIMAL(12, 4);
-CREATE TYPE ValDistanceVerticalBaseTypeNonNumeric AS ENUM ('UNL', 'GND', 'FLOOR', 'CEILING');
+CREATE DOMAIN ValDistanceVerticalBaseTypeNonNumeric AS VARCHAR(40) CHECK (VALUE ~ '((UNL|GND|FLOOR|CEILING)|OTHER: [A-Z]{30})');
 CREATE TYPE ValDistanceVerticalType AS (
   value      ValDistanceVerticalBaseType,
   nonNumeric ValDistanceVerticalBaseTypeNonNumeric,
   unit       UomDistanceVerticalType
 );
+
 
 -- Вообще в AIXM приведены три используемых датума: EGM_96, AHD (Australian Height Datum), NAVD88 (North American Vertical Datum of 1988), но я думаю что, возможно гораздо больше вариантов
 --
@@ -856,13 +860,14 @@ CREATE DOMAIN CodeAirspaceClassificationType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|C|D|E|F|G)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeAirspaceClassificationType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'OTHER');
 
--- SFC - расстояние, измеренное от поверхности Земли (эквивалентно AGL - над уровнем Земли)
--- MSL - расстояние, измеренное от среднего уровня моря (эквивалентно высоте)
--- W84 - расстояние, измеренное от эллипсоида WGS84
--- STD - вертикальное расстояние, измеренное с помощью альтиметра, установленного по стандартной атмосфере
+/*
+SFC - расстояние, измеренное от поверхности Земли (эквивалентно AGL - над уровнем Земли)
+MSL - расстояние, измеренное от среднего уровня моря (эквивалентно высоте)
+W84 - расстояние, измеренное от эллипсоида WGS84
+STD - вертикальное расстояние, измеренное с помощью альтиметра, установленного по стандартной атмосфере
+*/
 CREATE DOMAIN CodeVerticalReferenceType AS VARCHAR(40)
 CHECK (VALUE ~ '((SFC|MSL|W84|STD)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeVerticalReferenceType AS ENUM ('SFC', 'MSL', 'W84', 'STD', 'OTHER');
 
 -- ABOVE_LOWER - на нижней высоте или выше нее
 -- BELOW_UPPER - на верхней высоте или ниже нее
@@ -1220,7 +1225,10 @@ CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'O
 -- CTAF - общая полетная консультационная частотная служба
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
-CREATE TYPE CodeServiceATCType AS ENUM ('ACS', 'UAC', 'OACS', 'APP', 'TWR', 'ADVS', 'CTAF', 'OTHER');
+CREATE DOMAIN CodeServiceATCType AS VARCHAR(40)
+CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
+  --ENUM ('ACS', 'UAC', 'OACS', 'APP', 'TWR', 'ADVS', 'CTAF', 'OTHER');
+
 
 -- Тип ответственности, которую организация нест за аэронавигационный объект (например, за воздушное пространство)
 -- OWN - у организации есть законные права на владение и право собственности на объект.
@@ -1369,7 +1377,6 @@ CREATE TABLE Point
 CREATE TABLE ElevatedPoint
 (
   id               INTEGER PRIMARY KEY REFERENCES Point (id),
-  --elevation        ValDistanceVerticalType,
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -1398,8 +1405,13 @@ CREATE TABLE Curve
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
-  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface'),
+  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_surface'),
   horizontalAccuracy ValDistanceType,
+  -- массивы (arrays) из широт и долгот:
+  latitude           DECIMAL[],
+  longitude          DECIMAL[],
+  coordinates DECIMAL[][],
+  srid               INTEGER REFERENCES spatial_ref_sys (srid),
   geom               GEOMETRY(POLYGON, 4326)
 );
 
@@ -1712,6 +1724,31 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER inserting
 BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert();
+
+CREATE FUNCTION trigger_insert_polygon()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' OR
+      (TG_OP = 'UPDATE' AND (NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
+  THEN
+    IF (NEW.srid = 4326)
+    THEN
+      NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ARRAY[ST_MakePoint(NEW.longitude,NEW.latitude)] )), NEW.srid);
+      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(NEW.longitude, NEW.latitude) )), NEW.srid);
+    ELSE
+      NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(ARRAY[NEW.longitude], ARRAY[NEW.latitude]) )), NEW.srid),4326);
+      --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_GeomFromText('LINESTRING(NEW.longitude, NEW.latitude)' )), NEW.srid), 4326);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER inserting_surface
+BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
+EXECUTE PROCEDURE trigger_insert_polygon();
 
 
 CREATE VIEW airports AS
@@ -2227,7 +2264,7 @@ CREATE TABLE Airspace_AirTrafficManagementService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id           INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_activation'),
+  id           INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_activation'),
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid)
@@ -2242,7 +2279,7 @@ CREATE TABLE AirspaceActivation_OrganisationAuthority
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
 CREATE TABLE AirspaceLayerClass
 (
-  id             INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer_class'),
+  id             INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer_class'),
   classification CodeAirspaceClassificationType,
   uuidAirspace   id REFERENCES Airspace (uuid)
 );
@@ -2250,20 +2287,20 @@ CREATE TABLE AirspaceLayerClass
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
 CREATE TABLE AirspaceLayer
 (
-  id                     INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer'),
+  id                     INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer'),
   upperLimit             ValDistanceVerticalType,
   upperLimitReference    CodeVerticalReferenceType,
   lowerLimit             ValDistanceVerticalType,
   lowerLimitReference    CodeVerticalReferenceType,
   altitudeInterpretation CodeAltitudeUseType,
-  idAirspaceLayerClass   INTEGER NOT NULL REFERENCES AirspaceLayerClass (id),
-  idAirspaceActivation   INTEGER NOT NULL REFERENCES AirspaceActivation (id)
+  idAirspaceLayerClass   INTEGER REFERENCES AirspaceLayerClass (id),
+  idAirspaceActivation   INTEGER REFERENCES AirspaceActivation (id)
 );
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceVolume
 CREATE TABLE AirspaceVolume
 (
-  id                    INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_airspace_volume'),
+  id                    INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_volume'),
   upperLimit            ValDistanceVerticalType,
   upperLimitReference   CodeVerticalReferenceType,
   maximumLimit          ValDistanceVerticalType,
@@ -2273,8 +2310,8 @@ CREATE TABLE AirspaceVolume
   minimumLimit          ValDistanceVerticalType,
   minimumLimitReference CodeVerticalReferenceType,
   width                 ValDistanceType,
-  idSurface             INTEGER NOT NULL REFERENCES Surface (id),
-  idCurve               INTEGER NOT NULL REFERENCES Curve (id),
+  idSurface             INTEGER REFERENCES Surface (id),
+  idCurve               INTEGER REFERENCES Curve (id),
   uuidAirspace          id REFERENCES Airspace (uuid)
 );
 
