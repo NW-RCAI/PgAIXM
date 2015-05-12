@@ -20,7 +20,9 @@ CodeRunwayMarkingType, CodeMarkingConditionType, CodeLightingJARType, CodeApproa
 CodeColourType, CodeTelecomNetworkType, CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType,
 CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
-CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,  CodeAircraftGroundServiceType CASCADE;
+CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,
+CodeAircraftGroundServiceType,CodeUnitType,CodeTimeReferenceType,CodeDayType,CodeTimeEventType,UomDurationType,
+CodeTimeEventCombinationType CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -42,8 +44,8 @@ CodeStatusAirspaceType, CodeAirspacePointRoleType, codeunitdependencytype, codea
 coderoutesegmentpathtype, coderoutenavigationtype, codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype,
 codefreeflighttype, codervsmpointroletype, codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype,
  valfrequencybasetype, valfrequencytype, coderadioemissiontype, codecommunicationchanneltype,
-codecommunicationdirectiontype, codeunittype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
-codesignalperformanceilstype, codecoursequalityilstype, codeintegritylevelilstype CASCADE;
+codecommunicationdirectiontype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
+codesignalperformanceilstype, codecoursequalityilstype, codeintegritylevelilstype,ValDurationType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -114,7 +116,7 @@ JOINT - совместного использования
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
 */
 CREATE DOMAIN CodeMilitaryOperationsType AS VARCHAR(60)
-CHECK (VALUE ~ '(MIL|CIVIL|ALL|OTHER)*');
+CHECK (VALUE ~ '(MIL|CIVIL|JOINT|OTHER: [A-Z]{0,30})');
 -- AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER');
 
 -- A unit of measurement for a vertical distance:
@@ -137,7 +139,7 @@ CEILING - значение "верх воздушного пространств
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
 */
 CREATE DOMAIN ValDistanceVerticalBaseType AS DECIMAL(12, 4);
-CREATE DOMAIN ValDistanceVerticalBaseTypeNonNumeric AS VARCHAR(40) CHECK (VALUE ~ '((UNL|GND|FLOOR|CEILING)|OTHER: [A-Z]{30})');
+CREATE DOMAIN ValDistanceVerticalBaseTypeNonNumeric AS VARCHAR(40) CHECK (VALUE ~ '((UNL|GND|FLOOR|CEILING)|OTHER: [A-Z]{0,30})');
 CREATE TYPE ValDistanceVerticalType AS (
   value      ValDistanceVerticalBaseType,
   nonNumeric ValDistanceVerticalBaseTypeNonNumeric,
@@ -1154,57 +1156,63 @@ CREATE DOMAIN CodeCommunicationChannelType AS VARCHAR;
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
 CREATE TYPE CodeCommunicationDirectionType AS ENUM ('UPLINK', 'DOWNLINK', 'BIDIRECTIONAL', 'UPCAST', 'DOWNCAST', 'OTHER');
 
--- Объединение, предоставляющее отдельный вид обслуживания воздушного движения (ОВД).
--- ACC - Районное диспетчерское обслуживание
--- ADSU - полуавтоматическая система наблюдения за-воздушной обстановкой (службы УВД) , система ADS-B
--- ADVC - консультативный центр
--- ALPS - пост аварийного оповещения
--- AOF - офис службы аэронавигационной информации
--- APP - диспетчерский пункт управления заходом на посадку
--- APP_ARR - диспетчерский пункт управления заходом на посадку (прибытие)
--- APP_DEP - диспетчерский пункт управления заходом на посадку (вылет)
--- ARO - пункт сбора информации о полете
--- ATCC - центр управления воздушным движением, центр УВД
--- ATFMU
--- ATMU - служба управления воздушным движением
--- ATSU
--- BOF
--- BS
--- COM
--- FCST
--- FIC
--- GCA
--- MET
--- MWO
--- NOF
--- OAC
--- PAR
--- RAD
--- RAFC
--- RCC
--- RSC
--- SAR
--- SMC
--- SMR
--- SRA
--- SSR
--- TAR
--- TWR
--- UAC
--- UDF
--- UIC
--- VDF
--- WAFC
--- ARTCC
--- FSS
--- TRACON
--- MIL
--- MILOPS
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
+/*
+Объединение, предоставляющее отдельный вид обслуживания воздушного движения (ОВД).
+ACC - Районное диспетчерское обслуживание
+ADSU - полуавтоматическая система наблюдения за-воздушной обстановкой (службы УВД) , система ADS-B
+ADVC - консультативный центр
+ALPS - пост аварийного оповещения
+AOF - офис службы аэронавигационной информации
+APP - диспетчерский пункт управления заходом на посадку
+APP_ARR - диспетчерский пункт управления заходом на посадку (прибытие)
+APP_DEP - диспетчерский пункт управления заходом на посадку (вылет)
+ARO - пункт сбора информации о полете
+ATCC - центр управления воздушным движением, центр УВД
+ATFMU
+ATMU - служба управления воздушным движением
+ATSU
+BOF
+BS
+COM
+FCST
+FIC
+GCA
+MET
+MWO
+NOF
+OAC
+PAR
+RAD
+RAFC
+RCC
+RSC
+SAR
+SMC
+SMR
+SRA
+SSR
+TAR
+TWR
+UAC
+UDF
+UIC
+VDF
+WAFC
+ARTCC
+FSS
+TRACON
+MIL
+MILOPS
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
 CREATE TYPE CodeUnitType AS ENUM
 ('ACC', 'ADSU', 'ADVC', 'ALPS', 'AOF', 'APP', 'APP_ARR', 'APP_DEP', 'ARO', 'ATCC', 'ATFMU', 'ATMU', 'ATSU', 'BOF', 'BS', 'COM', 'FCST', 'FIC', 'GCA', 'MET', 'MWO', 'NOF', 'OAC', 'PAR',
   'RAD', 'RAFC', 'RCC', 'RSC', 'SAR', 'SMC', 'SMR', 'SRA', 'SSR', 'TAR', 'TWR', 'UAC', 'UDF', 'UIC', 'VDF', 'WAFC', 'ARTCC', 'FSS', 'TRACON', 'MIL', 'MILOPS', 'OTHER');
+*/
+
+CREATE DOMAIN CodeUnitType AS VARCHAR(40)
+CHECK (VALUE ~ '((ACC|ADSU|ADVC|ALPS|AOF|APP|APP_ARR|APP_DEP|ARO|ATCC|ATFMU|ATMU|ATSU|BOF|BS|COM|FCST|FIC|GCA|MET|MWO|NOF|OAC|PAR|RAD|RAFC|RCC|RSC|SAR|SMC|SRA|SSR|TAR|TWR|UAC|UDF|UIC|
+|VDF|WAFC|ARTCC|FSS|TRACON|MIL|MILOPS)|OTHER: [A-Z]{0,30})');
 
 -- Вид зависимости между объединением и связанным с ним объединением
 -- OWNER - связанное объединение (RelatedUnit) - владелец объединения (Unit)
@@ -1305,7 +1313,7 @@ TAXI - служба разрешения рулежки (?)
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceGroundControlType
 */
 CREATE DOMAIN CodeServiceGroundControlType AS VARCHAR(40)
-CHECK (VALUE ~ '((TWR|SMGCS|TAXI)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((TWR|SMGCS|TAXI)|OTHER: [A-Z]{0,30})');
 
 /*
 DEICE - служба по защите от обледенения
@@ -1317,15 +1325,80 @@ REMOVE - вывоз непригодных воздухных суден
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAircraftGroundServiceType
 */
 CREATE DOMAIN CodeAircraftGroundServiceType AS VARCHAR(40)
-CHECK (VALUE ~ '((DEICE|HAND|HANGAR|REPAIR|REMOVE)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((DEICE|HAND|HANGAR|REPAIR|REMOVE)|OTHER: [A-Z]{0,30})');
 
+/*
+Код, обозначающий систему измерения времени (например, UTC)
 
-DROP SEQUENCE IF EXISTS auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeReferenceType
+ */
+CREATE DOMAIN CodeTimeReferenceType AS VARCHAR(40)
+CHECK (VALUE ~ '((UTC|UTC-12|UTC-11|UTC-10|UTC-9|UTC-8|UTC-7|UTC-6|UTC-5|UTC-4|UTC-3|UTC-2|UTC-1|UTC+1|UTC+2|UTC+3|UTC+4|UTC+5|UTC+6|UTC+7|UTC+8|UTC+9|UTC+10|UTC+11|UTC+12|UTC+13|UTC+14)|OTHER: [A-Z]{0,30})');
+
+CREATE DOMAIN DateMonthDayType AS VARCHAR(40)
+CHECK (VALUE ~ '(((0[1-9])|(1[0-9])|(2[0-9]))\-((0[1-9])|10|11|12))|(30\-(01|03|04|05|06|07|08|09|10|11|12))|(31\-(01|03|05|07|08|10|12))|SDLST|EDLST');
+
+/*
+Код, обозначающий определенный день (день недели, праздничные дни, рабочие дни и т.д.)
+MON - понедельник
+TUE - вторник
+WED - среда
+THU - четверг
+FRI - пятница
+SAT - суббота
+SUN - воскресенье
+WORK_DAY - рабочий день
+BEF_WORK_DAY - день, предшествующий рабочему
+AFT_WORK_DAY - день, следующий после рабочего
+HOL - официальный день отдыха
+BEF_HOL - день, предшествующий официальному праздничному дню
+AFT_HOL - день, следующий после официального праздничного дня
+ANY - любой день
+BUSY_FRI - день объявленный как "занятая пятница" официальными властями, отвественными за предоставление аэронавигационной информации на обозначенной территории, чтобы ввести в действие особые меры управления двитжением.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDayType
+ */
+CREATE DOMAIN CodeDayType AS VARCHAR(40)
+CHECK (VALUE ~ '((MON|TUE|WED|THU|FRI|SAT|SUN|WORK_DAY|BEF_WORK_DAY|AFT_WORK_DAY|HOL|BEF_HOL|AFT_HOL|ANY|)|OTHER: [A-Z]{0,30})');
+
+/*
+Код, обозначающий событие (такое как рассвет или закат), которое указываеи на начало периода, описываемого в расписании.
+SR - рассвет
+SS - закат
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeEventType
+ */
+
+CREATE DOMAIN CodeTimeEventType AS VARCHAR(40)
+CHECK (VALUE ~ '((SR|SS)|OTHER: [A-Z]{0,30})');
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDurationType
+CREATE DOMAIN UomDurationType AS VARCHAR(40)
+CHECK (VALUE ~ '((HR|MIN|SEC)|OTHER: [A-Z]{0,30})');
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDurationType
+CREATE TYPE ValDurationType AS (
+  value      DECIMAL,
+  unit       UomDurationType
+);
+
+/*
+Код, показывающий, какое событие в списке событий по времени должно предшествовать остальным или идти после остальных.
+EARLIEST - самое первое событие
+LATEST - самое последнее
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeEventCombinationType
+ */
+CREATE DOMAIN CodeTimeEventCombinationType AS VARCHAR(40)
+CHECK (VALUE ~ '((EARLIEST|LATEST)|OTHER: [A-Z]{0,30})');
+
+DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
-auto_id_segment_point, auto_id_route_portion, auto_id_airspace_activation, auto_id_airspace_layer_class, auto_id_airspace_layer,
-auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability CASCADE;
+auto_id_segment_point, auto_id_route_portion, auto_id_airspace_layer_class, auto_id_airspace_layer,
+auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability,auto_id_properties_with_schedule CASCADE;
 
+CREATE SEQUENCE auto_id_properties_with_schedule;
+CREATE SEQUENCE auto_id_timesheet;
 CREATE SEQUENCE auto_id_city;
 CREATE SEQUENCE auto_id_point;
 CREATE SEQUENCE auto_id_significant_point;
@@ -1343,12 +1416,39 @@ CREATE SEQUENCE auto_id_postal_address;
 CREATE SEQUENCE auto_id_online_contact;
 CREATE SEQUENCE auto_id_segment_point;
 CREATE SEQUENCE auto_id_route_portion;
-CREATE SEQUENCE auto_id_airspace_activation;
 CREATE SEQUENCE auto_id_airspace_layer_class;
 CREATE SEQUENCE auto_id_airspace_layer;
 CREATE SEQUENCE auto_id_airspace_volume;
 CREATE SEQUENCE auto_id_telephone_contact;
 CREATE SEQUENCE auto_ground_lighting_availability;
+
+CREATE TABLE PropertiesWithSchedule
+(
+  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_properties_with_schedule')
+);
+
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Timesheet
+CREATE TABLE Timesheet
+(
+  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_timesheet'),
+  timeReference	CodeTimeReferenceType,
+  startDate	DateMonthDayType,
+  endDate	DateMonthDayType,
+  day	CodeDayType,
+  dayTil	CodeDayType,
+  startTime	TimeType,
+  startEvent	CodeTimeEventType,
+  startTimeRelativeEvent	ValDurationType,
+  startEventInterpretation	CodeTimeEventCombinationType,
+  endTime	TimeType,
+  endEvent	CodeTimeEventType,
+  endTimeRelativeEvent	ValDurationType,
+  endEventInterpretation	CodeTimeEventCombinationType,
+  daylightSavingAdjust	CodeYesNoType,
+  excluded	CodeYesNoType,
+  idPropertiesWithSchedule INTEGER REFERENCES PropertiesWithSchedule (id)
+);
+
 
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
@@ -1357,7 +1457,8 @@ CREATE TABLE OrganisationAuthority
   name       TextNameType,
   designator CodeOrganisationDesignatorType,
   type       CodeOrganisationType,
-  military   CodeMilitaryOperationsType
+  military   CodeMilitaryOperationsType,
+  idPropertiesWithSchedule INTEGER REFERENCES PropertiesWithSchedule (id)
 );
 
 
@@ -1408,9 +1509,10 @@ CREATE TABLE Surface
   id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_surface'),
   horizontalAccuracy ValDistanceType,
   -- массивы (arrays) из широт и долгот:
-  latitude           DECIMAL[],
-  longitude          DECIMAL[],
+  latitude           latitude,
+  longitude          longitude,
   coordinates DECIMAL[][],
+  coord VARCHAR,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   geom               GEOMETRY(POLYGON, 4326)
 );
@@ -1729,15 +1831,18 @@ CREATE FUNCTION trigger_insert_polygon()
   RETURNS TRIGGER AS $$
 BEGIN
   IF (TG_OP = 'INSERT' OR
-      (TG_OP = 'UPDATE' AND (NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
+      (TG_OP = 'UPDATE' AND (NEW.coord<>OLD.coord)))
+       --(NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
   THEN
     IF (NEW.srid = 4326)
     THEN
-      NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ARRAY[ST_MakePoint(NEW.longitude,NEW.latitude)] )), NEW.srid);
+      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ARRAY[ST_MakePoint(NEW.longitude,NEW.latitude)] )), NEW.srid);
+      NEW.geom = ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',4326);
       --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(NEW.longitude, NEW.latitude) )), NEW.srid);
     ELSE
-      NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(ARRAY[NEW.longitude], ARRAY[NEW.latitude]) )), NEW.srid),4326);
-      --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_GeomFromText('LINESTRING(NEW.longitude, NEW.latitude)' )), NEW.srid), 4326);
+      --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(ARRAY[NEW.longitude], ARRAY[NEW.latitude]) )), NEW.srid),4326);
+      NEW.geom = st_transform(ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',NEW.srid),4326);
+      -- --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_GeomFromText('LINESTRING(NEW.longitude, NEW.latitude)' )), NEW.srid), 4326);
     END IF;
   END IF;
   RETURN NEW;
@@ -2264,7 +2369,7 @@ CREATE TABLE Airspace_AirTrafficManagementService
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id           INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_activation'),
+  id INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id),
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid)
