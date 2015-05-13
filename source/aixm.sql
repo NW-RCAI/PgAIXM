@@ -9,7 +9,8 @@ AirspaceLayer, EnRouteSegmentPoint, RoutePortion, SegmentPoint, RouteSegment, Ro
 AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, SignificantPoint, Curve, AirportHeliport_InformationService,
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
-GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService CASCADE;
+GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
+PropertiesWithSchedule, Timesheet CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -22,7 +23,7 @@ CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVertic
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
 CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,
 CodeAircraftGroundServiceType,CodeUnitType,CodeTimeReferenceType,CodeDayType,CodeTimeEventType,UomDurationType,
-CodeTimeEventCombinationType CASCADE;
+CodeTimeEventCombinationType, datemonthdaytype CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -1457,7 +1458,13 @@ CREATE TABLE OrganisationAuthority
   name       TextNameType,
   designator CodeOrganisationDesignatorType,
   type       CodeOrganisationType,
-  military   CodeMilitaryOperationsType,
+  military   CodeMilitaryOperationsType
+
+);
+
+CREATE TABLE OrganisationAuthority_PropertiesWithSchedule
+(
+  uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
   idPropertiesWithSchedule INTEGER REFERENCES PropertiesWithSchedule (id)
 );
 
