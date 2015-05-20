@@ -1863,212 +1863,7 @@ BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_polygon();
 
 
-CREATE VIEW airports AS
-  SELECT
-    Point.id AS id,
-    AirportHeliport.name,
-    AirportHeliport.designator,
-    AirportHeliport.type,
-    AirportHeliport.controlType,
-    airportheliport.abandoned,
-    --elevatedpoint.elevation,
-    runwayMax.lenght,
-    Point.latitude,
-    Point.longitude,
 
-    -- runway.designator AS runway_design,
-    runwaydirection.truebearing,
-    surfacecharacteristics.composition,
-    --runwaydirectionlightsystem.lightsystem,
-    --runwaydirectionlightsystem.position
-    Point.geom
-  FROM airportheliport
-    LEFT JOIN (
-        elevatedpoint
-        JOIN point ON (elevatedpoint.id = point.id)
-      ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
-    LEFT JOIN (
-                SELECT
-                  max((nominallength).value) AS lenght,
-                  uuidAirportHeliport
-                FROM runway
-                GROUP BY uuidAirportHeliport
-              ) runwayMax
-      ON airportheliport.uuid = runwayMax.uuidAirportHeliport
-    LEFT JOIN (
-        runway
-        JOIN (runwaydirection
-        JOIN (SELECT
-                count(runwaydirectionlightsystem.uuid) AS lightsystem,
-                runwaydirectionlightsystem.uuidrunwaydirection
-              FROM runwaydirectionlightsystem
-              GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
-          ON runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid)
-          ON (runway.uuid = runwaydirection.uuidrunway)
-        JOIN surfacecharacteristics ON runway.idsurfacecharacteristics = surfacecharacteristics.id
-      )
-      ON airportheliport.uuid = runway.uuidairportheliport
-  WHERE (runway.nominallength).value =
-        (SELECT max((nominallength).value)
-         FROM runway
-         GROUP BY uuidAirportHeliport
-         HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
-
-CREATE VIEW AIRP_TABLE AS
-  SELECT
-    uuid,
-    name,
-    designator,
-    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT count(surfacecharacteristics.composition) AS cover
-     FROM surfacecharacteristics, runway
-     WHERE
-       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
-       AND surfacecharacteristics.composition IN
-           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
-    (SELECT point.latitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.longitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT POINT.geom
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
-  FROM airportheliport;
-
-CREATE VIEW AIRP_MAP AS
-  SELECT
-    uuid,
-    designator,
-    name,
-            controltype AS type,
-    (SELECT ((elevation).value) AS height
-     FROM elevatedpoint
-     WHERE airportheliport.idelevatedpoint = elevatedpoint.id),
-    (SELECT max((nominallength).value) AS length
-     FROM runway
-     WHERE runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT count(surfacecharacteristics.composition) AS hydroaerodrom
-     FROM surfacecharacteristics, runway
-     WHERE
-       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
-       AND surfacecharacteristics.composition IN ('WATER')),
-    (SELECT max(truebearing) AS angle
-     FROM runwaydirection, runway
-     WHERE runwaydirection.uuidrunway = runway.uuid AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT count(runwaydirectionlightsystem.position) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT point.geom
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    abandoned
-  FROM airportheliport;
-
-CREATE VIEW AIRP_MAP_2 AS
-  SELECT
-    uuid,
-    designator,
-    name,
-            controltype AS type,
-    (SELECT elevation AS height
-     FROM elevatedpoint
-     WHERE airportheliport.idelevatedpoint = elevatedpoint.id),
-    (SELECT max((nominallength).value) AS length
-     FROM runway
-     WHERE runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT surfacecharacteristics.composition AS hydroaerodrom
-     FROM surfacecharacteristics, runway
-     WHERE
-       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
-       AND surfacecharacteristics.composition IN ('WATER')),
-    (SELECT max(truebearing) AS angle
-     FROM runwaydirection, runway
-     WHERE runwaydirection.uuidrunway = runway.uuid AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT count(runwaydirectionlightsystem.position) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
-    -- если count(runwaydirectionlightsystem.position) > 0 - значит у аэропорта есть система освещения
-    (SELECT point.geom
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    abandoned
-  FROM airportheliport;
-
-/*
-first
-CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
-DO INSTEAD
-INSERT INTO AirportHeliport VALUES (
-    NEW.uuid,
-    NEW.designator,
-    NEW.name);
-
-CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
-DO INSTEAD
-  UPDATE AirportHeliport
-  SET uuid     = NEW.uuid,
-    designator = NEW.designator,
-    name       = NEW.name;
-*/
-
--- second
-CREATE OR REPLACE FUNCTION arp_function()
-  RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-  IF TG_OP = 'INSERT'
-  THEN
-    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
-    INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
-    /*
-    агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
-        INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
-     в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
-        INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
-     в view агрегатная функция max(truebearing):
-        INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
-     и снова агрегатная - count(runwaydirectionlightsystem.position)
-        INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
-       */
-    INSERT INTO Point VALUES (NEW.id, NEW.geom);
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE'
-    THEN
-      UPDATE AirportHeliport
-      SET uuid    = NEW.uuid, designator = NEW.designator, name = NEW.name, controltype = NEW.controltype,
-        abandoned = NEW.abandoned
-      WHERE uuid = OLD.uuid;
-      UPDATE elevatedpoint
-      SET id = NEW.id, elevation = NEW.elevation
-      WHERE id = OLD.id;
-      UPDATE Point
-      SET id = NEW.id, geom = NEW.geom
-      WHERE id = OLD.id;
-      RETURN NEW;
-  ELSIF TG_OP = 'DELETE'
-    THEN
-      DELETE FROM AirportHeliport
-      WHERE uuid = OLD.uuid;
-      DELETE FROM elevatedpoint
-      WHERE id = OLD.id;
-      DELETE FROM Point
-      WHERE id = OLD.id;
-      RETURN NULL;
-  END IF;
-  RETURN NEW;
-END;
-$function$;
-
-CREATE TRIGGER arp_trig
-INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
 CREATE TABLE Unit
@@ -2445,6 +2240,194 @@ CREATE TABLE AuthorityForAirspace
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
   uuidAirspace              id REFERENCES Airspace (uuid)
 );
+
+
+CREATE VIEW airports AS
+  SELECT
+    Point.id AS id,
+    AirportHeliport.name,
+    AirportHeliport.designator,
+    AirportHeliport.type,
+    AirportHeliport.controlType,
+    airportheliport.abandoned,
+    --elevatedpoint.elevation,
+    runwayMax.lenght,
+    Point.latitude,
+    Point.longitude,
+
+    -- runway.designator AS runway_design,
+    runwaydirection.truebearing,
+    surfacecharacteristics.composition,
+    --runwaydirectionlightsystem.lightsystem,
+    --runwaydirectionlightsystem.position
+    Point.geom
+  FROM airportheliport
+    LEFT JOIN (
+        elevatedpoint
+        JOIN point ON (elevatedpoint.id = point.id)
+      ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
+    LEFT JOIN (
+                SELECT
+                  max((nominallength).value) AS lenght,
+                  uuidAirportHeliport
+                FROM runway
+                GROUP BY uuidAirportHeliport
+              ) runwayMax
+      ON airportheliport.uuid = runwayMax.uuidAirportHeliport
+    LEFT JOIN (
+        runway
+        JOIN (runwaydirection
+        JOIN (SELECT
+                count(runwaydirectionlightsystem.uuid) AS lightsystem,
+                runwaydirectionlightsystem.uuidrunwaydirection
+              FROM runwaydirectionlightsystem
+              GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
+          ON runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid)
+          ON (runway.uuid = runwaydirection.uuidrunway)
+        JOIN surfacecharacteristics ON runway.idsurfacecharacteristics = surfacecharacteristics.id
+      )
+      ON airportheliport.uuid = runway.uuidairportheliport
+  WHERE (runway.nominallength).value =
+        (SELECT max((nominallength).value)
+         FROM runway
+         GROUP BY uuidAirportHeliport
+         HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
+
+CREATE VIEW AIRP_TABLE AS
+  SELECT
+    uuid,
+    name,
+    designator,
+    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT count(surfacecharacteristics.composition) AS cover
+     FROM surfacecharacteristics, runway
+     WHERE
+       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       AND surfacecharacteristics.composition IN
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
+    (SELECT point.latitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT point.longitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT POINT.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT Runway.nominalLength
+      FROM Runway
+      WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
+    (SELECT RunwayDirection.trueBearing
+    FROM RunwayDirection, Runway
+    WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid)
+
+  FROM airportheliport;
+
+
+CREATE VIEW AIRP_MAP_2 AS
+  SELECT
+    uuid,
+    designator,
+    name,
+            controltype AS type,
+    (SELECT elevation AS height
+     FROM elevatedpoint
+     WHERE airportheliport.idelevatedpoint = elevatedpoint.id),
+    (SELECT max((nominallength).value) AS length
+     FROM runway
+     WHERE runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT surfacecharacteristics.composition AS hydroaerodrom
+     FROM surfacecharacteristics, runway
+     WHERE
+       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       AND surfacecharacteristics.composition IN ('WATER')),
+    (SELECT max(truebearing) AS angle
+     FROM runwaydirection, runway
+     WHERE runwaydirection.uuidrunway = runway.uuid AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT count(runwaydirectionlightsystem.position) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    -- если count(runwaydirectionlightsystem.position) > 0 - значит у аэропорта есть система освещения
+    (SELECT point.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    abandoned
+  FROM airportheliport;
+
+/*
+first
+CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
+DO INSTEAD
+INSERT INTO AirportHeliport VALUES (
+    NEW.uuid,
+    NEW.designator,
+    NEW.name);
+
+CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
+DO INSTEAD
+  UPDATE AirportHeliport
+  SET uuid     = NEW.uuid,
+    designator = NEW.designator,
+    name       = NEW.name;
+*/
+
+-- second
+CREATE OR REPLACE FUNCTION arp_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
+    INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
+    /*
+    агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
+        INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
+     в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
+        INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
+     в view агрегатная функция max(truebearing):
+        INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
+     и снова агрегатная - count(runwaydirectionlightsystem.position)
+        INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
+       */
+    INSERT INTO Point VALUES (NEW.id, NEW.geom);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE AirportHeliport
+      SET uuid    = NEW.uuid, designator = NEW.designator, name = NEW.name, controltype = NEW.controltype,
+        abandoned = NEW.abandoned
+      WHERE uuid = OLD.uuid;
+      UPDATE elevatedpoint
+      SET id = NEW.id, elevation = NEW.elevation
+      WHERE id = OLD.id;
+      UPDATE Point
+      SET id = NEW.id, geom = NEW.geom
+      WHERE id = OLD.id;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM AirportHeliport
+      WHERE uuid = OLD.uuid;
+      DELETE FROM elevatedpoint
+      WHERE id = OLD.id;
+      DELETE FROM Point
+      WHERE id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER arp_trig
+INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+
+
 
 CREATE VIEW DRA AS
   SELECT
