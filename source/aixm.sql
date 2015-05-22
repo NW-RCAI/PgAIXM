@@ -23,7 +23,7 @@ CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVertic
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
 CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,
 CodeAircraftGroundServiceType,CodeUnitType,CodeTimeReferenceType,CodeDayType,CodeTimeEventType,UomDurationType,
-CodeTimeEventCombinationType, datemonthdaytype CASCADE;
+CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType,UomDistanceVerticalType,UomTemperatureType CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -34,7 +34,7 @@ CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeM
 */
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
-uomdepthtype, CodeYesNoType, UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,
+uomdepthtype,  UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,
 ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType,
 CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType,
 ValSlopeType, UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
@@ -106,7 +106,9 @@ CREATE TYPE CodeAirportHeliportType AS ENUM ('AD', 'AH', 'HP', 'LS', 'OTHER');
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
 */
-CREATE TYPE CodeYesNoType AS ENUM ('Yes', 'No', 'Other');
+CREATE DOMAIN CodeYesNoType AS VARCHAR(60)
+CHECK (VALUE ~ '(YES|NO|OTHER: [A-Z]{0,30})');
+--CREATE TYPE CodeYesNoType AS ENUM ('Yes', 'No', 'Other');
 
 /*
 Признак принадлежности к военным:
@@ -127,7 +129,9 @@ CHECK (VALUE ~ '(MIL|CIVIL|JOINT|OTHER: [A-Z]{0,30})');
 -- SM - standard meters (tens of meters)
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceVerticalType
-CREATE TYPE UomDistanceVerticalType AS ENUM ('FT', 'M', 'FL', 'SM', 'OTHER');
+CREATE DOMAIN UomDistanceVerticalType AS VARCHAR(60)
+CHECK (VALUE ~ '(FT|M|FL|SM|OTHER: [A-Z]{0,30})');
+
 
 /*
 Значение расстояния по вертикали (например: верхние и нижние границы воздушного пространства).
@@ -147,11 +151,16 @@ CREATE TYPE ValDistanceVerticalType AS (
   unit       UomDistanceVerticalType
 );
 
+/*
+Вообще в AIXM приведены три используемых датума: EGM_96, AHD (Australian Height Datum), NAVD88 (North American Vertical Datum of 1988), но я думаю что, возможно гораздо больше вариантов
+EMG_96 - геопотенциальная модель земного шара 1996 года
+AHD - австралийский высотный датум
+NAVD88 - северо-американский высотный датум 1988 года
 
--- Вообще в AIXM приведены три используемых датума: EGM_96, AHD (Australian Height Datum), NAVD88 (North American Vertical Datum of 1988), но я думаю что, возможно гораздо больше вариантов
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeVerticalDatumType
-CREATE DOMAIN CodeVerticalDatumType AS VARCHAR;
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeVerticalDatumType
+*/
+CREATE DOMAIN CodeVerticalDatumType AS VARCHAR(60)
+CHECK (VALUE ~ '(EMG_96|AHD|NAVD88|OTHER: [A-Z]{0,30})');
 
 -- Значение угла в данной точке между направлением на магнитный север и направлением на географический север.
 -- Положительное значение показывает, что магнитный север восточнее географического.
@@ -187,7 +196,8 @@ CHECK (VALUE >= -180 AND VALUE <= 180);
 -- K - degrees Kelvin
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
-CREATE TYPE UomTemperatureType AS ENUM ('C', 'F', 'K', 'OTHER');
+CREATE DOMAIN UomTemperatureType AS VARCHAR(60)
+CHECK (VALUE ~ '(C|F|K|OTHER: [A-Z]{0,30})');
 
 -- Значение температуры.
 --
@@ -1786,83 +1796,6 @@ CREATE TABLE CartographyLabel
   geom                GEOMETRY(POINT, 4326)
 );
 
-CREATE OR REPLACE FUNCTION trigger_update()
-  RETURNS TRIGGER AS $update_lbl$
-BEGIN
-  INSERT INTO CartographyLabel (xlbl, ylbl, srid, uuidairportheliport, geom) VALUES
-    ((SELECT latitude
-      FROM Point, ElevatedPoint
-      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
-     (SELECT longitude
-      FROM Point, ElevatedPoint
-      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
-     (SELECT srid
-      FROM Point, ElevatedPoint
-      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
-     NEW.uuid,
-     (SELECT geom
-      FROM Point, ElevatedPoint
-      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint));
-  RETURN NEW;
-END;
-$update_lbl$ LANGUAGE plpgsql;
-
-CREATE TRIGGER CartographyLabel
-AFTER INSERT ON AirportHeliport FOR EACH ROW EXECUTE PROCEDURE trigger_update();
-
--- Отслеживание изменений координат и SRID
---
-CREATE FUNCTION trigger_insert()
-  RETURNS TRIGGER AS $$
-BEGIN
-  IF (TG_OP = 'INSERT' OR
-      (TG_OP = 'UPDATE' AND (NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
-  THEN
-    IF (NEW.srid = 4326)
-    THEN
-      NEW.geom = st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid);
-    ELSE
-      NEW.geom = st_transform(st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid), 4326);
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER inserting
-BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
-EXECUTE PROCEDURE trigger_insert();
-
-CREATE FUNCTION trigger_insert_polygon()
-  RETURNS TRIGGER AS $$
-BEGIN
-  IF (TG_OP = 'INSERT' OR
-      (TG_OP = 'UPDATE' AND (NEW.coord<>OLD.coord)))
-       --(NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
-  THEN
-    IF (NEW.srid = 4326)
-    THEN
-      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ARRAY[ST_MakePoint(NEW.longitude,NEW.latitude)] )), NEW.srid);
-      NEW.geom = ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',4326);
-      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(NEW.longitude, NEW.latitude) )), NEW.srid);
-    ELSE
-      --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(ARRAY[NEW.longitude], ARRAY[NEW.latitude]) )), NEW.srid),4326);
-      NEW.geom = st_transform(ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',NEW.srid),4326);
-      -- --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_GeomFromText('LINESTRING(NEW.longitude, NEW.latitude)' )), NEW.srid), 4326);
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-
-$$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER inserting_surface
-BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
-EXECUTE PROCEDURE trigger_insert_polygon();
-
-
 
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
@@ -2298,6 +2231,8 @@ CREATE VIEW AIRP_TABLE AS
     uuid,
     name,
     designator,
+    (fieldElevation).value as height,
+  controltype AS type,
     (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
      FROM runwaydirectionlightsystem, runwaydirection, runway
      WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
@@ -2317,115 +2252,83 @@ CREATE VIEW AIRP_TABLE AS
     (SELECT POINT.geom
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT Runway.nominalLength
+    (SELECT (nominallength).value as length
       FROM Runway
       WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
-    (SELECT RunwayDirection.trueBearing
+    (SELECT RunwayDirection.trueBearing as ugol
     FROM RunwayDirection, Runway
-    WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid)
+    WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid),
+
+    (SELECT CallsignDetail.callSign
+    FROM CallsignDetail, Service, Unit
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit=Unit.uuid AND Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as fr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit
+    WHERE Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1)
 
   FROM airportheliport;
 
 
-CREATE VIEW AIRP_MAP_2 AS
+CREATE OR REPLACE VIEW AIRP_test AS
   SELECT
     uuid,
-    designator,
     name,
-            controltype AS type,
-    (SELECT elevation AS height
-     FROM elevatedpoint
-     WHERE airportheliport.idelevatedpoint = elevatedpoint.id),
-    (SELECT max((nominallength).value) AS length
-     FROM runway
-     WHERE runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT surfacecharacteristics.composition AS hydroaerodrom
-     FROM surfacecharacteristics, runway
-     WHERE
-       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
-       AND surfacecharacteristics.composition IN ('WATER')),
-    (SELECT max(truebearing) AS angle
-     FROM runwaydirection, runway
-     WHERE runwaydirection.uuidrunway = runway.uuid AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT count(runwaydirectionlightsystem.position) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
-    -- если count(runwaydirectionlightsystem.position) > 0 - значит у аэропорта есть система освещения
-    (SELECT point.geom
+    designator,
+    controltype,
+    (fieldElevation).value as height,
+    (SELECT point.id
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    abandoned
+        (SELECT point.latitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT point.longitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT POINT.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
+
   FROM airportheliport;
 
-/*
-first
-CREATE RULE inserting_airp AS ON INSERT TO AIRP_MAP
-DO INSTEAD
-INSERT INTO AirportHeliport VALUES (
-    NEW.uuid,
-    NEW.designator,
-    NEW.name);
-
-CREATE RULE updating_airp AS ON UPDATE TO AIRP_MAP
-DO INSTEAD
-  UPDATE AirportHeliport
-  SET uuid     = NEW.uuid,
-    designator = NEW.designator,
-    name       = NEW.name;
-*/
-
--- second
-CREATE OR REPLACE FUNCTION arp_function()
-  RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION arp_test2()
+RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
-BEGIN
-  IF TG_OP = 'INSERT'
-  THEN
-    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controltype, NEW.abandoned);
-    INSERT INTO elevatedpoint VALUES (NEW.id, NEW.elevation);
-    /*
-    агрегатная функция (max((nominallength).value) - как она будет вводиться в изначальную таблицу?
-        INSERT INTO runway VALUES (NEW.uuid, NEW.(nominallength).value);
-     в view агрегатная функция count(surfacecharacteristics.composition) - вообще не понятно как такое будет вводиться в таблицу:
-        INSERT INTO surfacecharacteristics VALUES (NEW.id, NEW.composition);
-     в view агрегатная функция max(truebearing):
-        INSERT INTO runwaydirection VALUES (NEW.uuid, NEW.truebearing);
-     и снова агрегатная - count(runwaydirectionlightsystem.position)
-        INSERT INTO runwaydirectionlightsystem VALUES (NEW.uuid, NEW.position);
-       */
-    INSERT INTO Point VALUES (NEW.id, NEW.geom);
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE'
-    THEN
-      UPDATE AirportHeliport
-      SET uuid    = NEW.uuid, designator = NEW.designator, name = NEW.name, controltype = NEW.controltype,
-        abandoned = NEW.abandoned
-      WHERE uuid = OLD.uuid;
-      UPDATE elevatedpoint
-      SET id = NEW.id, elevation = NEW.elevation
-      WHERE id = OLD.id;
-      UPDATE Point
-      SET id = NEW.id, geom = NEW.geom
-      WHERE id = OLD.id;
+   BEGIN
+      IF TG_OP = 'INSERT' THEN
+        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controltype,NEW.height);
+        INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
+
+        RETURN NEW;
+      ELSIF TG_OP = 'UPDATE' THEN
+       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.designator,name=NEW.name,controltype=NEW.controltype, height = NEW.height
+       WHERE AirportHeliport.uuid=OLD.uuid;
+       UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
+       RETURN NEW;
+      ELSIF TG_OP = 'DELETE' THEN
+       DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
+       DELETE FROM Point WHERE Point.id=OLD.id;
+       RETURN NULL;
+      END IF;
       RETURN NEW;
-  ELSIF TG_OP = 'DELETE'
-    THEN
-      DELETE FROM AirportHeliport
-      WHERE uuid = OLD.uuid;
-      DELETE FROM elevatedpoint
-      WHERE id = OLD.id;
-      DELETE FROM Point
-      WHERE id = OLD.id;
-      RETURN NULL;
-  END IF;
-  RETURN NEW;
-END;
+    END;
 $function$;
 
-CREATE TRIGGER arp_trig
-INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+CREATE TRIGGER arp_test_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      AIRP_test FOR EACH ROW EXECUTE PROCEDURE arp_test2();
+
+
+
+--CREATE TRIGGER arp_trig
+--INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
 
 
@@ -2690,3 +2593,84 @@ CREATE TABLE Navaid
   courseQuality     CodeCourseQualityILSType,
   integrityLevel    CodeIntegrityLevelILSType
 );
+
+
+-- Триггеры для координат
+
+CREATE OR REPLACE FUNCTION trigger_update()
+  RETURNS TRIGGER AS $update_lbl$
+BEGIN
+  INSERT INTO CartographyLabel (xlbl, ylbl, srid, uuidairportheliport, geom) VALUES
+    ((SELECT latitude
+      FROM Point, ElevatedPoint
+      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
+     (SELECT longitude
+      FROM Point, ElevatedPoint
+      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
+     (SELECT srid
+      FROM Point, ElevatedPoint
+      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint),
+     NEW.uuid,
+     (SELECT geom
+      FROM Point, ElevatedPoint
+      WHERE Point.id = ElevatedPoint.id AND ElevatedPoint.id = NEW.idElevatedPoint));
+  RETURN NEW;
+END;
+$update_lbl$ LANGUAGE plpgsql;
+
+CREATE TRIGGER CartographyLabel
+AFTER INSERT ON AirportHeliport FOR EACH ROW EXECUTE PROCEDURE trigger_update();
+
+-- Отслеживание изменений координат и SRID
+--
+CREATE FUNCTION trigger_insert()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' OR
+      (TG_OP = 'UPDATE' AND (NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
+  THEN
+    IF (NEW.srid = 4326)
+    THEN
+      NEW.geom = st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid);
+    ELSE
+      NEW.geom = st_transform(st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid), 4326);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER inserting
+BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
+EXECUTE PROCEDURE trigger_insert();
+
+CREATE FUNCTION trigger_insert_polygon()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' OR
+      (TG_OP = 'UPDATE' AND (NEW.coord<>OLD.coord)))
+       --(NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
+  THEN
+    IF (NEW.srid = 4326)
+    THEN
+      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ARRAY[ST_MakePoint(NEW.longitude,NEW.latitude)] )), NEW.srid);
+      NEW.geom = ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',4326);
+      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(NEW.longitude, NEW.latitude) )), NEW.srid);
+    ELSE
+      --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(ARRAY[NEW.longitude], ARRAY[NEW.latitude]) )), NEW.srid),4326);
+      NEW.geom = st_transform(ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',NEW.srid),4326);
+      -- --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_GeomFromText('LINESTRING(NEW.longitude, NEW.latitude)' )), NEW.srid), 4326);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER inserting_surface
+BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
+EXECUTE PROCEDURE trigger_insert_polygon();
+
+
