@@ -23,7 +23,7 @@ CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVertic
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
 CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,
 CodeAircraftGroundServiceType,CodeUnitType,CodeTimeReferenceType,CodeDayType,CodeTimeEventType,UomDurationType,
-CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType,UomDistanceVerticalType,UomTemperatureType CASCADE;
+CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType,UomDistanceVerticalType,UomTemperatureType, CodeAirportHeliportType CASCADE;
 
 /*
 coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
@@ -99,8 +99,8 @@ LS - посадочная площадка
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
 */
-CREATE TYPE CodeAirportHeliportType AS ENUM ('AD', 'AH', 'HP', 'LS', 'OTHER');
-
+CREATE DOMAIN CodeAirportHeliportType AS VARCHAR(60)
+CHECK (VALUE ~ '(AD|AH|HP|LS|OTHER: [A-Z]{0,30})');
 /*
 Тип данных для хранения значений: Да или Нет
 
@@ -2175,94 +2175,49 @@ CREATE TABLE AuthorityForAirspace
 );
 
 
-CREATE VIEW airports AS
-  SELECT
-    Point.id AS id,
-    AirportHeliport.name,
-    AirportHeliport.designator,
-    AirportHeliport.type,
-    AirportHeliport.controlType,
-    airportheliport.abandoned,
-    --elevatedpoint.elevation,
-    runwayMax.lenght,
-    Point.latitude,
-    Point.longitude,
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Navaid
+CREATE TABLE Navaid
+(
+  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type              CodeNavaidServiceType,
+  designator        CodeNavaidDesignatorType,
+  name              TextNameType,
+  flightChecked     CodeYesNoType,
+  purpose           CodeNavaidPurposeType,
+  signalPerformance CodeSignalPerformanceILSType,
+  courseQuality     CodeCourseQualityILSType,
+  integrityLevel    CodeIntegrityLevelILSType
+);
 
-    -- runway.designator AS runway_design,
-    runwaydirection.truebearing,
-    surfacecharacteristics.composition,
-    --runwaydirectionlightsystem.lightsystem,
-    --runwaydirectionlightsystem.position
-    Point.geom
-  FROM airportheliport
-    LEFT JOIN (
-        elevatedpoint
-        JOIN point ON (elevatedpoint.id = point.id)
-      ) ON (elevatedpoint.id = airportheliport.idelevatedpoint)
-    LEFT JOIN (
-                SELECT
-                  max((nominallength).value) AS lenght,
-                  uuidAirportHeliport
-                FROM runway
-                GROUP BY uuidAirportHeliport
-              ) runwayMax
-      ON airportheliport.uuid = runwayMax.uuidAirportHeliport
-    LEFT JOIN (
-        runway
-        JOIN (runwaydirection
-        JOIN (SELECT
-                count(runwaydirectionlightsystem.uuid) AS lightsystem,
-                runwaydirectionlightsystem.uuidrunwaydirection
-              FROM runwaydirectionlightsystem
-              GROUP BY runwaydirectionlightsystem.uuidrunwaydirection) runwaydirectionlightsystem
-          ON runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid)
-          ON (runway.uuid = runwaydirection.uuidrunway)
-        JOIN surfacecharacteristics ON runway.idsurfacecharacteristics = surfacecharacteristics.id
-      )
-      ON airportheliport.uuid = runway.uuidairportheliport
-  WHERE (runway.nominallength).value =
-        (SELECT max((nominallength).value)
-         FROM runway
-         GROUP BY uuidAirportHeliport
-         HAVING uuidairportheliport = airportheliport.uuid) OR (runway.nominallength).value IS NULL;
 
-CREATE VIEW AIRP_TABLE AS
+CREATE OR REPLACE VIEW ARP AS
   SELECT
     uuid,
     name,
     designator,
+    controltype,
     (fieldElevation).value as height,
-  controltype AS type,
-    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT (nominallength).value as length
+      FROM Runway
+      WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
     (SELECT count(surfacecharacteristics.composition) AS cover
      FROM surfacecharacteristics, runway
      WHERE
        runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
        AND surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
-    (SELECT point.latitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.longitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT POINT.geom
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT (nominallength).value as length
-      FROM Runway
-      WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
     (SELECT RunwayDirection.trueBearing as ugol
     FROM RunwayDirection, Runway
     WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid),
-
-    (SELECT CallsignDetail.callSign
+    abandoned as closed,
+    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT CallsignDetail.callSign as cs
     FROM CallsignDetail, Service, Unit
     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit=Unit.uuid AND Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as fr
+    (SELECT (frequencyTransmission).value as tf
     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
     WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
     (SELECT (frequencyReception).value as tr
@@ -2270,18 +2225,7 @@ CREATE VIEW AIRP_TABLE AS
     WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
     (SELECT Unit.type as unit_type
     FROM Unit
-    WHERE Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1)
-
-  FROM airportheliport;
-
-
-CREATE OR REPLACE VIEW AIRP_test AS
-  SELECT
-    uuid,
-    name,
-    designator,
-    controltype,
-    (fieldElevation).value as height,
+    WHERE Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
     (SELECT point.id
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
@@ -2297,23 +2241,86 @@ CREATE OR REPLACE VIEW AIRP_test AS
 
   FROM airportheliport;
 
-CREATE OR REPLACE FUNCTION arp_test2()
+CREATE OR REPLACE VIEW ALS AS
+  SELECT
+    uuid,
+    name,
+    designator,
+    type,
+    (fieldElevation).value as height,
+    (SELECT (nominallength).value as length
+      FROM Runway
+      WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
+    (SELECT count(surfacecharacteristics.composition) AS cover
+     FROM surfacecharacteristics, runway
+     WHERE
+       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       AND surfacecharacteristics.composition IN
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
+    (SELECT RunwayDirection.trueBearing as ugol
+    FROM RunwayDirection, Runway
+    WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid),
+    abandoned as closed,
+    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
+     FROM runwaydirectionlightsystem, runwaydirection, runway
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
+           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, Unit
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit=Unit.uuid AND Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit
+    WHERE Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT point.id
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+        (SELECT point.latitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT point.longitude
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
+    (SELECT POINT.geom
+     FROM point, elevatedpoint
+     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
+
+  FROM airportheliport;
+
+CREATE OR REPLACE FUNCTION arp_function()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
    BEGIN
       IF TG_OP = 'INSERT' THEN
-        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controltype,NEW.height);
+        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controltype,NEW.height,NEW.closed);
+        INSERT INTO Runway VALUES (NEW.length);
+        INSERT INTO RunwayDirection VALUES (NEW.ugol);
+        INSERT INTO CallsignDetail VALUES (NEW.cs);
+        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
         INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
-
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.designator,name=NEW.name,controltype=NEW.controltype, height = NEW.height
+        -- не удается поменять составной тип данных если просто прописывать: height=NEW.height
+       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.designator,name=NEW.name,controltype=NEW.controltype, fieldElevation.value = NEW.height, abandoned=NEW.closed
        WHERE AirportHeliport.uuid=OLD.uuid;
+       UPDATE Runway SET nominalLength = ROW (NEW.length, 'M') WHERE Runway.uuid=OLD.uuid;
+       UPDATE RunwayDirection SET trueBearing = NEW.ugol;
+       UPDATE CallsignDetail SET callSign = NEW.cs;
+       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
        UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
        RETURN NEW;
       ELSIF TG_OP = 'DELETE' THEN
        DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
+       DELETE FROM Runway WHERE Runway.uuid=OLD.uuid;
+       DELETE FROM RunwayDirection WHERE RunwayDirection.uuid = OLD.uuid;
+       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
+       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
        DELETE FROM Point WHERE Point.id=OLD.id;
        RETURN NULL;
       END IF;
@@ -2321,159 +2328,90 @@ AS $function$
     END;
 $function$;
 
-CREATE TRIGGER arp_test_trigger
+CREATE TRIGGER arp_trigger
     INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      AIRP_test FOR EACH ROW EXECUTE PROCEDURE arp_test2();
+      ARP FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
+CREATE OR REPLACE FUNCTION als_function()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+   BEGIN
+      IF TG_OP = 'INSERT' THEN
+        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.type,NEW.height,NEW.closed);
+        INSERT INTO Runway VALUES (NEW.length);
+        INSERT INTO RunwayDirection VALUES (NEW.ugol);
+        INSERT INTO CallsignDetail VALUES (NEW.cs);
+        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
+        INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
+        RETURN NEW;
+      ELSIF TG_OP = 'UPDATE' THEN
+       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.designator,name=NEW.name,type=NEW.type, fieldElevation.value = NEW.height, abandoned=NEW.closed
+       WHERE AirportHeliport.uuid=OLD.uuid;
+       UPDATE Runway SET nominalLength = ROW (NEW.length, 'M') WHERE Runway.uuid=OLD.uuid;
+       UPDATE RunwayDirection SET trueBearing = NEW.ugol;
+       UPDATE CallsignDetail SET callSign = NEW.cs;
+       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+       UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
+       RETURN NEW;
+      ELSIF TG_OP = 'DELETE' THEN
+       DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
+       DELETE FROM Runway WHERE Runway.uuid=OLD.uuid;
+       DELETE FROM RunwayDirection WHERE RunwayDirection.uuid = OLD.uuid;
+       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
+       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
+       DELETE FROM Point WHERE Point.id=OLD.id;
+       RETURN NULL;
+      END IF;
+      RETURN NEW;
+    END;
+$function$;
 
-
---CREATE TRIGGER arp_trig
---INSTEAD OF INSERT OR UPDATE OR DELETE ON AIRP_MAP_2 FOR EACH ROW EXECUTE PROCEDURE arp_function();
-
-
-
-CREATE VIEW DRA AS
-  SELECT
-    uuid,
-    (SELECT upperlimit AS top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT upperLimitReference AS format_top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimit AS bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimitReference AS format_bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
-    (SELECT callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    (SELECT RadioCommunicationChannel.channel AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    -- правильно ли то что ниже (связь)?
-    (SELECT Unit.type AS tp_unit
-     FROM Unit, OrganisationAuthority, AuthorityForAirspace
-     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
-    (SELECT Surface.geom
-     FROM Surface, AirspaceVolume
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type IN ('D');
-
-CREATE VIEW PRA AS
-  SELECT
-    uuid,
-    (SELECT upperlimit AS top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT upperLimitReference AS format_top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimit AS bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimitReference AS format_bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
-    (SELECT callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    (SELECT RadioCommunicationChannel.channel AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    -- правильно ли то что ниже (связь)?
-    (SELECT Unit.type AS tp_unit
-     FROM Unit, OrganisationAuthority, AuthorityForAirspace
-     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
-    (SELECT Surface.geom
-     FROM Surface, AirspaceVolume
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type IN ('P');
-
-CREATE VIEW RSA AS
-  SELECT
-    uuid,
-    (SELECT upperlimit AS top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT upperLimitReference AS format_top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimit AS bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimitReference AS format_bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
-    (SELECT callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    (SELECT RadioCommunicationChannel.channel AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    -- правильно ли то что ниже (связь)?
-    (SELECT Unit.type AS tp_unit
-     FROM Unit, OrganisationAuthority, AuthorityForAirspace
-     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
-    (SELECT Surface.geom
-     FROM Surface, AirspaceVolume
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type IN ('R');
+CREATE TRIGGER als_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      ALS FOR EACH ROW EXECUTE PROCEDURE als_function();
 
 CREATE VIEW CTA AS
+  SELECT
+    designator,
+    name,
+    controlType,
+    (SELECT AirspaceVolume.upperLimit AS top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT Surface.coord
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT Surface.geom
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+  FROM Airspace WHERE Airspace.type='CTA';
+
+CREATE OR REPLACE FUNCTION cta_function()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+   BEGIN
+      IF TG_OP = 'INSERT' THEN
+        INSERT INTO  Airspace VALUES(NEW.designator,NEW.name,NEW.controlType);
+        RETURN NEW;
+      ELSIF TG_OP = 'UPDATE' THEN
+       UPDATE Airspace SET designator = NEW.designator,name = NEW.name,controlType=NEW.controlType
+         WHERE Airspace.uuid=OLD.uuid;
+       RETURN NEW;
+      ELSIF TG_OP = 'DELETE' THEN
+       DELETE FROM Airspace WHERE Airspace.uuid=OLD.uuid;
+       RETURN NULL;
+      END IF;
+      RETURN NEW;
+    END;
+$function$;
+
+CREATE TRIGGER cta_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      CTA FOR EACH ROW EXECUTE PROCEDURE cta_function();
+
+CREATE VIEW CTA_2 AS
   SELECT
     AirspaceLayer.id,
             AirspaceLayer.upperlimit          AS top,
@@ -2527,72 +2465,54 @@ CREATE VIEW CTA AS
   WHERE Airspace.type IN ('CTA');
 
 
-CREATE VIEW CTR AS
+CREATE VIEW DRA AS
   SELECT
-    AirspaceLayer.id,
-            AirspaceLayer.upperlimit          AS top,
-            AirspaceLayer.upperLimitReference AS format_top,
-            AirspaceLayer.lowerLimit          AS bottom,
-            AirspaceLayer.lowerLimitReference AS format_bottom,
-    (SELECT Airspace.designator AS nm
-     FROM Airspace, AirspaceLayerClass
+    uuid,
+    (SELECT upperlimit AS top
+     FROM AirspaceLayer, AirspaceLayerClass
      WHERE
-       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT Airspace.controlType AS tp
-     FROM Airspace, AirspaceLayerClass
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT upperLimitReference AS format_top
+     FROM AirspaceLayer, AirspaceLayerClass
      WHERE
-       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT Airspace.name AS nl
-     FROM Airspace, AirspaceLayerClass
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimit AS bottom
+     FROM AirspaceLayer, AirspaceLayerClass
      WHERE
-       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+    (SELECT lowerLimitReference AS format_bottom
+     FROM AirspaceLayer, AirspaceLayerClass
+     WHERE
+       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
     (SELECT callSign AS cs
-     FROM
-       CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService, AirspaceLayerClass,
-       Airspace
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
      WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
            AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
     (SELECT RadioCommunicationChannel.channel AS tf
      FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService, AirspaceLayerClass, Airspace
+       Airspace_AirTrafficManagementService
      WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
            Service_RadioCommunicationChannel.uuidService = Service.uuid AND
            AirTrafficManagementService.uuid = Service.uuid
            AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
     -- правильно ли то что ниже (связь)?
     (SELECT Unit.type AS tp_unit
-     FROM Unit, OrganisationAuthority, AuthorityForAirspace, AirspaceLayerClass, Airspace
+     FROM Unit, OrganisationAuthority, AuthorityForAirspace
      WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
            OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid AND Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
+           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-     FROM Surface, AirspaceVolume, AirspaceLayerClass, Airspace
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid AND
-           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id)
-  FROM AirspaceLayer, Airspace
-  WHERE Airspace.type IN ('CTR');
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type IN ('D');
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Navaid
-CREATE TABLE Navaid
-(
-  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  type              CodeNavaidServiceType,
-  designator        CodeNavaidDesignatorType,
-  name              TextNameType,
-  flightChecked     CodeYesNoType,
-  purpose           CodeNavaidPurposeType,
-  signalPerformance CodeSignalPerformanceILSType,
-  courseQuality     CodeCourseQualityILSType,
-  integrityLevel    CodeIntegrityLevelILSType
-);
+
 
 
 -- Триггеры для координат
@@ -2650,18 +2570,13 @@ CREATE FUNCTION trigger_insert_polygon()
 BEGIN
   IF (TG_OP = 'INSERT' OR
       (TG_OP = 'UPDATE' AND (NEW.coord<>OLD.coord)))
-       --(NEW.longitude <> OLD.longitude OR NEW.latitude <> OLD.latitude OR NEW.srid <> OLD.srid)))
   THEN
     IF (NEW.srid = 4326)
     THEN
-      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ARRAY[ST_MakePoint(NEW.longitude,NEW.latitude)] )), NEW.srid);
-      NEW.geom = ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',4326);
-      --NEW.geom = st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(NEW.longitude, NEW.latitude) )), NEW.srid);
+      NEW.geom = ST_GeomFromGeoJSON(NEW.coord);
     ELSE
-      --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_MakeLine(ST_MakePoint(ARRAY[NEW.longitude], ARRAY[NEW.latitude]) )), NEW.srid),4326);
-      NEW.geom = st_transform(ST_GeomFromText('MULTIPOLYGON(((NEW.coord)))',NEW.srid),4326);
-      -- --NEW.geom = st_transform(st_setsrid(ST_MakePolygon(ST_GeomFromText('LINESTRING(NEW.longitude, NEW.latitude)' )), NEW.srid), 4326);
-    END IF;
+      NEW.geom = st_transform((ST_GeomFromGeoJSON(NEW.coord)),4326);
+   END IF;
   END IF;
   RETURN NEW;
 END;
