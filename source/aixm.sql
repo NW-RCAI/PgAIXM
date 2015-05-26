@@ -52,7 +52,7 @@ DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
 DROP FUNCTION IF EXISTS trigger_insert_polygon();
 
-DROP VIEW IF EXISTS airports, AIRP_TABLE, AIRP_MAP, AIRP_MAP_2, CRA, CTR, DRA, PRA, RSA ;
+DROP VIEW IF EXISTS airports, AIRP_TABLE, AIRP_MAP, AIRP_MAP_2, CTA, CTA_2, CTR, DRA, PRA, RSA ;
 
 
 -- В качестве id используем UUID Type
@@ -1525,10 +1525,8 @@ CREATE TABLE Surface
 (
   id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_surface'),
   horizontalAccuracy ValDistanceType,
-  -- массивы (arrays) из широт и долгот:
   latitude           latitude,
   longitude          longitude,
-  coordinates DECIMAL[][],
   coord VARCHAR,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   geom               GEOMETRY(POLYGON, 4326)
@@ -2306,7 +2304,6 @@ AS $function$
         INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-        -- не удается поменять составной тип данных если просто прописывать: height=NEW.height
        UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.designator,name=NEW.name,controltype=NEW.controltype, fieldElevation.value = NEW.height, abandoned=NEW.closed
        WHERE AirportHeliport.uuid=OLD.uuid;
        UPDATE Runway SET nominalLength = ROW (NEW.length, 'M') WHERE Runway.uuid=OLD.uuid;
@@ -2371,17 +2368,52 @@ CREATE TRIGGER als_trigger
     INSTEAD OF INSERT OR UPDATE OR DELETE ON
       ALS FOR EACH ROW EXECUTE PROCEDURE als_function();
 
+
 CREATE VIEW CTA AS
   SELECT
+    uuid,
     designator,
     name,
     controlType,
-    (SELECT AirspaceVolume.upperLimit AS top
+    (SELECT (upperLimit).value AS top
     FROM AirspaceVolume
     WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
-    (SELECT Surface.coord
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+    (SELECT id
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
     (SELECT Surface.geom
     FROM Surface, AirspaceVolume
     WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
@@ -2393,15 +2425,29 @@ LANGUAGE plpgsql
 AS $function$
    BEGIN
       IF TG_OP = 'INSERT' THEN
-        INSERT INTO  Airspace VALUES(NEW.designator,NEW.name,NEW.controlType);
+        INSERT INTO  Airspace VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controlType);
+        INSERT INTO AirspaceVolume VALUES (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom, NEW.geom);
+        INSERT INTO CallsignDetail VALUES (NEW.cs);
+        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE Airspace SET designator = NEW.designator,name = NEW.name,controlType=NEW.controlType
+       UPDATE Airspace SET uuid = NEW.uuid, designator = NEW.designator,name = NEW.name,controlType=NEW.controlType
          WHERE Airspace.uuid=OLD.uuid;
-       RETURN NEW;
+       UPDATE AirspaceVolume SET
+         upperLimit=ROW(NEW.top, NEW.UNL, NEW.top_unit),
+         upperLimitReference=NEW.format_top,
+         lowerLimit= ROW(NEW.bottom, NEW.GND, NEW.bottom_unit),
+         lowerLimitReference=NEW.format_bottom
+        WHERE AirspaceVolume.id=OLD.id;
+       UPDATE CallsignDetail SET callSign = NEW.cs;
+       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+        RETURN NEW;
       ELSIF TG_OP = 'DELETE' THEN
        DELETE FROM Airspace WHERE Airspace.uuid=OLD.uuid;
-       RETURN NULL;
+      DELETE FROM AirspaceVolume WHERE AirspaceVolume.id=OLD.id;
+       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
+       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
+        RETURN NULL;
       END IF;
       RETURN NEW;
     END;
@@ -2411,109 +2457,269 @@ CREATE TRIGGER cta_trigger
     INSTEAD OF INSERT OR UPDATE OR DELETE ON
       CTA FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
-CREATE VIEW CTA_2 AS
-  SELECT
-    AirspaceLayer.id,
-            AirspaceLayer.upperlimit          AS top,
-            AirspaceLayer.upperLimitReference AS format_top,
-            AirspaceLayer.lowerLimit          AS bottom,
-            AirspaceLayer.lowerLimitReference AS format_bottom,
-    (SELECT Airspace.designator AS nm
-     FROM Airspace, AirspaceLayerClass
-     WHERE
-       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT Airspace.controlType AS tp
-     FROM Airspace, AirspaceLayerClass
-     WHERE
-       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT Airspace.name AS nl
-     FROM Airspace, AirspaceLayerClass
-     WHERE
-       Airspace.uuid = AirspaceLayerClass.uuidAirspace AND AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT callSign AS cs
-     FROM
-       CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService, AirspaceLayerClass,
-       Airspace
-     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT RadioCommunicationChannel.channel AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService, AirspaceLayerClass, Airspace
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    -- правильно ли то что ниже (связь)?
-    (SELECT Unit.type AS tp_unit
-     FROM Unit, OrganisationAuthority, AuthorityForAirspace, AirspaceLayerClass, Airspace
-     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid AND Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id),
-    (SELECT Surface.geom
-     FROM Surface, AirspaceVolume, AirspaceLayerClass, Airspace
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid AND
-           Airspace.uuid = AirspaceLayerClass.uuidAirspace AND
-           AirspaceLayer.idAirspaceLayerClass = AirspaceLayerClass.id)
-  FROM AirspaceLayer, Airspace
-  WHERE Airspace.type IN ('CTA');
-
-
-CREATE VIEW DRA AS
+CREATE VIEW CTR AS
   SELECT
     uuid,
-    (SELECT upperlimit AS top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT upperLimitReference AS format_top
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimit AS bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-    (SELECT lowerLimitReference AS format_bottom
-     FROM AirspaceLayer, AirspaceLayerClass
-     WHERE
-       AirspaceLayerClass.id = AirspaceLayer.idAirspaceLayerClass AND AirspaceLayerClass.uuidAirspace = Airspace.uuid),
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
-    (SELECT callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    (SELECT RadioCommunicationChannel.channel AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           AirTrafficManagementService.uuid = Service.uuid
-           AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-           AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid),
-    -- правильно ли то что ниже (связь)?
-    (SELECT Unit.type AS tp_unit
-     FROM Unit, OrganisationAuthority, AuthorityForAirspace
-     WHERE Unit.uuidOrganisationAuthority = OrganisationAuthority.uuid AND
-           OrganisationAuthority.uuid = AuthorityForAirspace.uuidOrganisationAuthority AND
-           AuthorityForAirspace.uuidAirspace = Airspace.uuid),
+    designator,
+    name,
+    controlType,
+    (SELECT (upperLimit).value AS top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+    (SELECT id
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
     (SELECT Surface.geom
-     FROM Surface, AirspaceVolume
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type IN ('D');
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+  FROM Airspace WHERE Airspace.type='CTR';
 
 
+CREATE TRIGGER ctr_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      CTR FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
+-- TMA
+CREATE VIEW TMA AS
+  SELECT
+    uuid,
+    designator,
+    name,
+    controlType,
+    (SELECT (upperLimit).value AS top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+    (SELECT id
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT Surface.geom
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+  FROM Airspace WHERE Airspace.type='TMA';
+
+
+CREATE TRIGGER tma_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      TMA FOR EACH ROW EXECUTE PROCEDURE cta_function();
+
+-- UAA
+CREATE VIEW UAA AS
+  SELECT
+    uuid,
+    designator,
+    name,
+    controlType,
+    (SELECT (upperLimit).value AS top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+    (SELECT id
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT Surface.geom
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+  FROM Airspace WHERE Airspace.type='ATZ';
+
+
+CREATE TRIGGER uaa_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      UAA FOR EACH ROW EXECUTE PROCEDURE cta_function();
+
+-- FIR
+CREATE VIEW FIR AS
+  SELECT
+    uuid,
+    designator,
+    name,
+    (SELECT (upperLimit).value AS top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT day as day_of_the_week
+    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT startTime
+    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT endTime
+    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+    (SELECT id
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT Surface.geom
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+  FROM Airspace WHERE Airspace.type='FIR';
+
+CREATE OR REPLACE FUNCTION fir_function()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+   BEGIN
+      IF TG_OP = 'INSERT' THEN
+        INSERT INTO  Airspace VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controlType);
+        INSERT INTO AirspaceVolume VALUES (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom, NEW.geom);
+        INSERT INTO CallsignDetail VALUES (NEW.cs);
+        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
+        RETURN NEW;
+      ELSIF TG_OP = 'UPDATE' THEN
+       UPDATE Airspace SET uuid = NEW.uuid, designator = NEW.designator,name = NEW.name,controlType=NEW.controlType
+         WHERE Airspace.uuid=OLD.uuid;
+       UPDATE AirspaceVolume SET
+         upperLimit=ROW(NEW.top, NEW.UNL, NEW.top_unit),
+         upperLimitReference=NEW.format_top,
+         lowerLimit= ROW(NEW.bottom, NEW.GND, NEW.bottom_unit),
+         lowerLimitReference=NEW.format_bottom
+        WHERE AirspaceVolume.id=OLD.id;
+       UPDATE CallsignDetail SET callSign = NEW.cs;
+       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+        RETURN NEW;
+      ELSIF TG_OP = 'DELETE' THEN
+       DELETE FROM Airspace WHERE Airspace.uuid=OLD.uuid;
+      DELETE FROM AirspaceVolume WHERE AirspaceVolume.id=OLD.id;
+       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
+       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
+        RETURN NULL;
+      END IF;
+      RETURN NEW;
+    END;
+$function$;
+
+CREATE TRIGGER fir_trigger
+    INSTEAD OF INSERT OR UPDATE OR DELETE ON
+      FIR FOR EACH ROW EXECUTE PROCEDURE fir_function();
 
 -- Триггеры для координат
 
@@ -2551,9 +2757,9 @@ BEGIN
   THEN
     IF (NEW.srid = 4326)
     THEN
-      NEW.geom = st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid);
+      NEW.geom = ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), NEW.srid);
     ELSE
-      NEW.geom = st_transform(st_setsrid(st_makepoint(NEW.longitude, NEW.latitude), NEW.srid), 4326);
+      NEW.geom = ST_Transform(ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), NEW.srid), 4326);
     END IF;
   END IF;
   RETURN NEW;
@@ -2565,7 +2771,7 @@ CREATE TRIGGER inserting
 BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert();
 
-CREATE FUNCTION trigger_insert_polygon()
+CREATE OR REPLACE FUNCTION trigger_insert_polygon()
   RETURNS TRIGGER AS $$
 BEGIN
   IF (TG_OP = 'INSERT' OR
@@ -2573,9 +2779,9 @@ BEGIN
   THEN
     IF (NEW.srid = 4326)
     THEN
-      NEW.geom = ST_GeomFromGeoJSON(NEW.coord);
+      NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord),NEW.srid));
     ELSE
-      NEW.geom = st_transform((ST_GeomFromGeoJSON(NEW.coord)),4326);
+      NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord),NEW.srid)),4326));
    END IF;
   END IF;
   RETURN NEW;
