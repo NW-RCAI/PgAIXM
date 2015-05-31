@@ -631,7 +631,7 @@ CHECK (VALUE ~ '((GOOD|FAIR|POOR|EXCELLENT)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'EXCELLENT', 'OTHER');
 
 -- Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
--- FALS - полныое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
+-- FALS - полное световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
 -- IALS - среднее световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - от 420 до 720 м, огни по краям ВПП, в начале ВПП и в конце ВПП
 -- BALS - базовое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - менее 420 м (или низкая интенсивность посадочной световой системы любой длины), огни по краям ВПП, в начале ВПП и в конце ВПП
 -- NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
@@ -736,12 +736,13 @@ CREATE DOMAIN CodeServiceATFMType AS VARCHAR(40)
 CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
 --CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SCHED', 'OTHER');
 
--- Список значений, используемых для определения сервиса по предоставлению информации
--- AFIS - служба полетной информации аэродрома, как дано в ICAO Annex 11
+/*
+Список значений, используемых для определения сервиса по предоставлению информации
+AFIS - аэродромная служба полетной информации
 -- AIS - служба авиационной информации, как дано в ICAO Annex 15
--- ATIS - служба автоматизированной конечной информации, как дано в ICAO Annex 11
+ATIS - автоматическое информационное аэродромное обслуживание, работает на указанной частоте радиосредства
 -- BRIEFING - служба предполетная и послеполетной информации
--- FIS - служба, созданная с целью дать совет и информацию, полезную для безопасного и рационального полета
+FIS - полетно-информационное обслуживание пролетающих самолетов
 -- OFIS_VHF - VHF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
 -- OFIS_HF - HF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
 -- NOTAM - обеспечение службой NOTAM, как дано в ICAO Annex 11
@@ -754,15 +755,13 @@ CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
 -- VOLMET - служба передачи метеорологической информации для воздушного судна в полете
 -- ALTIMETER - служба предоставления информации настроек альтиметра
 -- ASOS - автоматизированная служба обследования поверхности
--- AWOS - автоматизированная служба обследования погоды
---
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
+AWOS - автоматизированная cистема метеонаблюдений
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
+*/
 CREATE DOMAIN CodeServiceInformationType AS VARCHAR(40)
 CHECK (VALUE ~
        '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeServiceInformationType AS ENUM ('AFIS', 'AIS', 'ATIS', 'BRIEFING', 'FIS', 'OFIS_VHF', 'OFIS_HF',
--- 'INFO', 'RAF', 'METAR', 'SIGMET', 'TWEB', 'TAF', 'VOLMET', 'ALTIMETER', 'ASOS', 'AWOS', 'OTHER');
-
 -- Список значений, используемых для определения сервиса по поиску и спасению
 -- ALRS - служба предупреждения
 -- SAR - служба поиска и спасения
@@ -893,27 +892,25 @@ CHECK (VALUE ~ '((SFC|MSL|W84|STD)|OTHER: [A-Z]{30})');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
 CREATE DOMAIN CodeAltitudeUseType AS VARCHAR(40)
 CHECK (VALUE ~ '((ABOVE_LOWER|BELOW_UPPER|AT_LOWER|BETWEEN|RECOMMENDED|EXPECT_LOWER|AS_ASSIGNED)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeAltitudeUseType AS ENUM ('ABOVE_LOWER', 'BELOW_UPPER', 'AT_LOWER', 'BETWEEN',
--- 'RECOMMENDED', 'EXPECT_LOWER', 'AS_ASSIGNED', 'OTHER');
 
--- Префикс указателя пути (ИКАО).
--- K - вертолетная МВТ
--- U - МВТ ВВП (В верхнем воздушном пространстве)
--- S - сверхзвуковая МВТ
--- T - TACAN Route (военный)
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorPrefixType
+/*
+Префикс перед основной буквой воздушных трасс (ИКАО).
+K - Kopter - маршрут расположен в нижнем воздушном пространстве и предназначен, в основном, для полетов вертолетов
+U - Upper - маршрут расположен в верхнем воздушном пространстве
+S - Supersonic - маршрут предназначен для самолетов со сверхзвуковыми скоростями полета
+T - TACAN Route (военный)
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorPrefixType
+*/
 CREATE DOMAIN CodeRouteDesignatorPrefixType AS VARCHAR(40)
 CHECK (VALUE ~ '((K|U|S|T)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeRouteDesignatorPrefixType AS ENUM ('K', 'U', 'S', 'T', 'OTHER');
 
 -- Однобуквенный указатель для пути
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
 CREATE DOMAIN CodeRouteDesignatorLetterType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|G|H|J|L|M|N|P|Q|R|T|V|W|Y|Z)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeRouteDesignatorLetterType AS ENUM ('A', 'B', 'G', 'H', 'J', 'L', 'M', 'N', 'P', 'Q', 'R',
---  'T', 'V', 'W', 'Y', 'Z', 'OTHER');
+
 
 -- A (positive) number of similar items.
 --
@@ -1036,12 +1033,14 @@ CREATE TYPE CodeLevelType AS ENUM ('UPPER', 'LOWER', 'BOTH', 'OTHER');
 --      https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteSegmentPathType
 CREATE TYPE CodeRouteSegmentPathType AS ENUM ('GRC', 'RHL', 'GDS', 'OTHER');
 
--- Тип пути с навигационной точки зрения
--- CONV - традиционный (обычный) навигационный путь
--- RNAV - зональная навигация
--- TACAN - радионавигационная система ближнего действия "Такан"
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteNavigationType
+/*
+Тип маршрута с навигационной точки зрения
+CONV - традиционный (обычный) навигационный путь
+RNAV - маршрут зональной навигации
+TACAN - радионавигационная система ближнего действия "Такан"
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteNavigationType
+*/
 CREATE TYPE CodeRouteNavigationType AS ENUM ('CONV', 'RNAV', 'TACAN', 'OTHER');
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRNPType
@@ -1096,20 +1095,22 @@ CREATE TYPE CodeMilitaryRoutePointType AS ENUM ('S', 'T', 'X', 'AS', 'AX', 'ASX'
 CREATE DOMAIN CodeLanguageType AS VARCHAR(3)
 CHECK (VALUE ~ '[a-z]{3}');
 
--- Тип канала связи.
--- HF - высокочастотный голосовой радиоканал
--- VHF - сверхвысокочастотный голосовой радиоканал с интервалами 25 КГц
--- VDL1
--- VDL2
--- VDL4
--- AMSS
--- ADS_B
--- ADS_B_VD
--- HFDL
--- VHF_833
--- UHF
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
+/*
+Тип канала связи.
+HF - высокочастотный голосовой радиоканал
+VHF - ультракоротковолновый голосовой радиоканал с интервалами 25 КГц
+VDL1
+VDL2
+VDL4
+AMSS
+ADS_B
+ADS_B_VD
+HFDL
+VHF_833
+UHF
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
+*/
 CREATE TYPE CodeCommunicationModeType AS ENUM ('HF', 'VHF', 'VDL1', 'VDL2', 'VDL4', 'AMSS', 'ADS_B', 'ADS_B_VD', 'HFDL', 'VHF_833', 'UHF', 'OTHER');
 
 -- HZ - Гц
@@ -1187,21 +1188,21 @@ BS
 COM
 FCST
 FIC
-GCA
+GCA - служба захода на посадку по командам с земли
 MET
 MWO
 NOF
 OAC
-PAR
+PAR - служба радиолокатора точного захода на посадку
 RAD
 RAFC
 RCC
 RSC
-SAR
+SAR - поисково-спасательная служба
 SMC
 SMR
 SRA
-SSR
+SSR - служба обзорного радиолокатора вторичной радиолокации
 TAR
 TWR
 UAC
@@ -1216,9 +1217,6 @@ MIL
 MILOPS
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
-CREATE TYPE CodeUnitType AS ENUM
-('ACC', 'ADSU', 'ADVC', 'ALPS', 'AOF', 'APP', 'APP_ARR', 'APP_DEP', 'ARO', 'ATCC', 'ATFMU', 'ATMU', 'ATSU', 'BOF', 'BS', 'COM', 'FCST', 'FIC', 'GCA', 'MET', 'MWO', 'NOF', 'OAC', 'PAR',
-  'RAD', 'RAFC', 'RCC', 'RSC', 'SAR', 'SMC', 'SMR', 'SRA', 'SSR', 'TAR', 'TWR', 'UAC', 'UDF', 'UIC', 'VDF', 'WAFC', 'ARTCC', 'FSS', 'TRACON', 'MIL', 'MILOPS', 'OTHER');
 */
 
 CREATE DOMAIN CodeUnitType AS VARCHAR(40)
@@ -1233,7 +1231,8 @@ CHECK (VALUE ~ '((ACC|ADSU|ADVC|ALPS|AOF|APP|APP_ARR|APP_DEP|ARO|ATCC|ATFMU|ATMU
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
 CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'OTHER');
 
--- Классификация служб эшелонирования полетов и наземного контроля
+/*
+Классификация служб эшелонирования полетов и наземного контроля
 -- ACS - служба контроля территории маршрутных полетов
 -- UAC - служба контроля верхней зоны полетов
 -- OACS - служба контроля океанической зоны
@@ -1241,12 +1240,12 @@ CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'O
 -- TWR - башенная служба контроля аэродрома
 -- ADVS - консультационная служба
 -- EFAS - консультационная служба маршрутных полетов
--- CTAF - общая полетная консультационная частотная служба
---
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
+CTAF - общая консультативная частота аэродромного обслуживания (только США)
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
+*/
 CREATE DOMAIN CodeServiceATCType AS VARCHAR(40)
 CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
-  --ENUM ('ACS', 'UAC', 'OACS', 'APP', 'TWR', 'ADVS', 'CTAF', 'OTHER');
 
 
 -- Тип ответственности, которую организация нест за аэронавигационный объект (например, за воздушное пространство)
@@ -1257,27 +1256,29 @@ CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
 CREATE TYPE CodeAuthorityType AS ENUM ('OWN', 'DLGT', 'AIS', 'OTHER');
 
--- Типы служб навигационных средств
--- VOR - курсовой всенаправленный радиомаяк ОВЧ-диапазона
--- DME - дальномерная система DME
--- NDB - ненаправленный радиомаяк
--- TACAN - радионавигационная система "Такан"
--- MKR - маркерный радиомаяк, МРМ
--- ILS - система слепой посадки
--- ILS_DME - система слепой посадки с размещенной дальномерной системой DME
--- MLS - СВЧ-система инструментальной посадки
--- MLS_DME
--- VORTAC - система "Вортак" (угломерно-дальномерная радионавигационная система)
--- VOR_DME
--- NDB_DME
--- TLS
--- LOC
--- LOC_DME
--- NDB_MKR
--- DF - (радио)пеленгатор
--- SDF
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidServiceType
+/*
+Типы служб навигационных средств
+VOR - всенаправленное навигационное ОВЧ средство с угломерными возможностями
+DME - дальномерное оборудование
+NDB - ненаправленный радиомаяк
+TACAN - всенаправленное навигационное средство УВЧ, позволяюшее определить пеленг и дальность
+MKR - маркерный радиомаяк, МРМ
+ILS - инструментальная система посадки по приборам (возможно наличие позывных на частоте курсового маяка)
+ILS_DME - инструментальная система посадки по приборам с размещенной дальномерной системой DME
+MLS - микроволновая система посадки
+MLS_DME
+VORTAC - совмещенные маяк VOR и стандартное УВЧ дальномерное обрудование системы TACAN
+VOR_DME - совмещенное навигационное средство VOR и стандартное УВЧ дальномерное оборудование системы TACAN
+NDB_DME
+TLS
+LOC
+LOC_DME
+NDB_MKR
+DF - (радио)пеленгатор
+SDF - упрощенное средство направленного действия
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidServiceType
+*/
 CREATE TYPE CodeNavaidServiceType AS ENUM ('VOR', 'DME', 'NDB', 'TACAN', 'MKR', 'ILS', 'ILS_DME', 'MLS', 'MLS_DME', 'VORTAC', 'VOR_DME',
   'NDB_DME', 'TLS', 'LOC', 'LOC_DME', 'NDB_MKR', 'DF', 'OTHER');
 
@@ -1318,7 +1319,7 @@ CREATE TYPE CodeIntegrityLevelILSType AS ENUM ('1', '2', '3', '4', 'OTHER');
 
 /*
 TWR - диспетчерская служба с аэродромной вышки
-SMGCS - диспетчерская служба передвижений по поверхности
+SMGCS - система контроля и управления движением транспорта на площади маневрирования
 TAXI - служба разрешения рулежки (?)
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceGroundControlType
