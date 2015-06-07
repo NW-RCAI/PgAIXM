@@ -91,7 +91,7 @@ CREATE DOMAIN CodeIATAType AS CHAR(3)
 CHECK (VALUE ~ '[A-Z]{3}');
 
 /*
-Тип объекта AirportHeliport:
+Тип объекта Аэродром/Вертодром:
 AD - только аэродром
 АН - аэродром и вертодром
 НР - только вертодром
@@ -120,7 +120,6 @@ https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_
 */
 CREATE DOMAIN CodeMilitaryOperationsType AS VARCHAR(60)
 CHECK (VALUE ~ '(MIL|CIVIL|JOINT|OTHER: [A-Z]{0,30})');
--- AS ENUM ('CIVIL', 'MIL', 'JOINT', 'OTHER');
 
 -- A unit of measurement for a vertical distance:
 -- FT - feet
