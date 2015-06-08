@@ -2305,20 +2305,19 @@ AS $function$
         INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,controltype=NEW.controltype, fieldElevation.value = NEW.ha, abandoned=NEW.closed
-       WHERE AirportHeliport.uuid=OLD.uuid;
-       UPDATE Runway SET nominalLength = ROW (NEW.length, 'M') WHERE Runway.uuid=OLD.uuid;
-       UPDATE RunwayDirection SET trueBearing = NEW.ugol WHERE RunwayDirection.uuid=OLD.uuid;
-       UPDATE CallsignDetail SET callSign = NEW.cs WHERE CallsignDetail.id= OLD.id;
-       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr WHERE RadioCommunicationChannel.uuid=OLD.uuid;
+       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,controltype=NEW.controltype, fieldElevation.value = NEW.ha, abandoned=NEW.closed WHERE AirportHeliport.uuid=OLD.uuid;
+       UPDATE Runway SET nominalLength.value = NEW.length WHERE  runway.uuidairportheliport=OLD.uuid;
+       UPDATE RunwayDirection SET trueBearing = NEW.ugol WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
+       UPDATE CallsignDetail SET callSign = NEW.cs WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
+       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
        UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
        RETURN NEW;
       ELSIF TG_OP = 'DELETE' THEN
        DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
-       DELETE FROM Runway WHERE Runway.uuid=OLD.uuid;
-       DELETE FROM RunwayDirection WHERE RunwayDirection.uuid = OLD.uuid;
-       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
-       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
+       DELETE FROM Runway WHERE runway.uuidairportheliport=OLD.uuid;
+       DELETE FROM RunwayDirection WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
+       DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
+       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
        DELETE FROM Point WHERE Point.id=OLD.id;
        RETURN NULL;
       END IF;
@@ -2344,20 +2343,19 @@ AS $function$
         INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,type=NEW.type, fieldElevation.value = NEW.height, abandoned=NEW.closed
-       WHERE AirportHeliport.uuid=OLD.uuid;
-       UPDATE Runway SET nominalLength = ROW (NEW.length, 'M') WHERE Runway.uuid=OLD.uuid;
-       UPDATE RunwayDirection SET trueBearing = NEW.ugol;
-       UPDATE CallsignDetail SET callSign = NEW.cs;
-       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,type=NEW.type, fieldElevation.value = NEW.height, abandoned=NEW.closed        WHERE AirportHeliport.uuid=OLD.uuid;
+       UPDATE Runway SET nominalLength.value = NEW.length WHERE  runway.uuidairportheliport=OLD.uuid;
+       UPDATE RunwayDirection SET trueBearing = NEW.ugol WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
+       UPDATE CallsignDetail SET callSign = NEW.cs WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
+       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
        UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
        RETURN NEW;
       ELSIF TG_OP = 'DELETE' THEN
        DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
-       DELETE FROM Runway WHERE Runway.uuid=OLD.uuid;
-       DELETE FROM RunwayDirection WHERE RunwayDirection.uuid = OLD.uuid;
-       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
-       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
+       DELETE FROM Runway WHERE runway.uuidairportheliport=OLD.uuid;
+       DELETE FROM RunwayDirection WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
+       DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
+       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
        DELETE FROM Point WHERE Point.id=OLD.id;
        RETURN NULL;
       END IF;
