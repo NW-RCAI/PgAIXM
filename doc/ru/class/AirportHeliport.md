@@ -211,7 +211,7 @@ The altitude at or below which the vertical position of an aircraft is controlle
 - F InformationService
 - F AirTrafficControlService
 - F ~~Procedure~~
-- F ~~Navaid~~
+- F Navaid
 - F ~~SafeAltitudeArea~~
 
 ### Многие к одному:

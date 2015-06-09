@@ -2184,7 +2184,16 @@ CREATE TABLE Navaid
   purpose           CodeNavaidPurposeType,
   signalPerformance CodeSignalPerformanceILSType,
   courseQuality     CodeCourseQualityILSType,
-  integrityLevel    CodeIntegrityLevelILSType
+  integrityLevel    CodeIntegrityLevelILSType,
+  idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id),
+  idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
+
+);
+
+CREATE TABLE AirportHeliport_Navaid
+(
+  uuidNavaid              id REFERENCES Navaid (uuid),
+    uuidAirportHeliport              id REFERENCES AirportHeliport (uuid)
 );
 
 
