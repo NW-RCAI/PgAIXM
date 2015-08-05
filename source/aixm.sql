@@ -2365,7 +2365,7 @@ CREATE OR REPLACE VIEW ARP AS
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
 
-  FROM airportheliport;
+  FROM airportheliport WHERE airportheliport.type IS NULL;
 
 CREATE OR REPLACE VIEW ALS AS
   SELECT
@@ -2373,7 +2373,7 @@ CREATE OR REPLACE VIEW ALS AS
     name as nl,
     designator as nm,
     type,
-    (fieldElevation).value as height,
+    (fieldElevation).value as ha,
     (SELECT (nominallength).value as length
       FROM Runway
       WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
@@ -2416,7 +2416,7 @@ CREATE OR REPLACE VIEW ALS AS
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
 
-  FROM airportheliport;
+  FROM airportheliport WHERE airportheliport.type IS NOT NULL;
 
 CREATE OR REPLACE FUNCTION arp_function()
 RETURNS TRIGGER
