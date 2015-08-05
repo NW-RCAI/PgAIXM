@@ -23,30 +23,19 @@ CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVertic
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
 CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,
 CodeAircraftGroundServiceType,CodeUnitType,CodeTimeReferenceType,CodeDayType,CodeTimeEventType,UomDurationType,
-CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType,UomDistanceVerticalType,UomTemperatureType, CodeAirportHeliportType CASCADE;
+CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType,UomDistanceVerticalType,UomTemperatureType, CodeAirportHeliportType,
+UomDistanceType, UomFLType,CodeStatusOperationsType,CodeOrganisationType,UomDepthType,CodeFrictionEstimateType,CodeFrictionDeviceType,
+CodeStatusAirportType,CodeAirportWarningType,CodeRunwayType,CodeSurfaceCompositionType,CodeSurfacePreparationType,CodeSurfaceConditionType,
+CodePCNPavementType,CodePCNSubgradeType,CodePCNTyrePressureType,CodePCNMethodType,UomWeightType,UomPressureType,CodeMilitaryTrainingType,
+CodeAirspaceActivityType,CodeStatusAirspaceType,CodeAirspacePointRoleType,CodeAirspacePointPositionType,CodeLevelType,CodeRouteSegmentPathType,
+CodeRouteNavigationType,CodeRouteDesignatorSuffixType,CodeATCReportingType,CodeFreeFlightType,CodeRVSMPointRoleType,CodeMilitaryRoutePointType,
+CodeCommunicationModeType,CodeRadioEmissionType,CodeCommunicationDirectionType,CodeUnitDependencyType,CodeAuthorityType,CodeNavaidServiceType,
+CodeNavaidPurposeType,CodeSignalPerformanceILSType,CodeCourseQualityILSType,CodeIntegrityLevelILSType CASCADE;
 
-/*
-coderunwaysectiontype, codesidetype, CodeDirectionTurnType,coderunwaymarkingtype, CodeMarkingConditionType, CodeLightingJARType,
-CodeApproachGuidanceType, CodeLightIntensityType,CodeColourType, codetelecomnetworktype, CodeFlightDestinationType, CodeFacilityRankingType,
-CodeServiceATFMType, CodeServiceInformationType, CodeServiceSARType,CodeAirspaceType, CodeAirspaceClassificationType,
-CodeVerticalReferenceType, CodeAltitudeUseType, CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType,
-CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype,
-*/
-
-DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, uomfltype, valflbasetype, uomdistancetype, valdistancebasetype,
-uomdepthtype,  UomDistanceVerticalType, ValDistanceVerticalType, valdistanceverticalbasetype,
-ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, CodeStatusOperationsType,
-CodeOrganisationType, ValDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType, CodeStatusAirportType, CodeAirportWarningType,
-ValSlopeType, UomWeightType, ValWeightType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType,
-CodeSurfaceConditionType, ValPCNType, CodePCNSubgradeType, CodePCNTyrePressureType, codepcnmethodtype,
-codeorganisationdesignatortype, textdesignatortype, textinstructiontype, datetimetype, uompressuretype,
-valfrictiontype, CodePCNPavementType, valpressuretype, textphonetype, CodeMilitaryTrainingType, CodeAirspaceActivityType,
-CodeStatusAirspaceType, CodeAirspacePointRoleType, codeunitdependencytype, codeairspacepointpositiontype, codeleveltype,
-coderoutesegmentpathtype, coderoutenavigationtype, codernptype, coderoutedesignatorsuffixtype, codeatcreportingtype,
-codefreeflighttype, codervsmpointroletype, codemilitaryroutepointtype, codelanguagetype, codecommunicationmodetype,
- valfrequencybasetype, valfrequencytype, coderadioemissiontype, codecommunicationchanneltype,
-codecommunicationdirectiontype, CodeAuthorityType, codenavaidservicetype, codenavaidpurposetype,
-codesignalperformanceilstype, codecoursequalityilstype, codeintegritylevelilstype,ValDurationType CASCADE;
+DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, valflbasetype, valdistancebasetype,
+ValDistanceVerticalType, valdistanceverticalbasetype,ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
+ValSlopeType, ValWeightType, ValPCNType,textdesignatortype, valpressuretype, textphonetype, codernptype, codelanguagetype, valfrequencybasetype,
+valfrequencytype, codecommunicationchanneltype, ValDurationType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
@@ -108,7 +97,6 @@ https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_
 */
 CREATE DOMAIN CodeYesNoType AS VARCHAR(60)
 CHECK (VALUE ~ '(YES|NO|OTHER: [A-Z]{0,30})');
---CREATE TYPE CodeYesNoType AS ENUM ('Yes', 'No', 'Other');
 
 /*
 Признак принадлежности к военным:
@@ -189,12 +177,14 @@ CHECK (VALUE > 1000 AND VALUE <= 2999);
 CREATE DOMAIN ValMagneticVariationChangeType AS DECIMAL(13, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
--- A unit of measurement for temperature.
--- C - degrees Celsius
--- F - degrees Fahrenheit
--- K - degrees Kelvin
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
+/*
+Единицы измерения температуры.
+C - degrees Celsius
+F - degrees Fahrenheit
+K - degrees Kelvin
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
+*/
 CREATE DOMAIN UomTemperatureType AS VARCHAR(60)
 CHECK (VALUE ~ '(C|F|K|OTHER: [A-Z]{0,30})');
 
@@ -207,16 +197,21 @@ CREATE TYPE ValTemperatureType AS (
 );
 
 
--- Unit of measurement for flight levels
--- FL - flight level in hundreds of feet
--- SM - standard meters (tens of meters)
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFLType
-CREATE TYPE UomFLType AS ENUM ('FL', 'SM', 'OTHER');
+/*
+Unit of measurement for flight levels
+FL - flight level in hundreds of feet
+SM - standard meters (tens of meters)
 
--- A value expressed in flight levels (FL).
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFLType
+*/
+CREATE DOMAIN UomFLType AS VARCHAR(60)
+CHECK (VALUE ~ '(FL|SM|OTHER: [A-Z]{0,30})');
+
+/*
+A value expressed in flight levels (FL).
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
+*/
 CREATE DOMAIN ValFLBaseType AS SMALLINT
 CHECK (VALUE < 999);
 CREATE TYPE ValFLType AS (
@@ -229,17 +224,20 @@ CREATE TYPE ValFLType AS (
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateType
 CREATE DOMAIN DateType AS DATE;
 
--- A unit of measurement for a horizontal distance.
--- For example, metres, feet, nautical miles, kilometres, etc...
--- NM - морские мили
--- KM - километры
--- М - метры
--- FT - футы
--- MI - мили
--- CM - сантиметры
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceType
-CREATE TYPE UomDistanceType AS ENUM ('NM', 'KM', 'M', 'FT', 'MI', 'CM', 'OTHER');
+/*
+A unit of measurement for a horizontal distance.
+For example, metres, feet, nautical miles, kilometres, etc...
+NM - морские мили
+KM - километры
+М - метры
+FT - футы
+MI - мили
+CM - сантиметры
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceType
+*/
+CREATE DOMAIN UomDistanceType AS VARCHAR(60)
+CHECK (VALUE ~ '(NM|KM|M|FT|MI|CM|OTHER: [A-Z]{0,30})');
 
 -- A signed distance.
 --
@@ -249,150 +247,189 @@ CREATE TYPE ValDistanceSignedType AS (
   unit  UomDistanceType
 );
 
--- A type for (positive) distance.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceBase
+/*
+A type for (positive) distance.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceBase
+*/
 CREATE DOMAIN ValDistanceBaseType AS DECIMAL(30, 20)
 CHECK (VALUE > 0);
 
--- A (positive) distance.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
+/*
+A (positive) distance.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
+*/
 CREATE TYPE ValDistanceType AS (
   value ValDistanceBaseType,
   unit  UomDistanceType
 );
 
--- Code indicating operational status:
--- NORMAL - стандартные операции
--- DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
--- UNSERVICEABLE - не пригодна для эксплуатации
--- WORK_IN_PROGRESS - работа налаживается (в ремонте) - under construction
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusOperationsType
-CREATE TYPE CodeStatusOperationsType AS ENUM ('NORMAL', 'DOWNGRADED', 'UNSERVICEABLE', 'WORK_IN_PROGRESS', 'OTHER');
+/*
+Code indicating operational status:
+NORMAL - стандартные операции
+DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
+UNSERVICEABLE - не пригодна для эксплуатации
+WORK_IN_PROGRESS - работа налаживается (в ремонте) - under construction
 
--- Закодированный идентификатор организации, департамента, агенства или объединения.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusOperationsType
+*/
+CREATE DOMAIN CodeStatusOperationsType AS VARCHAR(60)
+CHECK (VALUE ~ '(NORMAL|DOWNGRADED|UNSERVICEABLE|WORK_IN_PROGRESS|OTHER: [A-Z]{0,30})');
+
+/*
+Закодированный идентификатор организации, департамента, агенства или объединения.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
+*/
 CREATE DOMAIN CodeOrganisationDesignatorType AS VARCHAR(12)
 CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*');
 
--- Код, указывающий на тип организации:
--- STATE - область
--- STATE_GROUP - группа областей
--- ORG - организация в области
--- INTL_ORG - международная организация
--- ACFT_OPR - авиационное агентство
--- HANDLING_AGENCY - транспортное агентство (или логистическое)
--- NTL_AUTH - национальный департамент
--- ATS - постащик услуг авиаперевозок
--- COMMERCIAL - другая коммерческая организация
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationType
-CREATE TYPE CodeOrganisationType AS ENUM ('STATE', 'STATE_GROUP', 'ORG', 'INTL_ORG', 'ACFT_OPR', 'HANDLING_AGENCY', 'NTL_AUTH', 'ATS', 'COMMERCIAL', 'OTHER');
+/*
+Код, указывающий на тип организации:
+STATE - область
+STATE_GROUP - группа областей
+ORG - организация в области
+INTL_ORG - международная организация
+ACFT_OPR - авиационное агентство
+HANDLING_AGENCY - транспортное агентство (или логистическое)
+NTL_AUTH - национальный департамент
+ATS - постащик услуг авиаперевозок
+COMMERCIAL - другая коммерческая организация
 
--- Текстовое обозначение.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextDesignatorType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationType
+*/
+CREATE DOMAIN CodeOrganisationType AS VARCHAR(60)
+CHECK (VALUE ~ '(STATE|STATE_GROUP|ORG|INTL_ORG|ACFT_OPR|HANDLING_AGENCY|NTL_AUTH|ATS|COMMERCIAL|OTHER: [A-Z]{0,30})');
+
+/*
+Текстовое обозначение.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextDesignatorType
+*/
 CREATE DOMAIN TextDesignatorType AS VARCHAR(16)
 CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*');
 
--- A textual description of a sequence of elementary steps.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextInstructionType
+/*
+A textual description of a sequence of elementary steps.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextInstructionType
+*/
 CREATE DOMAIN TextInstructionType AS VARCHAR(10000);
 
--- A full date and time value.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateTimeType
+/*
+A full date and time value.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateTimeType
+*/
 CREATE DOMAIN DateTimeType AS TIMESTAMP WITH TIME ZONE;
 
--- Единицы измерения глубины:
--- MM - миллиметры
--- СМ - сантиметры
--- IN - дюймы
--- FT - футы
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDepthType
-CREATE TYPE UomDepthType AS ENUM ('MM', 'CM', 'IN', 'FT', 'OTHER');
+/*
+Единицы измерения глубины:
+MM - миллиметры
+СМ - сантиметры
+IN - дюймы
+FT - футы
 
--- The value of a depth.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDepthType
+*/
+CREATE DOMAIN UomDepthType AS VARCHAR(60)
+CHECK (VALUE ~ '(MM|CM|IN|FT|OTHER: [A-Z]{0,30})');
+
+/*
+Значение глубины.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
+*/
 CREATE TYPE ValDepthType AS (
   value DECIMAL(30, 20),
   unit  UomDepthType
 );
 
--- Значение коэффициента трения.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
+/*
+Значение коэффициента трения.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
+*/
 CREATE DOMAIN ValFrictionType AS DECIMAL(3, 2)
 CHECK ( VALUE >= 0 AND VALUE <= 1);
 
--- Качественная оценка трения на ВВП:
--- GOOD - хорошее
--- MEDIUM_GOOD - среднее ближе к хорошему
--- MEDIUM - среднее
--- MEDIUM_POOR - среднее ближе к плохому
--- POOR - плохое
--- UNRELIABLE - состояние поверхности или доступного прибора измерения трения не позволяют провести надежные измерения трения поверхности
---
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionEstimateType
-CREATE TYPE CodeFrictionEstimateType AS ENUM ('GOOD', 'MEDIUM_GOOD', 'MEDIUM', 'MEDIUM_POOR', 'POOR', 'UNRELIABLE', 'OTHER');
+/*
+Качественная оценка трения на ВВП:
+GOOD - хорошее
+MEDIUM_GOOD - среднее ближе к хорошему
+MEDIUM - среднее
+MEDIUM_POOR - среднее ближе к плохому
+POOR - плохое
+UNRELIABLE - состояние поверхности или доступного прибора измерения трения не позволяют провести надежные измерения трения поверхности
 
--- Типы оборудования, использованного для определения коэффициента трения на ВПП:
--- BRD - Brakemeter-Dynometer
--- GRT - Grip tester
--- MUM - Mu-meter
--- RFT -	Runway friction tester
--- SFH - Surface friction tester (high-pressure tire)
--- SFL	-	Surface friction tester (low-pressure tire)
--- SKH	-	Skiddometer (high-pressure tire)
--- SKL	-	Skiddometer (low-pressure tire)
--- TAP	-	Tapley meter
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionDeviceType
-CREATE TYPE CodeFrictionDeviceType AS ENUM ('BRD', 'GRT', 'MUM', 'RFT', 'SFH', 'SFL', 'SKH', 'SKL', 'TAP', 'OTHER');
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionEstimateType
+*/
+CREATE DOMAIN CodeFrictionEstimateType AS VARCHAR(60)
+CHECK (VALUE ~ '(GOOD|MEDIUM_GOOD|MEDIUM|MEDIUM_POOR|POOR|UNRELIABLE|OTHER: [A-Z]{0,30})');
 
--- Время с точностью до 1 мин.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
+/*
+Типы оборудования, использованного для определения коэффициента трения на ВПП:
+BRD - Brakemeter-Dynometer
+GRT - Grip tester
+MUM - Mu-meter
+RFT -	Runway friction tester
+SFH - Surface friction tester (high-pressure tire)
+SFL	-	Surface friction tester (low-pressure tire)
+SKL	-	Skiddometer (low-pressure tire)
+TAP	-	Tapley meter
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionDeviceType
+*/
+CREATE DOMAIN CodeFrictionDeviceType AS VARCHAR(60)
+CHECK (VALUE ~ '(BRD|GRT|MUM|RFT|SFH|SFL|SKH|SKL|TAP|OTHER: [A-Z]{0,30})');
+
+/*
+Время с точностью до 1 мин.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
+*/
 CREATE DOMAIN TimeType AS CHAR(5)
 CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 
--- A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
+/*
+A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
+*/
 CREATE DOMAIN ValPercentType AS DECIMAL(4, 1)
 CHECK (VALUE >= 0 AND VALUE <= 100);
 
+/*
+A coded list of values that indicates the availability of an airport/heliport facility for specific flight operations.
+NORMAL - условия имеют формальные ограничения
+LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
+CLOSED - не рабочее состояние
 
--- A coded list of values that indicates the availability of an airport/heliport facility for specific flight operations.
--- NORMAL - условия имеют формальные ограничения
--- LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
--- CLOSED - не рабочее состояние
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirportType
-CREATE TYPE CodeStatusAirportType AS ENUM ('NORMAL', 'LIMITED', 'CLOSED', 'OTHER');
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirportType
+*/
+CREATE DOMAIN CodeStatusAirportType AS VARCHAR(60)
+CHECK (VALUE ~ '(NORMAL|LIMITED|CLOSED|OTHER: [A-Z]{0,30})');
 
--- A code indicating a reason for caution in airport operations. For example, work in progress on a runway.
--- WIP - идут работы
--- EQUIP - люди и оборудование
--- BIRD - опасность в виде птиц
--- ANIMAL - опасность в виде животных
--- RUBBER_REMOVAL - уборка резиновых осадков с DGG (или каких-то резиновых отложений)
--- PARKED_ACFT - на площадке расположен припаркованный или вышедший из строя летательный аппарат
--- RESURFACING - работы по асфальтированию
--- PAVING - покрытие ВПП
--- PAINTING - разметка ВПП
--- INSPECTION - присутствие людей или оборудования из-за работ по обследованию наземного оборудования
--- GRASS_CUTTING - присутствие людей или оборудования из-за работ по стрижке газона
--- CALIBRATION - присутствие людей или оборудования из-за работ с наземным оборудованием
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
-CREATE TYPE CodeAirportWarningType AS ENUM ('WIP', 'EQUIP', 'BIRD', 'ANIMAL', 'RUBBER_REMOVAL', 'PARKED_ACFT', 'RESURFACING', 'PAVING', 'PAINTING', 'INSPECTION', 'GRASS_CUTTING', 'CALIBRATION');
+/*
+A code indicating a reason for caution in airport operations. For example, work in progress on a runway.
+WIP - идут работы
+EQUIP - люди и оборудование
+BIRD - опасность в виде птиц
+ANIMAL - опасность в виде животных
+RUBBER_REMOVAL - уборка резиновых осадков с DGG (или каких-то резиновых отложений)
+PARKED_ACFT - на площадке расположен припаркованный или вышедший из строя летательный аппарат
+RESURFACING - работы по асфальтированию
+PAVING - покрытие ВПП
+PAINTING - разметка ВПП
+INSPECTION - присутствие людей или оборудования из-за работ по обследованию наземного оборудования
+GRASS_CUTTING - присутствие людей или оборудования из-за работ по стрижке газона
+CALIBRATION - присутствие людей или оборудования из-за работ с наземным оборудованием
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
+*/
+CREATE DOMAIN CodeAirportWarningType AS VARCHAR(60)
+CHECK (VALUE ~ '(WIP|EQUIP|BIRD|ANIMAL|RUBBER_REMOVAL|PARKED_ACFT|RESURFACING|PAVING|PAINTING|INSPECTION|GRASS_CUTTING|CALIBRATION|OTHER: [A-Z]{0,30})');
 
 -- Широта
 --
@@ -402,125 +439,157 @@ CREATE DOMAIN latitude AS DECIMAL(17, 15);
 --
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
--- Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
--- RWY - ВПП для самолетов
--- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayType
-CREATE TYPE CodeRunwayType AS ENUM ('RWY', 'FATO', 'OTHER');
+/*
+Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
+RWY - ВПП для самолетов
+FATO - зона конечного этапа захода на посадку и взлета для вертолетов
 
--- Код указывающий на материал ВПП.
--- ASPH - асфальт
--- ASPH_GRASS - асфальт и трава
--- CONC - бетон
--- CONC_ASPH - бетон и асфальт
--- CONC_GRS - бетон и трава
--- GRASS - трава с дерном или голой землей
--- SAND - песок
--- WATER - вода
--- BITUM - битумная смола (Bituminous tar) или асфальт и/или масло или смесь битума с песком, замешанные на месте поверхности (часто относимые к "цементу земли" .Чтобы приготовить битумную смолу или асфальт нужно раскопать поверхность, смешать материал с битумным или масляным связующим веществом и покрыть поверхность получившейся смесью. Битум - это смола, полученная из масла или асфальта, который получен из масла.
--- BRICK - кирпич
--- MACADAM - поверхность из щебня или дёгтебетона, состоящая из связанных водой раздробленных камней
--- STONE - камень
--- CORAL - кораллы
--- CLAY - глина
--- LATERITE -латерит
--- GRAVEL - гравий
--- EARTH - преимущественно земля
--- ICE - лед
--- SNOW - снег
--- MEMBRANE - защищающий слоистый материал, обычно из резины
--- METAL - металл: сталь, аллюминий
--- MATS - настил для посадки, обычно из аллюминия
--- PIERCED_STEEL - перфорированная металлическая плита
--- WOOD - дерево
--- NON_BITUM_MIX - смесь без битума
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
-CREATE TYPE CodeSurfaceCompositionType AS ENUM ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'GRASS', 'SAND', 'WATER', 'BITUM', 'BRICK', 'MACADAM', 'STONE', 'CORAL', 'CLAY', 'LATERITE', 'GRAVEL', 'EARTH', 'ICE', 'SNOW', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'WOOD', 'NON_BITUM_MIX', 'OTHER');
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayType
+*/
+CREATE DOMAIN CodeRunwayType AS VARCHAR(60)
+CHECK (VALUE ~ '(RWY|FATO|OTHER: [A-Z]{0,30})');
 
--- Код указывающий на технику подотовки ВПП.
--- NATURAL - естественная поверхность, без обработки
--- ROLLED - обкатанная
--- COMPACTED - сжатая (уплотненная)
--- GRADED - выположенная
--- GROOVED - бороздчатая
--- OILED - масляная
--- PAVED - мощёная
--- PFC - пористое фрикционное покрытие
--- AFSC - спресованное уплотненное фрикционное покрытие
--- RFSC - гуммированное уплотненное фрикционное покрытие
--- NON_GROOVED - не бороздчатый асфальт
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
-CREATE TYPE CodeSurfacePreparationType AS ENUM ('NATURAL', 'ROLLED', 'COMPACTED', 'GRADED', 'GROOVED', 'OILED', 'PAVED', 'PFC', 'AFSC', 'RFSC', 'NON_GROOVED', 'OTHER');
 
--- Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
--- GOOD - хорошее
--- FAIR - чистое (?)
--- POOR - плохое
--- UNSAFE - ненадежное
--- DEFORMED - деформированное
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
-CREATE TYPE CodeSurfaceConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'UNSAFE', 'DEFORMED', 'OTHER');
+/*
+Код указывающий на материал ВПП.
+ASPH - асфальт
+ASPH_GRASS - асфальт и трава
+CONC - бетон
+CONC_ASPH - бетон и асфальт
+CONC_GRS - бетон и трава
+GRASS - трава с дерном или голой землей
+SAND - песок
+WATER - вода
+BITUM - битумная смола (Bituminous tar) или асфальт и/или масло или смесь битума с песком, замешанные на месте поверхности (часто относимые к "цементу земли" .Чтобы приготовить битумную смолу или асфальт нужно раскопать поверхность, смешать материал с битумным или масляным связующим веществом и покрыть поверхность получившейся смесью. Битум - это смола, полученная из масла или асфальта, который получен из масла.
+BRICK - кирпич
+MACADAM - поверхность из щебня или дёгтебетона, состоящая из связанных водой раздробленных камней
+STONE - камень
+CORAL - кораллы
+CLAY - глина
+LATERITE -латерит
+GRAVEL - гравий
+EARTH - преимущественно земля
+ICE - лед
+SNOW - снег
+MEMBRANE - защищающий слоистый материал, обычно из резины
+METAL - металл: сталь, аллюминий
+MATS - настил для посадки, обычно из аллюминия
+PIERCED_STEEL - перфорированная металлическая плита
+WOOD - дерево
+NON_BITUM_MIX - смесь без битума
 
--- Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость)
--- покрытия взлётно-посадочной полосы аэродрома для эксплуатации без ограничений, используемый
--- совместно с классификационным числом воздушного судна.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
+*/
+CREATE DOMAIN CodeSurfaceCompositionType AS VARCHAR(60)
+CHECK (VALUE ~ '(ASPH|ASPH_GRASS|CONC|CONC_ASPH|CONC_GRS|GRASS|SAND|WATER|BITUM|BRICK|MACADAM|STONE|CORAL|CLAY|LATERITE|GRAVEL|EARTH|ICE|SNOW|MEMBRANE|METAL|MATS|PIERCED_STEEL|WOOD|NON_BITUM_MIX|OTHER: [A-Z]{0,40})');
+
+/*
+Код указывающий на технику подотовки ВПП.
+NATURAL - естественная поверхность, без обработки
+ROLLED - обкатанная
+COMPACTED - сжатая (уплотненная)
+GRADED - выположенная
+GROOVED - бороздчатая
+OILED - масляная
+PAVED - мощёная
+PFC - пористое фрикционное покрытие
+AFSC - спресованное уплотненное фрикционное покрытие
+RFSC - гуммированное уплотненное фрикционное покрытие
+NON_GROOVED - не бороздчатый асфальт
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
+*/
+CREATE DOMAIN CodeSurfacePreparationType AS VARCHAR(60)
+CHECK (VALUE ~ '(NATURAL|ROLLED|COMPACTED|GRADED|GROOVED|OILED|PAVED|PFC|AFSC|RFSC|NON_GROOVED|OTHER: [A-Z]{0,30})');
+
+/*
+Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
+GOOD - хорошее
+FAIR - чистое (?)
+POOR - плохое
+UNSAFE - ненадежное
+DEFORMED - деформированное
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
+*/
+CREATE DOMAIN CodeSurfaceConditionType AS VARCHAR(60)
+CHECK (VALUE ~ '(GOOD|FAIR|POOR|UNSAFE|DEFORMED|OTHER: [A-Z]{0,30})');
+
+/*
+Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость)
+покрытия ВПП аэродрома для эксплуатации без ограничений, используемый совместно с классификационным числом воздушного судна.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
+*/
 CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
 
--- Код, обозначающий упругие свойства покрытия (жесткое или гибкое), используемого для определения ACN.
--- RIGID - жесткое покрытие
--- FLEXIBLE - гибкое покрытие
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
-CREATE TYPE CodePCNPavementType AS ENUM ('RIGID', 'FLEXIBLE', 'OTHER');
+/*
+Код, обозначающий упругие свойства покрытия (жесткое или гибкое), используемого для определения ACN.
+RIGID - жесткое покрытие
+FLEXIBLE - гибкое покрытие
 
--- Код, указывающий на класс прочности покрытия, связанный с PCN числа.
--- A - поверхность высокой прочности
--- B - поверхность средней прочности
--- C - поверхность низкой прочности
--- D - поверхность  низкой прочности
---
---https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
-CREATE TYPE CodePCNSubgradeType AS ENUM ('A', 'B', 'C', 'D', 'OTHER');
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
+*/
+CREATE DOMAIN CodePCNPavementType AS VARCHAR(60)
+CHECK (VALUE ~ '(RIGID|FLEXIBLE|OTHER: [A-Z]{0,30})');
 
+/*
+Код, указывающий на класс прочности покрытия, связанный с PCN числа.
+A - поверхность высокой прочности
+B - поверхность средней прочности
+C - поверхность низкой прочности
+D - поверхность  низкой прочности
 
--- Код, указывающий максимально допустимое давление в шинах, относящуюся. Используется в PCN.
--- W - высокий: нет ограничений давления (pressure)
--- X - средний: давление до 1.5 МПа (217 psi)
--- Y - низкий: давление до 1.0 МПа (145 psi)
--- Z - очень низкий: давление до 0.5 МПа (73 psi)
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
-CREATE TYPE CodePCNTyrePressureType AS ENUM ('W', 'X', 'Y', 'Z', 'OTHER');
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
+*/
+CREATE DOMAIN CodePCNSubgradeType AS VARCHAR(60)
+CHECK (VALUE ~ '(A|B|C|D|OTHER: [A-Z]{0,30})');
 
--- Код, указывающий на метод, используемый при оценке PCN.
--- TECH - техническая оценка
--- ACFT - основанная на опыте воздушного судна
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
-CREATE TYPE CodePCNMethodType AS ENUM ('TECH', 'ACFT', 'OTHER');
+/*
+Код, указывающий максимально допустимое давление в шинах, относящуюся. Используется в PCN.
+W - высокий: нет ограничений давления (pressure)
+X - средний: давление до 1.5 МПа (217 psi)
+Y - низкий: давление до 1.0 МПа (145 psi)
+Z - очень низкий: давление до 0.5 МПа (73 psi)
 
--- The value of a load classification number (LCN) for a surface.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValLCNBaseType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
+*/
+CREATE DOMAIN CodePCNTyrePressureType AS VARCHAR(60)
+CHECK (VALUE ~ '(W|X|Y|Z|OTHER: [A-Z]{0,30})');
+
+/*
+Код, указывающий на метод, используемый при оценке PCN.
+TECH - техническая оценка
+ACFT - основанная на опыте воздушного судна
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
+*/
+CREATE DOMAIN CodePCNMethodType AS VARCHAR(60)
+CHECK (VALUE ~ '(TECH|ACFT|OTHER: [A-Z]{0,30})');
+
+/*
+The value of a load classification number (LCN) for a surface.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValLCNBaseType
+*/
 CREATE DOMAIN ValLCNType AS DECIMAL;
 
--- Единицы измерения веса.
--- T - тонны
--- LB - фунты
--- TON - не метрические американские тонны (2000 ob или 907.18474 кг)
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
-CREATE TYPE UomWeightType AS ENUM ('KG', 'T', 'LB', 'TON', 'OTHER');
+/*
+Единицы измерения веса.
+T - тонны
+LB - фунты
+TON - не метрические американские тонны (2000 ob или 907.18474 кг)
 
--- Значение веса.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
+*/
+CREATE DOMAIN UomWeightType AS VARCHAR(60)
+CHECK (VALUE ~ '(KG|T|LB|TON|OTHER: [A-Z]{0,30})');
+
+/*
+Значение веса.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
+*/
 CREATE DOMAIN ValWeightBaseType AS DECIMAL
 CHECK (VALUE > 0);
 CREATE TYPE ValWeightType AS (
@@ -528,198 +597,216 @@ CREATE TYPE ValWeightType AS (
   unit  UomWeightType
 );
 
--- Единицы измерения давления.
--- PSI - Фунт на квадратный дюйм
--- BAR - 100000 Па
--- TORR - Миллиметр ртутного столба
--- ATM - Физическая атмосфера
--- HPA - гектопаскали
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomPressureType
-CREATE TYPE UomPressureType AS ENUM ('PA', 'MPA', 'PSI', 'BAR', 'TORR', 'ATM', 'HPA', 'OTHER');
+/*
+Единицы измерения давления.
+PSI - Фунт на квадратный дюйм
+BAR - 100000 Па
+TORR - Миллиметр ртутного столба
+ATM - Физическая атмосфера
+HPA - гектопаскали
 
--- Значение давления.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPressureType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomPressureType
+*/
+CREATE DOMAIN UomPressureType AS VARCHAR(60)
+CHECK (VALUE ~ '(PA|MPA|PSI|BAR|TORR|ATM|HPA|OTHER: [A-Z]{0,30})');
+
+/*
+Значение давления.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPressureType
+*/
 CREATE TYPE ValPressureType AS (
   value DECIMAL,
-  unit  UomPressureType
-);
+  unit  UomPressureType);
 
--- Код, описывающий положение по отношению к оси ВВП. Например: слева / справа от осевой линии ВПП.
--- LEFT - на левой стороне оси
--- RIGHT - на правой стороне оси
--- BOTH - распределено по двум сторонам оси
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
+/*
+Код, описывающий положение по отношению к оси ВВП. Например: слева / справа от осевой линии ВПП.
+LEFT - на левой стороне оси
+RIGHT - на правой стороне оси
+BOTH - распределено по двум сторонам оси
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
+*/
 CREATE DOMAIN CodeSideType AS VARCHAR(40)
 CHECK (VALUE ~ '((LEFT|RIGHT|BOTH|EITHER)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeSideType AS ENUM ('LEFT', 'RIGHT', 'BOTH', 'OTHER');
 
--- Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
--- TDZ - зона приземления
--- AIM - точка назначения
--- CL - осевая линия
--- EDGE - край
--- THR - начало
--- DESIG - обозначение ВПП
--- AFT_THR - после начала (фиксированное метками расстояние)
--- DTHR - перемещённое начало
--- END - конец ВПП
--- TWY_INT - пересечение рулежных дорожек
--- RPD_TWY_INT - частое (или резкое) пересечение рулежных дорожек
--- 1_THIRD - первая треть ВПП, считая от начала с наименьшим номером определителя (designation number)
--- 2_THIRD - вторая треть ВПП, считая от начала с наименьшим номером определителя
--- 3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
+/*
+Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
+TDZ - зона приземления
+AIM - точка назначения
+CL - осевая линия
+EDGE - край
+THR - начало
+DESIG - обозначение ВПП
+AFT_THR - после начала (фиксированное метками расстояние)
+DTHR - перемещённое начало
+END - конец ВПП
+TWY_INT - пересечение рулежных дорожек
+RPD_TWY_INT - частое (или резкое) пересечение рулежных дорожек
+1_THIRD - первая треть ВПП, считая от начала с наименьшим номером определителя (designation number)
+2_THIRD - вторая треть ВПП, считая от начала с наименьшим номером определителя
+3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
+*/
 CREATE DOMAIN CodeRunwaySectionType AS VARCHAR(40)
-CHECK (VALUE ~
-       '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeRunwaySectionType AS ENUM ('TDZ', 'AIM', 'CL', 'EDGE', 'THR', 'DESIG', 'AFT_THR', 'DTHR', 'END', 'TWY_INT',
--- 'RPD_TWY_INT', '1_THIRD', '2_THIRD', '3_THIRD', 'OTHER');
+CHECK (VALUE ~ '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
 
--- Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
--- Угол измеряется по часовой стрелке от 0 до 360 градусов. Значение может быть радиалом всенаправленного азимутального радиомаяка (РМА, VHF). Например, направление на запад выражается как 270 градусов.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValBearingType
+/*
+Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
+Угол измеряется по часовой стрелке от 0 до 360 градусов. Значение может быть радиалом всенаправленного азимутального радиомаяка (РМА, VHF). Например, направление на запад выражается как 270 градусов.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValBearingType
+*/
 CREATE DOMAIN ValBearingType AS DECIMAL
 CHECK ( VALUE >= 0 AND VALUE <= 360);
 
--- Идентификатор направления поворота
--- LEFT - налево
--- RIGHT - направо
--- EITHER	- любое левое или правое направление
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDirectionTurnType
+/*
+Идентификатор направления поворота
+LEFT - налево
+RIGHT - направо
+EITHER	- любое левое или правое направление
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDirectionTurnType
+*/
 CREATE DOMAIN CodeDirectionTurnType AS VARCHAR(40)
 CHECK (VALUE ~ '((LEFT|RIGHT|EITHER)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeDirectionTurnType AS ENUM ('LEFT', 'RIGHT', 'EITHER', 'OTHER');
 
--- Значение наклона или градиента восхождения/спуска, выраженное в процентах
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValSlopeType
+/*
+Значение наклона или градиента восхождения/спуска, выраженное в процентах
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValSlopeType
+*/
 CREATE DOMAIN ValSlopeType AS DECIMAL
 CHECK ( VALUE >= -100 AND VALUE <= 100);
 
--- Код маркировки ВПП, связанный с посадочными категориями, такими как точность, не точность и базовые категории.
--- PRECISION - маркировка соответствует заходу на посадку с точностью: используется и поперечная информация (локализатор), и вертикальная (наклон глиссады).
--- Маркировка захода на посадку с точностью включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала, пункта назначения, зоны посадки, боковых полос
--- NONPRECISION - маркировка соответствует заходу на посадку без точности: используется только поперечная информация (боковая)
--- Маркировка захода на посадку без точности включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала и пункта назначения
--- BASIC - базовые или визуальные элементы маркировки ВПП включают маркировки для обозначения ВПП (Runway Designation), для геометрической оси, начала (на ВПП, которые намереваются использовать международные торговые самолеты) и пункта назначения (на ВПП в 4000 футов (1200 метров) или длиннее, используемых реактивными самолетами)
--- NONE - у ВПП нет маркировки
--- RUNWAY_NUMBERS - единственный элемент маркировки ВПП - обозначение ВПП (Runway Designation)
--- NON_STANDARD - такие элементы маркировк, как обозначение ВПП, геометрическая ось, начало и пункт назначения могут быть представлены, но они не являются стандартной маркировкой
--- HELIPORT - специфичная маркировка для вертолетов
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
+/*
+Код маркировки ВПП, связанный с посадочными категориями, такими как точность, не точность и базовые категории.
+PRECISION - маркировка соответствует заходу на посадку с точностью: используется и поперечная информация (локализатор), и вертикальная (наклон глиссады).
+Маркировка захода на посадку с точностью включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала, пункта назначения, зоны посадки, боковых полос
+NONPRECISION - маркировка соответствует заходу на посадку без точности: используется только поперечная информация (боковая)
+Маркировка захода на посадку без точности включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала и пункта назначения
+BASIC - базовые или визуальные элементы маркировки ВПП включают маркировки для обозначения ВПП (Runway Designation), для геометрической оси, начала (на ВПП, которые намереваются использовать международные торговые самолеты) и пункта назначения (на ВПП в 4000 футов (1200 метров) или длиннее, используемых реактивными самолетами)
+NONE - у ВПП нет маркировки
+RUNWAY_NUMBERS - единственный элемент маркировки ВПП - обозначение ВПП (Runway Designation)
+NON_STANDARD - такие элементы маркировк, как обозначение ВПП, геометрическая ось, начало и пункт назначения могут быть представлены, но они не являются стандартной маркировкой
+HELIPORT - специфичная маркировка для вертолетов
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
+*/
 CREATE DOMAIN CodeRunwayMarkingType AS VARCHAR(40)
 CHECK (VALUE ~ '((PRECISION|NONPRECISION|BASIC|NONE|RUNWAY_NUMBERS|NON_STANDARD|HELIPORT)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeRunwayMarkingType AS ENUM ('PRECISION', 'NONPRECISION', 'BASIC', 'NONE', 'RUNWAY_NUMBERS', 'NON_STANDARD', 'HELIPORT', 'OTHER');
 
--- Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
--- GOOD - маркировка в хорошем состоянии
--- FAIR - маркировка в порядочном состоянии
--- POOR - маркировка в плохом состоянии
--- EXCELLENT - маркировка в прекрасном состоянии
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
+/*
+Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
+GOOD - маркировка в хорошем состоянии
+FAIR - маркировка в порядочном состоянии
+POOR - маркировка в плохом состоянии
+EXCELLENT - маркировка в прекрасном состоянии
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
+*/
 CREATE DOMAIN CodeMarkingConditionType AS VARCHAR(40)
 CHECK (VALUE ~ '((GOOD|FAIR|POOR|EXCELLENT)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeMarkingConditionType AS ENUM ('GOOD', 'FAIR', 'POOR', 'EXCELLENT', 'OTHER');
 
--- Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
--- FALS - полное световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
--- IALS - среднее световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - от 420 до 720 м, огни по краям ВПП, в начале ВПП и в конце ВПП
--- BALS - базовое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - менее 420 м (или низкая интенсивность посадочной световой системы любой длины), огни по краям ВПП, в начале ВПП и в конце ВПП
--- NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
+/*
+Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
+FALS - полное световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
+IALS - среднее световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - от 420 до 720 м, огни по краям ВПП, в начале ВПП и в конце ВПП
+BALS - базовое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - менее 420 м (или низкая интенсивность посадочной световой системы любой длины), огни по краям ВПП, в начале ВПП и в конце ВПП
+NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
+*/
 CREATE DOMAIN CodeLightingJARType AS VARCHAR(40)
 CHECK (VALUE ~ '((FALS|IALS|BALS|NALS)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeLightingJARType AS ENUM ('FALS', 'IALS', 'BALS', 'NALS', 'OTHER');
 
--- Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
--- NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
--- ILS_PRECISION_CAT_I - ВПП с заходом на посадку с точностью: категория I
--- ILS_PRECISION_CAT_II - ВПП с заходом на посадку с точностью: категория II
--- ILS_PRECISION_CAT_IIIA - ВПП с заходом на посадку с точностью: категория III A
--- ILS_PRECISION_CAT_IIIB - ВПП с заходом на посадку с точностью: категория III B
--- ILS_PRECISION_CAT_IIIC - ВПП с заходом на посадку с точностью: категория III C
--- ILS_PRECISION_CAT_IIID - ВПП с заходом на посадку с точностью: категория III D
--- MLS_PRECISION - микроволновая точностная система захода на посадки
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
+/*
+Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
+NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
+ILS_PRECISION_CAT_I - ВПП с заходом на посадку с точностью: категория I
+ILS_PRECISION_CAT_II - ВПП с заходом на посадку с точностью: категория II
+ILS_PRECISION_CAT_IIIA - ВПП с заходом на посадку с точностью: категория III A
+ILS_PRECISION_CAT_IIIB - ВПП с заходом на посадку с точностью: категория III B
+ILS_PRECISION_CAT_IIIC - ВПП с заходом на посадку с точностью: категория III C
+ILS_PRECISION_CAT_IIID - ВПП с заходом на посадку с точностью: категория III D
+MLS_PRECISION - микроволновая точностная система захода на посадки
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
+*/
 CREATE DOMAIN CodeApproachGuidanceType AS VARCHAR(40)
 CHECK (VALUE ~
        '((NON_PRECISION|ILS_PRECISION_CAT_I|ILS_PRECISION_CAT_II|ILS_PRECISION_CAT_IIIA|ILS_PRECISION_CAT_IIIB|ILS_PRECISION_CAT_IIIC|ILS_PRECISION_CAT_IIID|MLS_PRECISION)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeApproachGuidanceType AS ENUM ('NON_PRECISION', 'ILS_PRECISION_CAT_I',
--- 'ILS_PRECISION_CAT_II', 'ILS_PRECISION_CAT_IIIA', 'ILS_PRECISION_CAT_IIIB', 'ILS_PRECISION_CAT_IIIC', 'ILS_PRECISION_CAT_IIID', 'MLS_PRECISION', 'OTHER');
 
--- Код, идентифицирующий уровень интенсивности источника света
--- LIL - низкая интенсивность света
--- LIM - средняя интенсивность света
--- LIH - высокая интенсивность света
--- LIL_LIH - низкая интенсивность для ночного использования, высокая интенсивность для дневного использования, определяется фотоэлементом
--- PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
+/*
+Код, идентифицирующий уровень интенсивности источника света
+LIL - низкая интенсивность света
+LIM - средняя интенсивность света
+LIH - высокая интенсивность света
+LIL_LIH - низкая интенсивность для ночного использования, высокая интенсивность для дневного использования, определяется фотоэлементом
+PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
+*/
 CREATE DOMAIN CodeLightIntensityType AS VARCHAR(40)
 CHECK (VALUE ~ '((LIL|LIM|LIH|LIL_LIH|PREDETERMINED)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeLightIntensityType AS ENUM ('LIL', 'LIM', 'LIH', 'LIL_LIH', 'PREDETERMINED', 'OTHER');
 
--- Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
+/*
+Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
+*/
 CREATE DOMAIN CodeColourType AS VARCHAR(40)
 CHECK (VALUE ~
        '((YELLOW|RED|WHITE|BLUE|GREEN|PURPLE|ORANGE|AMBER|BLACK|BROWN|GREY|LIGHT_GREY|MAGENTA|PINK|VIOLET)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeColourType AS ENUM ('YELLOW', 'RED', 'WHITE', 'BLUE', 'GREEN', 'PURPLE',
--- 'ORANGE', 'AMBER', 'BLACK', 'BROWN', 'GREY', 'LIGHT_GREY', 'MAGENTA', 'PINK', 'VIOLET', 'OTHER');
 
--- Codelist containing the Telecom Networks that can be used to address an organisation.
--- AFTN - The data interchange in the AFS is performed by the Aeronautical Fixed Telecommunications Network, AFTN. This is a message handling network running according to ICAO Standards documented in Annex 10 to the ICAO Convention
--- AMHS - Aeronautical Message Handling System. A standard for aeronautical ground-ground communications (e.g. for the transmission of NOTAM, Flight Plans or Meteorological Data) based on X.400 profiles. It has been defined by the International Civil Aviation Organization (ICAO)
--- INTERNET - The Internet is a worldwide, publicly accessible series of interconnected computer networks that transmit data by packet switching using the standard Internet Protocol (IP)
--- SITA - SITA network
--- ACARS - Aircraft Communications Addressing and Reporting System. A datalink system that enables ground stations (airports, aircraft maintenance bases, etc.) and commercial aircraft to communicate without voice using a datalink system.
--- ADNS - ARINC Data Network Service (retired Mar 2007)
--- RESURFACING - работы по асфальтированию
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTelecomNetworkType
+/*
+Codelist containing the Telecom Networks that can be used to address an organisation.
+AFTN - The data interchange in the AFS is performed by the Aeronautical Fixed Telecommunications Network, AFTN. This is a message handling network running according to ICAO Standards documented in Annex 10 to the ICAO Convention
+AMHS - Aeronautical Message Handling System. A standard for aeronautical ground-ground communications (e.g. for the transmission of NOTAM, Flight Plans or Meteorological Data) based on X.400 profiles. It has been defined by the International Civil Aviation Organization (ICAO)
+INTERNET - The Internet is a worldwide, publicly accessible series of interconnected computer networks that transmit data by packet switching using the standard Internet Protocol (IP)
+SITA - SITA network
+ACARS - Aircraft Communications Addressing and Reporting System. A datalink system that enables ground stations (airports, aircraft maintenance bases, etc.) and commercial aircraft to communicate without voice using a datalink system.
+ADNS - ARINC Data Network Service (retired Mar 2007)
+RESURFACING - работы по асфальтированию
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTelecomNetworkType
+*/
 CREATE DOMAIN CodeTelecomNetworkType AS VARCHAR(40)
 CHECK (VALUE ~ '((AFTN|AMHS|INTERNET|SITA|ACARS|ADNS)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeTelecomNetworkType AS ENUM ('AFTN', 'AMHS', 'INTERNET', 'SITA', 'ACARS', 'ADNS', 'OTHER');
 
--- A phone or facsimile number.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextPhoneBaseType
+/*
+A phone or facsimile number.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextPhoneBaseType
+*/
 CREATE DOMAIN TextPhoneType AS VARCHAR
 CHECK (VALUE ~ '(\+)?[0-9\s\-\(\)]+');
 
--- Список значений, идентифицирующих цель полета в зависимости от расположения, таких как прибытие, вылет, перелет
--- ARR - прибытие
--- DEP - вылет
--- OVERFLY - перелет
--- ALL - все типы
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightDestinationType
+/*
+Список значений, идентифицирующих цель полета в зависимости от расположения, таких как прибытие, вылет, перелет
+ARR - прибытие
+DEP - вылет
+OVERFLY - перелет
+ALL - все типы
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightDestinationType
+*/
 CREATE DOMAIN CodeFlightDestinationType AS VARCHAR(40)
 CHECK (VALUE ~ '((ARR|DEP|OVERFLY|ALL)|OTHER: [A-Z]{30})');
--- CREATE TYPE CodeFlightDestinationType AS ENUM ('ARR', 'DEP', 'OVERFLY', 'ALL', 'OTHER');
 
--- Список очередности обслуживания внутри последовательности анологичных видов обслуживания: первичная, вторичная, альтернативная
--- PRIMARY
--- SECONDARY
--- ALTERNATE
--- EMERG - аварийная
--- GUARD - защитная
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFacilityRankingType
+/*
+Список очередности обслуживания внутри последовательности анологичных видов обслуживания: первичная, вторичная, альтернативная
+PRIMARY
+SECONDARY
+ALTERNATE
+EMERG - аварийная
+GUARD - защитная
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFacilityRankingType
+*/
 CREATE DOMAIN CodeFacilityRankingType AS VARCHAR(40)
 CHECK (VALUE ~ '((PRIMARY|SECONDARY|ALTERNATE|EMERG|GUARD)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeFacilityRankingType AS ENUM ('PRIMARY', 'SECONDARY', 'ALTERNATE', 'EMERG', 'GUARD', 'OTHER');
 
 /*
 Список значений, используемых для определения сервиса по плнированию полетов и регулированию потоков
@@ -733,27 +820,26 @@ https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_
 */
 CREATE DOMAIN CodeServiceATFMType AS VARCHAR(40)
 CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeServiceATFMType AS ENUM ('FPL', 'FPLV', 'ATFM', 'CLEARANCE', 'SCHED', 'OTHER');
 
 /*
 Список значений, используемых для определения сервиса по предоставлению информации
 AFIS - аэродромная служба полетной информации
--- AIS - служба авиационной информации, как дано в ICAO Annex 15
+AIS - служба авиационной информации, как дано в ICAO Annex 15
 ATIS - автоматическое информационное аэродромное обслуживание, работает на указанной частоте радиосредства
--- BRIEFING - служба предполетная и послеполетной информации
+BRIEFING - служба предполетная и послеполетной информации
 FIS - полетно-информационное обслуживание пролетающих самолетов
--- OFIS_VHF - VHF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
--- OFIS_HF - HF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
--- NOTAM - обеспечение службой NOTAM, как дано в ICAO Annex 11
--- INFO - предоставление ограниченной специальной информакии о специфичной активности в определенном месте
--- RAF - служба регионального прогноза
--- METAR - регулярный авиационный отчет по погоде
--- SIGMET - информация, издаваемая службой метеоролического наблюдения, касающаяся появления или ожидаемого появлени указанного проходящего погодного явления, котрое может повлиять на безопасность операций воздушного судна
--- TWEB - служба вещания записей о погоде
--- TAF - служба метеорологического прогноза в области терминала
--- VOLMET - служба передачи метеорологической информации для воздушного судна в полете
--- ALTIMETER - служба предоставления информации настроек альтиметра
--- ASOS - автоматизированная служба обследования поверхности
+OFIS_VHF - VHF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
+OFIS_HF - HF operational flight information service (OFIS) broadcasts, как дано в ICAO Annex 11
+NOTAM - обеспечение службой NOTAM, как дано в ICAO Annex 11
+INFO - предоставление ограниченной специальной информакии о специфичной активности в определенном месте
+RAF - служба регионального прогноза
+METAR - регулярный авиационный отчет по погоде
+SIGMET - информация, издаваемая службой метеоролического наблюдения, касающаяся появления или ожидаемого появлени указанного проходящего погодного явления, котрое может повлиять на безопасность операций воздушного судна
+TWEB - служба вещания записей о погоде
+TAF - служба метеорологического прогноза в области терминала
+VOLMET - служба передачи метеорологической информации для воздушного судна в полете
+ALTIMETER - служба предоставления информации настроек альтиметра
+ASOS - автоматизированная служба обследования поверхности
 AWOS - автоматизированная cистема метеонаблюдений
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
@@ -761,115 +847,120 @@ https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_
 CREATE DOMAIN CodeServiceInformationType AS VARCHAR(40)
 CHECK (VALUE ~
        '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
--- Список значений, используемых для определения сервиса по поиску и спасению
--- ALRS - служба предупреждения
--- SAR - служба поиска и спасения
--- RCC - служба по координации спасательных операций
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceSARType
+
+/*
+Список значений, используемых для определения сервиса по поиску и спасению
+ALRS - служба предупреждения
+SAR - служба поиска и спасения
+RCC - служба по координации спасательных операций
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceSARType
+*/
 CREATE DOMAIN CodeServiceSARType AS VARCHAR(40)
 CHECK (VALUE ~ '((ALRS|SAR|RCC)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeServiceSARType AS ENUM ('ALRS', 'SAR', 'RCC', 'OTHER');
 
---Список значений, идентифицирующих тип воздушного пространства
--- NAS - национальная система воздушного пространства.
---   [Замечание: воздушное пространство, внутри которого государство предоставляет службу управления воздушным движением обычно состоит из:
---   1)территории, подвластнные государству; 2)отдельные участки воздушного пространства над открытым морем или воздушное пространство территорий без государственности, где служба управления воздушным движением предоставляется так, как определено в региональных соглашениях]
--- FIR - район полетной информации. Воздушное пространоство определенных размеров, внутри которого предоставляется служба полётной информации и аварийная служба оповещения.
---   Описание: признается ИКАО. Может использоваться, например, если служба предоставляется более, чем одним отделом (единицей-?).
--- FIR_P - часть РПИ
--- UIR - верхний район полетной информации. Верхнее воздушное пространство определенных размеров, внутри которого предоставляется служба полётной информации и аварийная служба оповещения.
---   Описание: не признается ИКАО. Каждая структура (штат) даёт своё определение верхнему воздушному пространству.
--- UIR_P - часть верхнего РПИ
--- CTA - диспетчерская зона (или зона управления). Управляемое воздушное пространство, распространяющееся вверх от определенной границы над землей.
---   Описание: признается ИКАО.
--- CTA_P - часть диспетчерской зоны
--- OCA - океаническая диспетчерская зона. Диспетчерская зона, распространяющаяся вверх в верхнем воздушном пространстве.
---   Описание: не признается ИКАО.
--- OCA_P - часть океанической диспетчерской зоны
--- UTA - верхняя диспетчерская зона. Диспетчерская зона, распространяющаяся вверх в верхнем воздушном пространстве.
---   Описание: не признается ИКАО.
--- UTA_P - часть верхней диспетчерской зоны
--- TMA - диспетчерская зона у аэропортов. Диспетчерская зона, обычно установленная в месте скопления путей служб управления воздушным движением в окрестностях одного или более значительных аэродромов.
---   Описание: не признается ИКАО. В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
--- TMA_P - часть диспетчерской зоны у аэропортов
--- CTR - диспетчерский район. Управляемое воздушное пространство, распространяющееся вверх от поверхности земли до определенной верхней границы.
---   Описание: признается ИКАО.
--- CTR_P - часть диспетчерского района
--- OTA - океаническая транзитная зона
--- SECTOR - диспетчерский сектор. Разделение обозначенной диспетчерской зоны, внутри которой ответственность отведена одному диспетчеру или небольшой группе диспетчеров.
---   Описание: признается ИКАО.
--- SECTOR_C - временно сгруппированный сектор
--- TSA - временно отделенная зона (FUA). Воздушное пространство с заранее определенными размерами, внутри которого действия требуют бронирования воздушного пространства для исключительного пользования определенными пользователями в течение предопределенного периода времени.
---   Описание: площадь, на которой приняты специальные ограничительные меры, направленные на предотвращение или минимизацию вмешательства (помех) со стороны дружественных сил.
---             площадь под военным контролем, на которой приняты специальные меры безопасности, чтобы предотвратить несанкционированное вторжение.
--- CBA - зарубежная зона (FUA). Воздушное пространство определенных размеров над контактными площадями земли или внутренними водами более чем одного государства.
---   Описание: не признается ИКАО. В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
--- RCA - сокращенная зона координации (FUA). Часть воздушного пространства определенных размеров, внутри которого общее воздушное движение разрешено по принципу "off-route", когда нет необходимости диспетчерам общего воздушного движения начинать коодинацию с диспетчерами OAT.
---   Описание: не признается ИКАО.  В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
--- RAS - регулируемое воздушное пространство (ничем другим не покрытое).
--- AWY - воздушный путь (корридор). Управляемая территория или ее часть, установленная в форме корридора.
--- MTR - буферная зона военного тренировочного пути. Управляемая территория или ее часть, установленная в форме корридора вокруг военного тренировочного пути в целях оградить его от другого движения (воздушного).
--- P - запрещенная зона. Воздушное пространство определенных размеров над землей или внутренними водами государства, внутри которого полеты воздушным суднам запрещены.
---   Описание: признается ИКАО.
--- R - зона ограничения полетов. Воздушное пространство определенных размеров над землей или внутренними водами государства, внутри которого полеты воздушных суден ограничены в соответствии с определенными обозначенными условиями.
---   Описание: признается ИКАО.
--- D - опасная зона. Воздушное пространство определенных размеров, внутри которого в определенное время могут существовать условия, опасные для полета воздушного судна.
---   Описание: признается ИКАО.
--- ADIZ - воздушная защитная идентификационная зона. Специально названное воздушное пространство определенных размеров, внутри которого воздушное судно должно исполнять специальные процедуры идентификации и/или отчетности вдобавок к процедурам, связанным с обеспечением служб управления воздушным движением.
---   Описание: признается ИКАО.
--- NO_FIR - воздушная зона, для которой не определен даже РПИ.
---   [Замечание: есть части земного пространства, где не определен ни РПИ, ни любой другой тип воздушного пространства. Такое воздушное пространство обозначается: NO-FIR]
--- PART - часть воздушного пространства (используется в аггрегациях воздушного пространства)
--- CLASS - воздушное пространство, имеющее определённый класс
--- POLITICAL - политическая/административная зона
--- D_OTHER - действия опасного происхождения (не то же, что опасная зона)
--- TRA - временнно зарезервированная зона.  Воздушное пространство с заранее определенными размерами, внутри которого действия требуют бронирования воздушного пространства в течение предопределенного периода времени.
---   Описание: не признается ИКАО. В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
--- A - зона тревоги. Воздушное пространство, на котором может произоводиться большой объем действий по обучению пилотов или не обычные типы воздушных действий, не опасные для воздушного судна.
---   Описание: не признается ИКАО. В основном используется в США и прилигающих территориях.
--- W - зона предупреждения. Не управляемое воздушное пространство определенных размеров
--- PROTECT - воздушное пространство, защищенное от необычного воздушного движения
--- AMA - зона минимальной высоты. Минимальная высота, используемая согласно с метеоусловиями полета по приборам и обеспечивающая минимальный вертикальный промежуток в 300 метров (1000 футов) или в случае обозначенной горной местности - 600 метров (2000 футов) наад всеми препятствиями, расположенными над данной территорией.
---   Описание: признается ИКАО. Издается многими штатми как прямоугольник 1*1 градус в ENR 6 charts (?).
---   Замечание: при точном расчете 984 фута может использоватьсся как эквивалент 300 метров.
--- ASR - зона установки альтиметра. Воздушное пространство определенных размеров, внутри которого производят процедуры по стандартизированной установке альтиметра.
---   Описание: не признается ИКАО. Например, в течение полета альтиметр должен быть настроен по местным установкам альтиметра ближайшей станции по ходу полета.
--- ADV - рекомендованная зона. Зона определенных размеров, внутри которой доступна консультативная служба воздушного движения.
---   Описание: признается ИКАО. Диспетчерская служба воздушного движения предоставляет куда более полный набор услуг, чем консультативная служба воздушного движения, поэтому консультативные зоны полётов и путей не устанавливают внутри воздушных пространств, управляемых диспетчерами, но консультативная служба воздушного сообщения может предоставляться и внизу, и наверху.
--- UADV - верхняя рекомендованная зона. Зона определенных размеров в верхнем воздушном пространстве, внутри которой доступна консультативная служба воздушного движения.
---   Описание: признается ИКАО. Диспетчерская служба воздушного движения предоставляет куда более полный набор услуг, чем консультативная служба воздушного движения, поэтому консультативные зоны полётов и путей не устанавливают внутри воздушных пространств, управляемых диспетчерами, но консультативная служба воздушного сообщения может предоставляться и внизу, и наверху.
--- ATZ - зона движения аэропорта. Воздушное пространство определенных размеров, установленное вокруг аэропорта для защиты движения в аэропорту.
---   Описание: признается ИКАО.
--- ATZ_P - часть зоны движения аэропорта
--- HTZ	- зона движения вертодрома
--- NAS_P - часть национальной системы воздушного пространства
---
---https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
+/*
+Список значений, идентифицирующих тип воздушного пространства
+NAS - национальная система воздушного пространства.
+   [Замечание: воздушное пространство, внутри которого государство предоставляет службу управления воздушным движением обычно состоит из:
+   1)территории, подвластнные государству; 2)отдельные участки воздушного пространства над открытым морем или воздушное пространство территорий без государственности, где служба управления воздушным движением предоставляется так, как определено в региональных соглашениях]
+FIR - район полетной информации. Воздушное пространоство определенных размеров, внутри которого предоставляется служба полётной информации и аварийная служба оповещения.
+   Описание: признается ИКАО. Может использоваться, например, если служба предоставляется более, чем одним отделом (единицей-?).
+FIR_P - часть РПИ
+UIR - верхний район полетной информации. Верхнее воздушное пространство определенных размеров, внутри которого предоставляется служба полётной информации и аварийная служба оповещения.
+   Описание: не признается ИКАО. Каждая структура (штат) даёт своё определение верхнему воздушному пространству.
+UIR_P - часть верхнего РПИ
+CTA - диспетчерская зона (или зона управления). Управляемое воздушное пространство, распространяющееся вверх от определенной границы над землей.
+   Описание: признается ИКАО.
+CTA_P - часть диспетчерской зоны
+OCA - океаническая диспетчерская зона. Диспетчерская зона, распространяющаяся вверх в верхнем воздушном пространстве.
+   Описание: не признается ИКАО.
+OCA_P - часть океанической диспетчерской зоны
+UTA - верхняя диспетчерская зона. Диспетчерская зона, распространяющаяся вверх в верхнем воздушном пространстве.
+   Описание: не признается ИКАО.
+UTA_P - часть верхней диспетчерской зоны
+TMA - диспетчерская зона у аэропортов. Диспетчерская зона, обычно установленная в месте скопления путей служб управления воздушным движением в окрестностях одного или более значительных аэродромов.
+   Описание: не признается ИКАО. В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
+TMA_P - часть диспетчерской зоны у аэропортов
+CTR - диспетчерский район. Управляемое воздушное пространство, распространяющееся вверх от поверхности земли до определенной верхней границы.
+   Описание: признается ИКАО.
+CTR_P - часть диспетчерского района
+OTA - океаническая транзитная зона
+SECTOR - диспетчерский сектор. Разделение обозначенной диспетчерской зоны, внутри которой ответственность отведена одному диспетчеру или небольшой группе диспетчеров.
+   Описание: признается ИКАО.
+SECTOR_C - временно сгруппированный сектор
+TSA - временно отделенная зона (FUA). Воздушное пространство с заранее определенными размерами, внутри которого действия требуют бронирования воздушного пространства для исключительного пользования определенными пользователями в течение предопределенного периода времени.
+   Описание: площадь, на которой приняты специальные ограничительные меры, направленные на предотвращение или минимизацию вмешательства (помех) со стороны дружественных сил.
+             площадь под военным контролем, на которой приняты специальные меры безопасности, чтобы предотвратить несанкционированное вторжение.
+CBA - зарубежная зона (FUA). Воздушное пространство определенных размеров над контактными площадями земли или внутренними водами более чем одного государства.
+   Описание: не признается ИКАО. В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
+RCA - сокращенная зона координации (FUA). Часть воздушного пространства определенных размеров, внутри которого общее воздушное движение разрешено по принципу "off-route", когда нет необходимости диспетчерам общего воздушного движения начинать коодинацию с диспетчерами OAT.
+   Описание: не признается ИКАО.  В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
+RAS - регулируемое воздушное пространство (ничем другим не покрытое).
+AWY - воздушный путь (корридор). Управляемая территория или ее часть, установленная в форме корридора.
+MTR - буферная зона военного тренировочного пути. Управляемая территория или ее часть, установленная в форме корридора вокруг военного тренировочного пути в целях оградить его от другого движения (воздушного).
+P - запрещенная зона. Воздушное пространство определенных размеров над землей или внутренними водами государства, внутри которого полеты воздушным суднам запрещены.
+   Описание: признается ИКАО.
+R - зона ограничения полетов. Воздушное пространство определенных размеров над землей или внутренними водами государства, внутри которого полеты воздушных суден ограничены в соответствии с определенными обозначенными условиями.
+   Описание: признается ИКАО.
+D - опасная зона. Воздушное пространство определенных размеров, внутри которого в определенное время могут существовать условия, опасные для полета воздушного судна.
+   Описание: признается ИКАО.
+ADIZ - воздушная защитная идентификационная зона. Специально названное воздушное пространство определенных размеров, внутри которого воздушное судно должно исполнять специальные процедуры идентификации и/или отчетности вдобавок к процедурам, связанным с обеспечением служб управления воздушным движением.
+   Описание: признается ИКАО.
+NO_FIR - воздушная зона, для которой не определен даже РПИ.
+   [Замечание: есть части земного пространства, где не определен ни РПИ, ни любой другой тип воздушного пространства. Такое воздушное пространство обозначается: NO-FIR]
+PART - часть воздушного пространства (используется в аггрегациях воздушного пространства)
+CLASS - воздушное пространство, имеющее определённый класс
+POLITICAL - политическая/административная зона
+D_OTHER - действия опасного происхождения (не то же, что опасная зона)
+TRA - временнно зарезервированная зона.  Воздушное пространство с заранее определенными размерами, внутри которого действия требуют бронирования воздушного пространства в течение предопределенного периода времени.
+   Описание: не признается ИКАО. В основном используется в Европе под гибким использованием концепта воздушного пространства (??)
+A - зона тревоги. Воздушное пространство, на котором может произоводиться большой объем действий по обучению пилотов или не обычные типы воздушных действий, не опасные для воздушного судна.
+   Описание: не признается ИКАО. В основном используется в США и прилигающих территориях.
+W - зона предупреждения. Не управляемое воздушное пространство определенных размеров
+PROTECT - воздушное пространство, защищенное от необычного воздушного движения
+AMA - зона минимальной высоты. Минимальная высота, используемая согласно с метеоусловиями полета по приборам и обеспечивающая минимальный вертикальный промежуток в 300 метров (1000 футов) или в случае обозначенной горной местности - 600 метров (2000 футов) наад всеми препятствиями, расположенными над данной территорией.
+   Описание: признается ИКАО. Издается многими штатми как прямоугольник 1*1 градус в ENR 6 charts (?).
+   Замечание: при точном расчете 984 фута может использоватьсся как эквивалент 300 метров.
+ASR - зона установки альтиметра. Воздушное пространство определенных размеров, внутри которого производят процедуры по стандартизированной установке альтиметра.
+   Описание: не признается ИКАО. Например, в течение полета альтиметр должен быть настроен по местным установкам альтиметра ближайшей станции по ходу полета.
+ADV - рекомендованная зона. Зона определенных размеров, внутри которой доступна консультативная служба воздушного движения.
+   Описание: признается ИКАО. Диспетчерская служба воздушного движения предоставляет куда более полный набор услуг, чем консультативная служба воздушного движения, поэтому консультативные зоны полётов и путей не устанавливают внутри воздушных пространств, управляемых диспетчерами, но консультативная служба воздушного сообщения может предоставляться и внизу, и наверху.
+UADV - верхняя рекомендованная зона. Зона определенных размеров в верхнем воздушном пространстве, внутри которой доступна консультативная служба воздушного движения.
+   Описание: признается ИКАО. Диспетчерская служба воздушного движения предоставляет куда более полный набор услуг, чем консультативная служба воздушного движения, поэтому консультативные зоны полётов и путей не устанавливают внутри воздушных пространств, управляемых диспетчерами, но консультативная служба воздушного сообщения может предоставляться и внизу, и наверху.
+ATZ - зона движения аэропорта. Воздушное пространство определенных размеров, установленное вокруг аэропорта для защиты движения в аэропорту.
+   Описание: признается ИКАО.
+ATZ_P - часть зоны движения аэропорта
+HTZ	- зона движения вертодрома
+NAS_P - часть национальной системы воздушного пространства
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
+*/
 CREATE DOMAIN CodeAirspaceType AS VARCHAR(40)
 CHECK (VALUE ~
        '((NAS|FIR|FIR_P|UIR|UIR_P|CTA|CTA_P|OCA|OCA_P|UTA|UTA_P|TMA|TMA_P|CTR|CTR_P|OTA|SECTOR|SECTOR_C|TSA|CBA|RCA|RAS|AWY|MTR|P|R|D|ADIZ|NO_FIR|PART|CLASS|POLITICAL|D_OTHER|TRA|A|W|PROTECT|AMA|ASR|ADV|UADV|ATZ|ATZ_P|HTZ|NAS_P)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeAirspaceType AS ENUM ('NAS', 'FIR', 'FIR_P', 'UIR', 'UIR_P', 'CTA', 'CTA_P', 'OCA', 'OCA_P',
--- 'UTA', 'UTA_P', 'TMA', 'TMA_P', 'CTR', 'CTR_P', 'OTA', 'SECTOR', 'SECTOR_C', 'TSA', 'CBA', 'RCA', 'RAS', 'AWY', 'MTR', 'P', 'R', 'D', 'ADIZ', 'NO_FIR', 'PART', 'CLASS', 'POLITICAL', 'D_OTHER', 'TRA', 'A', 'W', 'PROTECT', 'AMA', 'ASR', 'ADV', 'UADV', 'ATZ', 'ATZ_P', 'HTZ', 'NAS_P', 'OTHER');
 
--- Допустимый тип воздушного пространства
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceDesignatorType
+/*
+Допустимый тип воздушного пространства
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceDesignatorType
+*/
 CREATE DOMAIN CodeAirspaceDesignatorType AS VARCHAR(10)
 CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*');
 
--- A - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены только полёты по правилам полётов по приборам (ППП); все полёты снабжены диспетчерской службой воздушного движения и отделены друг от друга.
--- B - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полёты по правилам визуального полёта (ПВП); все полёты снабжены диспетчерской службой воздушного движения и отделены друг от друга.
--- C - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все полёты снабжены диспетчерской службой воздушного движения, полёты по ППП отделены от других полетов по ППП и от полетов по ПВП. Полеты по ПВП отделены от полетов по ППП и получают информацию о движении.
--- D - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все полёты снабжены диспетчерской службой воздушного движения, полёты по ППП отделены от других полетов по ППП и получают информацию о движении, касающуюся полетов по ПВП. Полеты по ПВП получают информацию о движении, касающуюся всех других полетов.
--- E - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; полёты по ППП снабжены диспетчерской службой воздушного движения и отделены от других полетов по ППП. Все полеты получают информацию о движении настолько, насколько это осуществимо. Класс Е не должен быть использован в диспетчерских зонах.
--- F - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все участвующие полёты по ППП снабжены консультативной службой воздушного движения, все полёты получают услуги по летной информации по требованию. Описание: приведение в исполнение консультативная служба воздушного движения обычно считается временной мерой, только до того времени, когда эта служба может быть заменена авиадиспетчерской службой.
--- G - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП и получают службу полетной информации по требованию.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceClassificationType
+/*
+A - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены только полёты по правилам полётов по приборам (ППП); все полёты снабжены диспетчерской службой воздушного движения и отделены друг от друга.
+B - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полёты по правилам визуального полёта (ПВП); все полёты снабжены диспетчерской службой воздушного движения и отделены друг от друга.
+C - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все полёты снабжены диспетчерской службой воздушного движения, полёты по ППП отделены от других полетов по ППП и от полетов по ПВП. Полеты по ПВП отделены от полетов по ППП и получают информацию о движении.
+D - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все полёты снабжены диспетчерской службой воздушного движения, полёты по ППП отделены от других полетов по ППП и получают информацию о движении, касающуюся полетов по ПВП. Полеты по ПВП получают информацию о движении, касающуюся всех других полетов.
+E - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; полёты по ППП снабжены диспетчерской службой воздушного движения и отделены от других полетов по ППП. Все полеты получают информацию о движении настолько, насколько это осуществимо. Класс Е не должен быть использован в диспетчерских зонах.
+F - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все участвующие полёты по ППП снабжены консультативной службой воздушного движения, все полёты получают услуги по летной информации по требованию. Описание: приведение в исполнение консультативная служба воздушного движения обычно считается временной мерой, только до того времени, когда эта служба может быть заменена авиадиспетчерской службой.
+G - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП и получают службу полетной информации по требованию.
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceClassificationType
+*/
 CREATE DOMAIN CodeAirspaceClassificationType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|C|D|E|F|G)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeAirspaceClassificationType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'OTHER');
 
 /*
 SFC - расстояние, измеренное от поверхности Земли (эквивалентно AGL - над уровнем Земли)
@@ -880,15 +971,17 @@ STD - вертикальное расстояние, измеренное с п�
 CREATE DOMAIN CodeVerticalReferenceType AS VARCHAR(40)
 CHECK (VALUE ~ '((SFC|MSL|W84|STD)|OTHER: [A-Z]{30})');
 
--- ABOVE_LOWER - на нижней высоте или выше нее
--- BELOW_UPPER - на верхней высоте или ниже нее
--- AT_LOWER - на нижней высоте
--- BETWEEN - между верхней и нижней высотами
--- RECOMMENDED - рекомендована нижняя высота
--- EXPECT_LOWER - ожидать нижнюю высоту от службы управлением воздушным движением
--- AS_ASSIGNED - назначается во время операций (например, службой управления воздушным движением)
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
+/*
+ABOVE_LOWER - на нижней высоте или выше нее
+BELOW_UPPER - на верхней высоте или ниже нее
+AT_LOWER - на нижней высоте
+BETWEEN - между верхней и нижней высотами
+RECOMMENDED - рекомендована нижняя высота
+EXPECT_LOWER - ожидать нижнюю высоту от службы управлением воздушным движением
+AS_ASSIGNED - назначается во время операций (например, службой управления воздушным движением)
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
+*/
 CREATE DOMAIN CodeAltitudeUseType AS VARCHAR(40)
 CHECK (VALUE ~ '((ABOVE_LOWER|BELOW_UPPER|AT_LOWER|BETWEEN|RECOMMENDED|EXPECT_LOWER|AS_ASSIGNED)|OTHER: [A-Z]{30})');
 
@@ -904,25 +997,28 @@ https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_
 CREATE DOMAIN CodeRouteDesignatorPrefixType AS VARCHAR(40)
 CHECK (VALUE ~ '((K|U|S|T)|OTHER: [A-Z]{30})');
 
--- Однобуквенный указатель для пути
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
+/*
+Однобуквенный указатель для пути
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
+*/
 CREATE DOMAIN CodeRouteDesignatorLetterType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|G|H|J|L|M|N|P|Q|R|T|V|W|Y|Z)|OTHER: [A-Z]{30})');
 
+/*
+A (positive) number of similar items.
 
--- A (positive) number of similar items.
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_NoNumberType
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_NoNumberType
+*/
 CREATE DOMAIN NoNumberType AS INTEGER;
 
--- Буквы латинского алфавита
---
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
+/*
+Буквы латинского алфавита
+
+https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
+*/
 CREATE DOMAIN CodeUpperAlphaType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeUpperAlphaType AS ENUM ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
--- 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'OTHER');
 
 -- Классификация путей на пути ATS и северно-атлантические пути.
 -- ATS - участки, используемые с разрешения службы движения при повышенном внимании (путь ATS описан в ICAO Annex 11).
@@ -931,7 +1027,6 @@ CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteType
 CREATE DOMAIN CodeRouteType AS VARCHAR(40)
 CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
---CREATE TYPE CodeRouteType AS ENUM ('ATS', 'NAT', 'OTHER');
 
 -- Правила полета, которые должны соблюдаится воздушным судном.
 -- IFR
@@ -940,7 +1035,6 @@ CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightRuleType
 CREATE DOMAIN CodeFlightRuleType AS VARCHAR(40)
 CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
--- --CREATE TYPE CodeFlightRuleType AS ENUM ('IFR', 'VFR', 'ALL', 'OTHER');
 
 -- Код, обозначающий, является путь международным или региональным (местным)
 -- INTL - международный
@@ -948,7 +1042,6 @@ CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
 -- BOTH - и то, и другое
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteOriginType
---CREATE TYPE CodeRouteOriginType AS ENUM ('INTL', 'DOM', 'BOTH', 'OTHER');
 CREATE DOMAIN CodeRouteOriginType AS VARCHAR(40)
 CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
 
@@ -959,7 +1052,6 @@ CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryStatusType
 CREATE DOMAIN CodeMilitaryStatusType AS VARCHAR(40)
 CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
---AS ENUM ('MIL', 'CIVIL', 'ALL', 'OTHER');
 
 -- Код, обозначающий тип полета на военном тренировочном пути
 -- IR - тренировочный путь IFR
@@ -967,7 +1059,8 @@ CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
 -- SR - тренировочный путь малой скорости и низкой высоты
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryTrainingType
-CREATE TYPE CodeMilitaryTrainingType AS ENUM ('IR', 'VR', 'SR', 'OTHER');
+CREATE DOMAIN CodeMilitaryTrainingType AS VARCHAR(40)
+CHECK (VALUE ~ '(IR|VR|SR|OTHER: [A-Z]{30})');
 
 -- Код, обозначающий первичную активность, имеющую место на воздушном пространстве или причину ее появления
 -- AD_TFC
@@ -988,7 +1081,9 @@ CREATE TYPE CodeMilitaryTrainingType AS ENUM ('IR', 'VR', 'SR', 'OTHER');
 -- и т.д.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceActivityType
-CREATE TYPE CodeAirspaceActivityType AS ENUM ('AD_TFC', 'HELI_TFC', 'TRAINING', 'AEROBATICS', 'AIRSHOW', 'SPORT', 'ULM', 'GLIDING', 'PARAGLIDER', 'HANGGLIDING', 'PARACHUTE', 'AIR_DROP', 'BALLOON', 'RADIOSONDE', 'SPACE_FLIGHT', 'UAV', 'AERIAL_WORK', 'CROP_DUSTING', 'FIRE_FIGHTING', 'MILOPS', 'REFUEL', 'JET_CLIMBING', 'EXERCISE', 'TOWING', 'NAVAL_EXER', 'MISSILES', 'AIR_GUN', 'ARTILLERY', 'SHOOTING', 'BLASTING', 'WATER_BLASTING', 'ANTI_HAIL', 'BIRD', 'BIRD_MIGRATION', 'FIREWORK', 'HI_RADIO', 'HI_LIGHT', 'LASER', 'NATURE', 'FAUNA', 'NO_NOISE', 'ACCIDENT', 'POPULATION', 'VIP', 'VIP_PRES', 'VIP_VICE', 'OIL', 'GAS', 'REFINERY', 'CHEMICAL', 'NUCLEAR', 'TECHNICAL', 'ATS', 'PROCEDURE', 'OTHER');
+CREATE DOMAIN CodeAirspaceActivityType AS VARCHAR(40)
+CHECK (VALUE ~ '(AD_TFC|HELI_TFC|TRAINING|AEROBATICS|AIRSHOW|SPORT|ULM|GLIDING|PARAGLIDER|HANGGLIDING|PARACHUTE|AIR_DROP|BALLOON|RADIOSONDE|SPACE_FLIGHT|UAV|AERIAL_WORK|CROP_DUSTING|FIRE_FIGHTING|MILOPS|REFUEL|JET_CLIMBING|EXERCISE|TOWING|NAVAL_EXER|MISSILES|AIR_GUN|ARTILLERY|SHOOTING|BLASTING|WATER_BLASTING|ANTI_HAIL|BIRD|BIRD_MIGRATION|FIREWORK|HI_RADIO|HI_LIGHT|LASER|NATURE|FAUNA|NO_NOISE|ACCIDENT|POPULATION|VIP|VIP_PRES|VIP_VICE|OIL|GAS|REFINERY|CHEMICAL|NUCLEAR|TECHNICAL|ATS|PROCEDURE|OTHER: [A-Z]{30})');
+
 
 -- Список значений, показывающий состояние активизации воздушного пространства.
 -- AVBL_FOR_ACTIVATION - свойство может быть активировано
@@ -998,7 +1093,8 @@ CREATE TYPE CodeAirspaceActivityType AS ENUM ('AD_TFC', 'HELI_TFC', 'TRAINING', 
 -- INTERMITTENT - воздушное пространство активно, но имеются периоды когда оно реально не используется
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirspaceType
-CREATE TYPE CodeStatusAirspaceType AS ENUM ('AVBL_FOR_ACTIVATION', 'ACTIVE', 'IN_USE', 'INТACTIVE', 'INTERMITTENT', 'OTHER');
+CREATE DOMAIN CodeStatusAirspaceType AS VARCHAR(40)
+CHECK (VALUE ~ '(AVBL_FOR_ACTIVATION|ACTIVE|IN_USE|INТACTIVE|INTERMITTENT|OTHER: [A-Z]{30})');
 
 -- Код, указывающий на тип связи между значимой точкой и воздушным пространством.
 -- ENTRY - первая точка оповещения, отнесенная к значимой точке, через которую проходит воздушное судно или предполагается, что пройдёт, при вхождении в воздушное пространство.
@@ -1006,7 +1102,8 @@ CREATE TYPE CodeStatusAirspaceType AS ENUM ('AVBL_FOR_ACTIVATION', 'ACTIVE', 'IN
 -- ENTRY_EXIT - точка входа/выхода. Первая и последняя точка оповещения, отнесенная к значимой точке, через которую проходит воздушное судно или предполагается, что пройдёт, при вхождении в воздушное пространство или выходе из него.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointRoleType
-CREATE TYPE CodeAirspacePointRoleType AS ENUM ('ENTRY', 'EXIT', 'ENTRY_EXIT', 'OTHER');
+CREATE DOMAIN CodeAirspacePointRoleType AS VARCHAR(40)
+CHECK (VALUE ~ '(ENTRY|EXIT|ENTRY_EXIT|OTHER: [A-Z]{30})');
 
 -- Код, обозначающий расположение значимой точки в воздушном пространстве
 -- IN - расположена внутри воздушного пространства
@@ -1014,7 +1111,8 @@ CREATE TYPE CodeAirspacePointRoleType AS ENUM ('ENTRY', 'EXIT', 'ENTRY_EXIT', 'O
 -- BORDER - расположена на границе воздушного пространства
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointPositionType
-CREATE TYPE CodeAirspacePointPositionType AS ENUM ('IN', 'OUT', 'BORDER', 'OTHER');
+CREATE DOMAIN CodeAirspacePointPositionType AS VARCHAR(40)
+CHECK (VALUE ~ '(IN|OUT|BORDER|OTHER: [A-Z]{30})');
 
 -- Код, обозначающий уровень
 -- UPPER - верхнее воздушное пространство
@@ -1022,15 +1120,17 @@ CREATE TYPE CodeAirspacePointPositionType AS ENUM ('IN', 'OUT', 'BORDER', 'OTHER
 -- BOTH - верхнее и нижнее воздушное пространство
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLevelType
-CREATE TYPE CodeLevelType AS ENUM ('UPPER', 'LOWER', 'BOTH', 'OTHER');
+CREATE DOMAIN CodeLevelType AS VARCHAR(40)
+CHECK (VALUE ~ '(UPPER|LOWER|BOTH|OTHER: [A-Z]{30})');
 
 -- Тип сегмента пути
 -- GRC - окружность большого круга
 -- RHL - локсодромия
 -- GDS - геодезическая линия
 --
---      https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteSegmentPathType
-CREATE TYPE CodeRouteSegmentPathType AS ENUM ('GRC', 'RHL', 'GDS', 'OTHER');
+-- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteSegmentPathType
+CREATE DOMAIN CodeRouteSegmentPathType AS VARCHAR(40)
+CHECK (VALUE ~ '(GRC|RHL|GDS|OTHER: [A-Z]{30})');
 
 /*
 Тип маршрута с навигационной точки зрения
@@ -1040,7 +1140,8 @@ TACAN - радионавигационная система ближнего д�
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteNavigationType
 */
-CREATE TYPE CodeRouteNavigationType AS ENUM ('CONV', 'RNAV', 'TACAN', 'OTHER');
+CREATE DOMAIN CodeRouteNavigationType AS VARCHAR(40)
+CHECK (VALUE ~ '(CONV|RNAV|TACAN|OTHER: [A-Z]{30})');
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRNPType
 CREATE DOMAIN CodeRNPType AS VARCHAR
@@ -1051,7 +1152,8 @@ CHECK (VALUE ~ '[0-9]{1,2}(\.[0-9]{1}){0,1}');
 -- G - на части пути доступно только Летно - информационное ОВД
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorSuffixType
-CREATE TYPE CodeRouteDesignatorSuffixType AS ENUM ('F', 'G', 'OTHER');
+CREATE DOMAIN CodeRouteDesignatorSuffixType AS VARCHAR(40)
+CHECK (VALUE ~ '(F|G|OTHER: [A-Z]{30})');
 
 -- Тип отчета о позиции, требуемого диспетчерской службой аэродрома (ATC Unit)
 -- COMPULSORY - обязательный
@@ -1059,7 +1161,8 @@ CREATE TYPE CodeRouteDesignatorSuffixType AS ENUM ('F', 'G', 'OTHER');
 -- NO_REPORT - без отчета
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeATCReportingType
-CREATE TYPE CodeATCReportingType AS ENUM ('COMPULSORY', 'ON_REQUEST', 'NO_REPORT', 'OTHERА');
+CREATE DOMAIN CodeATCReportingType AS VARCHAR(40)
+CHECK (VALUE ~ '(COMPULSORY|ON_REQUEST|NO_REPORT|OTHER: [A-Z]{30})');
 
 
 -- Классификация точек входа и выхода на свободные зоны полета
@@ -1067,7 +1170,8 @@ CREATE TYPE CodeATCReportingType AS ENUM ('COMPULSORY', 'ON_REQUEST', 'NO_REPORT
 -- CATCH - точка свободного полета CATCH указывает на конец свободного полета
 --
 --  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFreeFlightType
-CREATE TYPE CodeFreeFlightType AS ENUM ('PITCH', 'CATCH', 'OTHER');
+CREATE DOMAIN CodeFreeFlightType AS VARCHAR(40)
+CHECK (VALUE ~ '(PITCH|CATCH|OTHER: [A-Z]{30})');
 
 -- Код, показывающий, что у точки есть особенная роль в контексте RVSM (Cокращенный минимум вертикального эшелонирования)
 -- IN - точка входа RVSM
@@ -1075,7 +1179,8 @@ CREATE TYPE CodeFreeFlightType AS ENUM ('PITCH', 'CATCH', 'OTHER');
 -- IN_OUT - точка входа/выхода RVSM
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRVSMPointRoleType
-CREATE TYPE CodeRVSMPointRoleType AS ENUM ('IN', 'OUT', 'IN_OUT', 'OTHER');
+CREATE DOMAIN CodeRVSMPointRoleType AS VARCHAR(40)
+CHECK (VALUE ~ '(IN|OUT|IN_OUT|OTHER: [A-Z]{30})');
 
 -- Код, указывающий на использование точки на военном тренировочном пути.
 -- S - точка входа (начала)
@@ -1086,7 +1191,8 @@ CREATE TYPE CodeRVSMPointRoleType AS ENUM ('IN', 'OUT', 'IN_OUT', 'OTHER');
 -- ASX - запасная точка входа/выхода
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryRoutePointType
-CREATE TYPE CodeMilitaryRoutePointType AS ENUM ('S', 'T', 'X', 'AS', 'AX', 'ASX', 'OTHER');
+CREATE DOMAIN CodeMilitaryRoutePointType AS VARCHAR(40)
+CHECK (VALUE ~ '(S|T|X|AS|AX|ASX|OTHER: [A-Z]{30})');
 
 -- Трехбуквенный код, обозначающий язык (в соответствиии с ISO 639-2)
 --
@@ -1110,7 +1216,9 @@ UHF
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
 */
-CREATE TYPE CodeCommunicationModeType AS ENUM ('HF', 'VHF', 'VDL1', 'VDL2', 'VDL4', 'AMSS', 'ADS_B', 'ADS_B_VD', 'HFDL', 'VHF_833', 'UHF', 'OTHER');
+CREATE DOMAIN CodeCommunicationModeType AS VARCHAR(40)
+CHECK (VALUE ~ '(HF|VHF|VDL1|VDL2|VDL4|AMSS|ADS_B|ADS_B_VD|HFDL|VHF_833|UHF|OTHER: [A-Z]{30})');
+
 
 -- HZ - Гц
 -- KHZ - кГц
@@ -1118,8 +1226,9 @@ CREATE TYPE CodeCommunicationModeType AS ENUM ('HF', 'VHF', 'VDL1', 'VDL2', 'VDL
 -- GHZ - ГГц
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFrequencyType
---CREATE TYPE UomFrequencyType AS ENUM ('HZ', 'KHZ', 'MHZ', 'GHZ', 'OTHER');
-CREATE DOMAIN UomFrequencyType AS VARCHAR(60);
+CREATE DOMAIN UomFrequencyType AS VARCHAR(40)
+CHECK (VALUE ~ '(HZ|KHZ|MHZ|GHZ|OTHER: [A-Z]{30})');
+
 -- Значение частоты (радио) навигационной системы
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrequencyType
@@ -1150,7 +1259,9 @@ CREATE TYPE ValFrequencyType AS (
 -- G1D
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRadioEmissionType
-CREATE TYPE CodeRadioEmissionType AS ENUM ('A2', 'A3A', 'A3B', 'A3E', 'A3H', 'A3J', 'A3L', 'A3U', 'J3E', 'NONA1A', 'NONA2A', 'PON', 'A8W', 'A9W', 'NOX', 'G1D', 'OTHER');
+CREATE DOMAIN CodeRadioEmissionType AS VARCHAR(40)
+CHECK (VALUE ~ '(A2|A3A|A3B|A3E|A3H|A3J|A3L|A3U|J3E|NONA1A|NONA2A|PON|A8W|A9W|NOX|G1D|OTHER: [A-Z]{30})');
+
 
 -- Идентификатор радиоканала, по которому осуществляется связь.
 --
@@ -1165,7 +1276,8 @@ CREATE DOMAIN CodeCommunicationChannelType AS VARCHAR;
 -- DOWNCAST
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
-CREATE TYPE CodeCommunicationDirectionType AS ENUM ('UPLINK', 'DOWNLINK', 'BIDIRECTIONAL', 'UPCAST', 'DOWNCAST', 'OTHER');
+CREATE DOMAIN CodeCommunicationDirectionType AS VARCHAR(40)
+CHECK (VALUE ~ '(UPLINK|DOWNLINK|BIDIRECTIONAL|UPCAST|DOWNCAST|OTHER: [A-Z]{30})');
 
 /*
 Объединение, предоставляющее отдельный вид обслуживания воздушного движения (ОВД).
@@ -1228,7 +1340,8 @@ CHECK (VALUE ~ '((ACC|ADSU|ADVC|ALPS|AOF|APP|APP_ARR|APP_DEP|ARO|ATCC|ATFMU|ATMU
 -- ALTERNATE - связанное объединение (RelatedUnit) предоставляет запасное (альтернативное) обслуживание взамен обслуживания текущего объединения
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
-CREATE TYPE CodeUnitDependencyType AS ENUM ('OWNER', 'PROVIDER', 'ALTERNATE', 'OTHER');
+CREATE DOMAIN CodeUnitDependencyType AS VARCHAR(40)
+CHECK (VALUE ~ '(OWNER|PROVIDER|ALTERNATE|OTHER: [A-Z]{30})');
 
 /*
 Классификация служб эшелонирования полетов и наземного контроля
@@ -1253,7 +1366,8 @@ CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
 -- AIS - организация ответственна за предоставление аэронавишационной информации на данном объекте.
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
-CREATE TYPE CodeAuthorityType AS ENUM ('OWN', 'DLGT', 'AIS', 'OTHER');
+CREATE DOMAIN CodeAuthorityType AS VARCHAR(40)
+CHECK (VALUE ~ '(OWN|DLGT|AIS|OTHER: [A-Z]{30})');
 
 /*
 Типы служб навигационных средств
@@ -1278,8 +1392,8 @@ SDF - упрощенное средство направленного дейс�
 
 https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidServiceType
 */
-CREATE TYPE CodeNavaidServiceType AS ENUM ('VOR', 'DME', 'NDB', 'TACAN', 'MKR', 'ILS', 'ILS_DME', 'MLS', 'MLS_DME', 'VORTAC', 'VOR_DME',
-  'NDB_DME', 'TLS', 'LOC', 'LOC_DME', 'NDB_MKR', 'DF', 'OTHER');
+CREATE DOMAIN CodeNavaidServiceType AS VARCHAR(40)
+CHECK (VALUE ~ '(VOR|DME|NDB|TACAN|MKR|ILS|ILS_DME|MLS|MLS_DME|VORTAC|VOR_DME|NDB_DME|TLS|LOC|LOC_DME|NDB_MKR|DF|OTHER: [A-Z]{30})');
 
 -- Идентификатор РНС
 --
@@ -1293,7 +1407,8 @@ CHECK (VALUE ~ '([A-Z]|\d)*');
 -- ALL - для любых целей
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidPurposeType
-CREATE TYPE CodeNavaidPurposeType AS ENUM ('TERMINAL', 'ENROUTE', 'ALL', 'OTHER');
+CREATE DOMAIN CodeNavaidPurposeType AS VARCHAR(40)
+CHECK (VALUE ~ '(TERMINAL|ENROUTE|ALL|OTHER: [A-Z]{30})');
 
 -- ...
 -- I
@@ -1301,7 +1416,8 @@ CREATE TYPE CodeNavaidPurposeType AS ENUM ('TERMINAL', 'ENROUTE', 'ALL', 'OTHER'
 -- III
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSignalPerformanceILSType
-CREATE TYPE CodeSignalPerformanceILSType AS ENUM ('I', 'II', 'III', 'OTHER');
+CREATE DOMAIN CodeSignalPerformanceILSType AS VARCHAR(40)
+CHECK (VALUE ~ '(I|II|III|OTHER: [A-Z]{30})');
 
 -- A
 -- B
@@ -1311,10 +1427,13 @@ CREATE TYPE CodeSignalPerformanceILSType AS ENUM ('I', 'II', 'III', 'OTHER');
 -- T
 --
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCourseQualityILSType
-CREATE TYPE CodeCourseQualityILSType AS ENUM ('A', 'B', 'C', 'D', 'E', 'T', 'OTHER');
+CREATE DOMAIN CodeCourseQualityILSType AS VARCHAR(40)
+CHECK (VALUE ~ '(A|B|C|D|E|T|OTHER: [A-Z]{30})');
+
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
-CREATE TYPE CodeIntegrityLevelILSType AS ENUM ('1', '2', '3', '4', 'OTHER');
+CREATE DOMAIN CodeIntegrityLevelILSType AS VARCHAR(40)
+CHECK (VALUE ~ '(1|2|3|4|OTHER: [A-Z]{30})');
 
 /*
 TWR - диспетчерская служба с аэродромной вышки
@@ -2689,6 +2808,79 @@ CREATE VIEW FIR AS
     FROM Surface, AirspaceVolume
     WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
   FROM Airspace WHERE Airspace.type='FIR';
+
+
+CREATE VIEW MVL AS
+  SELECT
+    uuid,
+    designatorPrefix,
+    designatorSecondLetter,
+    designatorNumber,
+    (SELECT magneticTrack AS mta
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT reverseMagneticTrack AS rmta
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT length
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+
+
+    (SELECT (upperLimit).value AS top
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT (lowerLimit).value AS bottom
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+    FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+   FROM RouteSegment
+    WHERE RouteSegment.uuidRoute=Route.uuid),
+
+    (SELECT CallsignDetail.callSign as cs
+    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value as tf
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value as tr
+    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT day as day_of_the_week
+    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT startTime
+    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT endTime
+    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT Unit.type as unit_type
+    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+    (SELECT id
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+    (SELECT Surface.geom
+    FROM Surface, AirspaceVolume
+    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+  FROM Route;
+
 
 CREATE OR REPLACE FUNCTION fir_function()
 RETURNS TRIGGER

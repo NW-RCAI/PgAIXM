@@ -55,7 +55,7 @@ RouteSegment
 ##### magneticTrack
 Тип данных: ValBearingType
 
-Первоначальный магнитный путь.
+МПУ в градусах.
 
 ##### reverseTrueTrack
 Тип данных: ValBearingType
@@ -65,7 +65,7 @@ RouteSegment
 ##### reverseMagneticTrack
 Тип данных: ValBearingType
 
-Запасной магнитный путь.
+Обратный МПУ (если двухсторонняя) в градусах.
 
 ##### length
 Тип данных: ValDistanceType
