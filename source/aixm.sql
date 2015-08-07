@@ -1,4 +1,6 @@
-﻿DROP TABLE IF EXISTS AirportHeliport, City, Surface, Point, ElevatedPoint, SurveyControlPoint, ElevatedSurface,
+﻿
+
+DROP TABLE IF EXISTS AirportHeliport, City, Surface, Point, ElevatedPoint, SurveyControlPoint, ElevatedSurface,
 AirportHotSpot, AltimeterSourceAirportHeliport, AltimeterSource, AltimeterSourceStatus, OrganisationAuthority,
 ContactInformation, SurfaceContamination, AirportHeliportContamination, AirportHeliportAvailability, Runway,
 SurfaceCharacteristics, RunwayContamination, RunwaySectionContamination, RunwayDirection, GroundLightSystem,
@@ -2462,7 +2464,7 @@ LANGUAGE plpgsql
 AS $function$
    BEGIN
       IF TG_OP = 'INSERT' THEN
-        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.nm,NEW.nl,NEW.type,NEW.height,NEW.closed);
+        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.nm,NEW.nl,NEW.type,NEW.ha,NEW.closed);
         INSERT INTO Runway VALUES (NEW.length);
         INSERT INTO RunwayDirection VALUES (NEW.ugol);
         INSERT INTO CallsignDetail VALUES (NEW.cs);
@@ -2470,7 +2472,7 @@ AS $function$
         INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,type=NEW.type, fieldElevation.value = NEW.height, abandoned=NEW.closed        WHERE AirportHeliport.uuid=OLD.uuid;
+       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,type=NEW.type, fieldElevation.value = NEW.ha, abandoned=NEW.closed        WHERE AirportHeliport.uuid=OLD.uuid;
        UPDATE Runway SET nominalLength.value = NEW.length WHERE  runway.uuidairportheliport=OLD.uuid;
        UPDATE RunwayDirection SET trueBearing = NEW.ugol WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
        UPDATE CallsignDetail SET callSign = NEW.cs WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
