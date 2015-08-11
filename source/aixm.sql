@@ -2500,9 +2500,9 @@ CREATE TRIGGER als_trigger
 CREATE VIEW CTA AS
   SELECT
     uuid,
-    designator,
-    name,
-    controlType,
+    designator as nm,
+    name as nl,
+    controlType as tp,
     (SELECT (upperLimit).value AS top
     FROM AirspaceVolume
     WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
