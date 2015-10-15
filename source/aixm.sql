@@ -1,5 +1,6 @@
-﻿
-
+﻿--
+-- CLEANING DATABASE
+--
 DROP TABLE IF EXISTS AirportHeliport, City, Surface, Point, ElevatedPoint, SurveyControlPoint, ElevatedSurface,
 AirportHotSpot, AltimeterSourceAirportHeliport, AltimeterSource, AltimeterSourceStatus, OrganisationAuthority,
 ContactInformation, SurfaceContamination, AirportHeliportContamination, AirportHeliportAvailability, Runway,
@@ -12,7 +13,7 @@ AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, Significan
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
 GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
-PropertiesWithSchedule, Timesheet,airportheliport_navaid, DesignatedPoint CASCADE;
+PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -23,29 +24,33 @@ CodeRunwayMarkingType, CodeMarkingConditionType, CodeLightingJARType, CodeApproa
 CodeColourType, CodeTelecomNetworkType, CodeFlightDestinationType, CodeFacilityRankingType, CodeServiceATFMType, CodeServiceInformationType,
 CodeServiceSARType, CodeAirspaceType, CodeAirspaceClassificationType, CodeVerticalReferenceType, CodeAltitudeUseType,
 CodeRouteDesignatorPrefixType, CodeRouteDesignatorLetterType, CodeUpperAlphaType, CodeRouteType, CodeFlightRuleType,
-CodeRouteOriginType, CodeMilitaryStatusType,uomfrequencytype, CodeServiceGroundControlType,codeserviceatctype,valdistanceverticalbasetypenonnumeric,
-CodeAircraftGroundServiceType,CodeUnitType,CodeTimeReferenceType,CodeDayType,CodeTimeEventType,UomDurationType,
-CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType,UomDistanceVerticalType,UomTemperatureType, CodeAirportHeliportType,
-UomDistanceType, UomFLType,CodeStatusOperationsType,CodeOrganisationType,UomDepthType,CodeFrictionEstimateType,CodeFrictionDeviceType,
-CodeStatusAirportType,CodeAirportWarningType,CodeRunwayType,CodeSurfaceCompositionType,CodeSurfacePreparationType,CodeSurfaceConditionType,
-CodePCNPavementType,CodePCNSubgradeType,CodePCNTyrePressureType,CodePCNMethodType,UomWeightType,UomPressureType,CodeMilitaryTrainingType,
-CodeAirspaceActivityType,CodeStatusAirspaceType,CodeAirspacePointRoleType,CodeAirspacePointPositionType,CodeLevelType,CodeRouteSegmentPathType,
-CodeRouteNavigationType,CodeRouteDesignatorSuffixType,CodeATCReportingType,CodeFreeFlightType,CodeRVSMPointRoleType,CodeMilitaryRoutePointType,
-CodeCommunicationModeType,CodeRadioEmissionType,CodeCommunicationDirectionType,CodeUnitDependencyType,CodeAuthorityType,CodeNavaidServiceType,
-CodeNavaidPurposeType,CodeSignalPerformanceILSType,CodeCourseQualityILSType,CodeIntegrityLevelILSType, CodeDesignatedPointDesignatorType,
+CodeRouteOriginType, CodeMilitaryStatusType, uomfrequencytype, CodeServiceGroundControlType, codeserviceatctype, valdistanceverticalbasetypenonnumeric,
+CodeAircraftGroundServiceType, CodeUnitType, CodeTimeReferenceType, CodeDayType, CodeTimeEventType, UomDurationType,
+CodeTimeEventCombinationType, datemonthdaytype, CodeYesNoType, UomDistanceVerticalType, UomTemperatureType, CodeAirportHeliportType,
+UomDistanceType, UomFLType, CodeStatusOperationsType, CodeOrganisationType, UomDepthType, CodeFrictionEstimateType, CodeFrictionDeviceType,
+CodeStatusAirportType, CodeAirportWarningType, CodeRunwayType, CodeSurfaceCompositionType, CodeSurfacePreparationType, CodeSurfaceConditionType,
+CodePCNPavementType, CodePCNSubgradeType, CodePCNTyrePressureType, CodePCNMethodType, UomWeightType, UomPressureType, CodeMilitaryTrainingType,
+CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType, CodeAirspacePointPositionType, CodeLevelType, CodeRouteSegmentPathType,
+CodeRouteNavigationType, CodeRouteDesignatorSuffixType, CodeATCReportingType, CodeFreeFlightType, CodeRVSMPointRoleType, CodeMilitaryRoutePointType,
+CodeCommunicationModeType, CodeRadioEmissionType, CodeCommunicationDirectionType, CodeUnitDependencyType, CodeAuthorityType, CodeNavaidServiceType,
+CodeNavaidPurposeType, CodeSignalPerformanceILSType, CodeCourseQualityILSType, CodeIntegrityLevelILSType, CodeDesignatedPointDesignatorType,
 CodeDesignatedPointType CASCADE;
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, valflbasetype, valdistancebasetype,
-ValDistanceVerticalType, valdistanceverticalbasetype,ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
-ValSlopeType, ValWeightType, ValPCNType,textdesignatortype, valpressuretype, textphonetype, codernptype, codelanguagetype, valfrequencybasetype,
+ValDistanceVerticalType, valdistanceverticalbasetype, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
+ValSlopeType, ValWeightType, ValPCNType, textdesignatortype, valpressuretype, textphonetype, codernptype, codelanguagetype, valfrequencybasetype,
 valfrequencytype, codecommunicationchanneltype, ValDurationType CASCADE;
 
 DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
 DROP FUNCTION IF EXISTS trigger_insert_polygon();
 
-DROP VIEW IF EXISTS airports, AIRP_TABLE, AIRP_MAP, AIRP_MAP_2, CTA, CTA_2, CTR, DRA, PRA, RSA ;
+DROP VIEW IF EXISTS airports, AIRP_TABLE, CTA, CTA_2, CTR, DRA, PRA, RSA;
 
+
+--
+-- CREATE DOMAINS
+--
 
 -- В качестве id используем UUID Type
 --
@@ -54,31 +59,31 @@ CREATE DOMAIN id AS UUID;
 
 -- Уникальный индификатор для аэродрома/вертодрома.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportDesignatorType
+
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(10)
 CHECK (VALUE ~ '[A-Z]{3,4}|[A-Z]{2}[0-9]{4}');
 
 -- Используется для названий с максимальной длинной в 60 символов.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextNameType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextNameType
 CREATE DOMAIN TextNameType AS VARCHAR(60);
 
 -- A full free text address.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextAddressBaseType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextAddressBaseType
 CREATE DOMAIN TextAddressType AS VARCHAR(500);
 
 -- Четырехбуквенный индекс аэродрома ICAO (http://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code)
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeICAOType
 CREATE DOMAIN CodeICAOType AS CHAR(4)
 CHECK (VALUE ~ '[A-Z]{4}');
 
-/*
-Трехбуквенный индекс аэродрома IATA (http://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code)
+-- Трехбуквенный индекс аэродрома IATA (http://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code)
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIATAType
-*/
 CREATE DOMAIN CodeIATAType AS CHAR(3)
 CHECK (VALUE ~ '[A-Z]{3}');
 
@@ -89,14 +94,14 @@ AD - только аэродром
 НР - только вертодром
 LS - посадочная площадка
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportHeliportType
 */
 CREATE DOMAIN CodeAirportHeliportType AS VARCHAR(60)
 CHECK (VALUE ~ '(AD|AH|HP|LS|OTHER: [A-Z]{0,30})');
 /*
 Тип данных для хранения значений: Да или Нет
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeYesNoType
 */
 CREATE DOMAIN CodeYesNoType AS VARCHAR(60)
 CHECK (VALUE ~ '(YES|NO|OTHER: [A-Z]{0,30})');
@@ -107,7 +112,7 @@ CIVIL - только гражданская авиация
 MIL - только военная авиация
 JOINT - совместного использования
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryOperationsType
 */
 CREATE DOMAIN CodeMilitaryOperationsType AS VARCHAR(60)
 CHECK (VALUE ~ '(MIL|CIVIL|JOINT|OTHER: [A-Z]{0,30})');
@@ -118,7 +123,7 @@ CHECK (VALUE ~ '(MIL|CIVIL|JOINT|OTHER: [A-Z]{0,30})');
 -- FL - flight level in hundreds of feet
 -- SM - standard meters (tens of meters)
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceVerticalType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceVerticalType
 CREATE DOMAIN UomDistanceVerticalType AS VARCHAR(60)
 CHECK (VALUE ~ '(FT|M|FL|SM|OTHER: [A-Z]{0,30})');
 
@@ -131,10 +136,11 @@ UNL - значение "неограниченный"
 FLOOR - значение "основание (дно) воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной нижней границей
 CEILING - значение "верх воздушного пространства", необходимо отображать использование (?) для воздушного пространства с непостоянной верхней границей
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceVerticalType
 */
 CREATE DOMAIN ValDistanceVerticalBaseType AS DECIMAL(12, 4);
-CREATE DOMAIN ValDistanceVerticalBaseTypeNonNumeric AS VARCHAR(40) CHECK (VALUE ~ '((UNL|GND|FLOOR|CEILING)|OTHER: [A-Z]{0,30})');
+CREATE DOMAIN ValDistanceVerticalBaseTypeNonNumeric AS VARCHAR(40) CHECK (VALUE ~
+                                                                          '((UNL|GND|FLOOR|CEILING)|OTHER: [A-Z]{0,30})');
 CREATE TYPE ValDistanceVerticalType AS (
   value      ValDistanceVerticalBaseType,
   nonNumeric ValDistanceVerticalBaseTypeNonNumeric,
@@ -147,7 +153,7 @@ EMG_96 - геопотенциальная модель земного шара 1
 AHD - австралийский высотный датум
 NAVD88 - северо-американский высотный датум 1988 года
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeVerticalDatumType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeVerticalDatumType
 */
 CREATE DOMAIN CodeVerticalDatumType AS VARCHAR(60)
 CHECK (VALUE ~ '(EMG_96|AHD|NAVD88|OTHER: [A-Z]{0,30})');
@@ -156,65 +162,61 @@ CHECK (VALUE ~ '(EMG_96|AHD|NAVD88|OTHER: [A-Z]{0,30})');
 -- Положительное значение показывает, что магнитный север восточнее географического.
 -- Отрицательное значение показывает, что магнитный север западнее географического.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationType
 CREATE DOMAIN ValMagneticVariationType AS DECIMAL(13, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- Значение угла.
 -- предлагаю объединить этот тип с предыдущим и сделать один, так как они одинаковые
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValAngleType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValAngleType
 CREATE DOMAIN ValAngleType AS DECIMAL(13, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
 -- Дата, в которой значимым является только год.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateYearType
 CREATE DOMAIN DateYearType AS SMALLINT
-CHECK (VALUE > 1000 AND VALUE <= 2999);
+CHECK (VALUE > 1000 AND VALUE <= 9999);
 
 -- Величина годового изменения магнитного склонения, единицы измерения - градус/год.
 -- вообще всё описание такое же, как у типа ValAngleType, хоть и ед-цы измерения разные, можно объединить
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationChangeType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValMagneticVariationChangeType
 CREATE DOMAIN ValMagneticVariationChangeType AS DECIMAL(13, 10)
 CHECK (VALUE >= -180 AND VALUE <= 180);
 
-/*
-Единицы измерения температуры.
-C - degrees Celsius
-F - degrees Fahrenheit
-K - degrees Kelvin
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
-*/
+-- Единицы измерения температуры.
+-- C - degrees Celsius
+-- F - degrees Fahrenheit
+-- K - degrees Kelvin
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomTemperatureType
 CREATE DOMAIN UomTemperatureType AS VARCHAR(60)
 CHECK (VALUE ~ '(C|F|K|OTHER: [A-Z]{0,30})');
 
 -- Значение температуры.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValTemperatureType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValTemperatureType
 CREATE TYPE ValTemperatureType AS (
   value DECIMAL(13, 10),
   unit  UomTemperatureType
 );
 
 
-/*
-Unit of measurement for flight levels
-FL - flight level in hundreds of feet
-SM - standard meters (tens of meters)
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFLType
-*/
+-- Unit of measurement for flight levels
+-- FL - flight level in hundreds of feet
+-- SM - standard meters (tens of meters)
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFLType
 CREATE DOMAIN UomFLType AS VARCHAR(60)
 CHECK (VALUE ~ '(FL|SM|OTHER: [A-Z]{0,30})');
 
-/*
-A value expressed in flight levels (FL).
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
-*/
+-- A value expressed in flight levels (FL).
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFLType
 CREATE DOMAIN ValFLBaseType AS SMALLINT
 CHECK (VALUE < 999);
 CREATE TYPE ValFLType AS (
@@ -224,215 +226,196 @@ CREATE TYPE ValFLType AS (
 
 -- Дата по календарю.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateType
 CREATE DOMAIN DateType AS DATE;
 
-/*
-A unit of measurement for a horizontal distance.
-For example, metres, feet, nautical miles, kilometres, etc...
-NM - морские мили
-KM - километры
-М - метры
-FT - футы
-MI - мили
-CM - сантиметры
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceType
-*/
+-- A unit of measurement for a horizontal distance.
+-- For example, metres, feet, nautical miles, kilometres, etc...
+-- NM - морские мили
+-- KM - километры
+-- М - метры
+-- FT - футы
+-- MI - мили
+-- CM - сантиметры
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDistanceType
 CREATE DOMAIN UomDistanceType AS VARCHAR(60)
 CHECK (VALUE ~ '(NM|KM|M|FT|MI|CM|OTHER: [A-Z]{0,30})');
 
 -- A signed distance.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceSignedType
 CREATE TYPE ValDistanceSignedType AS (
   value DECIMAL(30, 20),
   unit  UomDistanceType
 );
 
-/*
-A type for (positive) distance.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceBase
-*/
+-- A type for (positive) distance.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceBaseType
 CREATE DOMAIN ValDistanceBaseType AS DECIMAL(30, 20)
 CHECK (VALUE > 0);
 
-/*
-A (positive) distance.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
-*/
+-- A (positive) distance.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceType
 CREATE TYPE ValDistanceType AS (
   value ValDistanceBaseType,
   unit  UomDistanceType
 );
 
-/*
-Code indicating operational status:
-NORMAL - стандартные операции
-DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
-UNSERVICEABLE - не пригодна для эксплуатации
-WORK_IN_PROGRESS - работа налаживается (в ремонте) - under construction
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusOperationsType
-*/
+-- Code indicating operational status:
+-- NORMAL - стандартные операции
+-- DOWNGRADED - система теоритически может работать на более высоком уровне, но в нынешнее время она ограничена описанным уровнем
+-- UNSERVICEABLE - не пригодна для эксплуатации
+-- WORK_IN_PROGRESS - работа налаживается (в ремонте) - under construction
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusOperationsType
 CREATE DOMAIN CodeStatusOperationsType AS VARCHAR(60)
 CHECK (VALUE ~ '(NORMAL|DOWNGRADED|UNSERVICEABLE|WORK_IN_PROGRESS|OTHER: [A-Z]{0,30})');
 
-/*
-Закодированный идентификатор организации, департамента, агенства или объединения.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
-*/
+-- Закодированный идентификатор организации, департамента, агенства или объединения.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationDesignatorType
 CREATE DOMAIN CodeOrganisationDesignatorType AS VARCHAR(12)
 CHECK (VALUE ~ '([A-Z]|[0-9])+([ \+\-/]*([A-Z]|[0-9])+)*');
 
-/*
-Код, указывающий на тип организации:
-STATE - область
-STATE_GROUP - группа областей
-ORG - организация в области
-INTL_ORG - международная организация
-ACFT_OPR - авиационное агентство
-HANDLING_AGENCY - транспортное агентство (или логистическое)
-NTL_AUTH - национальный департамент
-ATS - постащик услуг авиаперевозок
-COMMERCIAL - другая коммерческая организация
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationType
-*/
+-- Код, указывающий на тип организации:
+-- STATE - область
+-- STATE_GROUP - группа областей
+-- ORG - организация в области
+-- INTL_ORG - международная организация
+-- ACFT_OPR - авиационное агентство
+-- HANDLING_AGENCY - транспортное агентство (или логистическое)
+-- NTL_AUTH - национальный департамент
+-- ATS - постащик услуг авиаперевозок
+-- COMMERCIAL - другая коммерческая организация
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeOrganisationType
 CREATE DOMAIN CodeOrganisationType AS VARCHAR(60)
 CHECK (VALUE ~ '(STATE|STATE_GROUP|ORG|INTL_ORG|ACFT_OPR|HANDLING_AGENCY|NTL_AUTH|ATS|COMMERCIAL|OTHER: [A-Z]{0,30})');
 
-/*
-Текстовое обозначение.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextDesignatorType
-*/
+-- Текстовое обозначение.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextDesignatorType
 CREATE DOMAIN TextDesignatorType AS VARCHAR(16)
 CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*');
 
-/*
-A textual description of a sequence of elementary steps.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextInstructionType
-*/
+-- A textual description of a sequence of elementary steps.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextInstructionType
 CREATE DOMAIN TextInstructionType AS VARCHAR(10000);
 
-/*
-A full date and time value.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateTimeType
-*/
+-- A full date and time value.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_DateTimeType
 CREATE DOMAIN DateTimeType AS TIMESTAMP WITH TIME ZONE;
 
-/*
-Единицы измерения глубины:
-MM - миллиметры
-СМ - сантиметры
-IN - дюймы
-FT - футы
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDepthType
-*/
+-- Единицы измерения глубины:
+-- MM - миллиметры
+-- СМ - сантиметры
+-- IN - дюймы
+-- FT - футы
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDepthType
 CREATE DOMAIN UomDepthType AS VARCHAR(60)
 CHECK (VALUE ~ '(MM|CM|IN|FT|OTHER: [A-Z]{0,30})');
 
-/*
-Значение глубины.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
-*/
+--Значение глубины.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDepthType
 CREATE TYPE ValDepthType AS (
   value DECIMAL(30, 20),
   unit  UomDepthType
 );
 
-/*
-Значение коэффициента трения.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
-*/
+-- Значение коэффициента трения.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrictionType
 CREATE DOMAIN ValFrictionType AS DECIMAL(3, 2)
 CHECK ( VALUE >= 0 AND VALUE <= 1);
 
-/*
-Качественная оценка трения на ВВП:
-GOOD - хорошее
-MEDIUM_GOOD - среднее ближе к хорошему
-MEDIUM - среднее
-MEDIUM_POOR - среднее ближе к плохому
-POOR - плохое
-UNRELIABLE - состояние поверхности или доступного прибора измерения трения не позволяют провести надежные измерения трения поверхности
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionEstimateType
-*/
+-- Качественная оценка трения на ВВП:
+-- GOOD - хорошее
+-- MEDIUM_GOOD - среднее ближе к хорошему
+-- MEDIUM - среднее
+-- MEDIUM_POOR - среднее ближе к плохому
+-- POOR - плохое
+-- UNRELIABLE - состояние поверхности или доступного прибора измерения трения не позволяют провести надежные измерения трения поверхности
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionEstimateType
 CREATE DOMAIN CodeFrictionEstimateType AS VARCHAR(60)
 CHECK (VALUE ~ '(GOOD|MEDIUM_GOOD|MEDIUM|MEDIUM_POOR|POOR|UNRELIABLE|OTHER: [A-Z]{0,30})');
 
-/*
-Типы оборудования, использованного для определения коэффициента трения на ВПП:
-BRD - Brakemeter-Dynometer
-GRT - Grip tester
-MUM - Mu-meter
-RFT -	Runway friction tester
-SFH - Surface friction tester (high-pressure tire)
-SFL	-	Surface friction tester (low-pressure tire)
-SKL	-	Skiddometer (low-pressure tire)
-TAP	-	Tapley meter
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionDeviceType
-*/
+-- Типы оборудования, использованного для определения коэффициента трения на ВПП:
+-- BRD - Brakemeter-Dynometer
+-- GRT - Grip tester
+-- MUM - Mu-meter
+-- RFT -	Runway friction tester
+-- SFH - Surface friction tester (high-pressure tire)
+-- SFL	-	Surface friction tester (low-pressure tire)
+-- SKL	-	Skiddometer (low-pressure tire)
+-- TAP	-	Tapley meter
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFrictionDeviceType
 CREATE DOMAIN CodeFrictionDeviceType AS VARCHAR(60)
 CHECK (VALUE ~ '(BRD|GRT|MUM|RFT|SFH|SFL|SKH|SKL|TAP|OTHER: [A-Z]{0,30})');
 
-/*
-Время с точностью до 1 мин.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
-*/
+-- Время с точностью до 1 мин.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TimeBaseType
 CREATE DOMAIN TimeType AS CHAR(5)
 CHECK (VALUE ~ '(([0-1][0-9]|2[0-3]):[0-5][0-9])|(24:00)');
 
-/*
-A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
-*/
+-- A numerical value between 0.0 and 100, which designates a part or portion considered in its quantitative relation to the whole.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPercentBaseType
 CREATE DOMAIN ValPercentType AS DECIMAL(4, 1)
 CHECK (VALUE >= 0 AND VALUE <= 100);
 
-/*
-A coded list of values that indicates the availability of an airport/heliport facility for specific flight operations.
-NORMAL - условия имеют формальные ограничения
-LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
-CLOSED - не рабочее состояние
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirportType
-*/
+-- A coded list of values that indicates the availability of an airport/heliport facility for specific flight operations.
+-- NORMAL - условия имеют формальные ограничения
+-- LIMITED - наряду с формальными ограничениями, есть и дополнительные ограничения по использованию
+-- CLOSED - не рабочее состояние
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirportType
 CREATE DOMAIN CodeStatusAirportType AS VARCHAR(60)
 CHECK (VALUE ~ '(NORMAL|LIMITED|CLOSED|OTHER: [A-Z]{0,30})');
 
-/*
-A code indicating a reason for caution in airport operations. For example, work in progress on a runway.
-WIP - идут работы
-EQUIP - люди и оборудование
-BIRD - опасность в виде птиц
-ANIMAL - опасность в виде животных
-RUBBER_REMOVAL - уборка резиновых осадков с DGG (или каких-то резиновых отложений)
-PARKED_ACFT - на площадке расположен припаркованный или вышедший из строя летательный аппарат
-RESURFACING - работы по асфальтированию
-PAVING - покрытие ВПП
-PAINTING - разметка ВПП
-INSPECTION - присутствие людей или оборудования из-за работ по обследованию наземного оборудования
-GRASS_CUTTING - присутствие людей или оборудования из-за работ по стрижке газона
-CALIBRATION - присутствие людей или оборудования из-за работ с наземным оборудованием
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
-*/
+-- A code indicating a reason for caution in airport operations. For example, work in progress on a runway.
+-- WIP - идут работы
+-- EQUIP - люди и оборудование
+-- BIRD - опасность в виде птиц
+-- ANIMAL - опасность в виде животных
+-- RUBBER_REMOVAL - уборка резиновых осадков с DGG (или каких-то резиновых отложений)
+-- PARKED_ACFT - на площадке расположен припаркованный или вышедший из строя летательный аппарат
+-- RESURFACING - работы по асфальтированию
+-- PAVING - покрытие ВПП
+-- PAINTING - разметка ВПП
+-- INSPECTION - присутствие людей или оборудования из-за работ по обследованию наземного оборудования
+-- GRASS_CUTTING - присутствие людей или оборудования из-за работ по стрижке газона
+-- CALIBRATION - присутствие людей или оборудования из-за работ с наземным оборудованием
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirportWarningType
 CREATE DOMAIN CodeAirportWarningType AS VARCHAR(60)
-CHECK (VALUE ~ '(WIP|EQUIP|BIRD|ANIMAL|RUBBER_REMOVAL|PARKED_ACFT|RESURFACING|PAVING|PAINTING|INSPECTION|GRASS_CUTTING|CALIBRATION|OTHER: [A-Z]{0,30})');
+CHECK (VALUE ~
+       '(WIP|EQUIP|BIRD|ANIMAL|RUBBER_REMOVAL|PARKED_ACFT|RESURFACING|PAVING|PAINTING|INSPECTION|GRASS_CUTTING|CALIBRATION|OTHER: [A-Z]{0,30})');
 
 -- Широта
 --
@@ -442,157 +425,139 @@ CREATE DOMAIN latitude AS DECIMAL(17, 15);
 --
 CREATE DOMAIN longitude AS DECIMAL(18, 15);
 
-/*
-Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
-RWY - ВПП для самолетов
-FATO - зона конечного этапа захода на посадку и взлета для вертолетов
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayType
-*/
+-- Код, который указывает что взлетная полоса предназначена для самолетов или для конечного этапа захода на посадку для вертолетов.
+-- RWY - ВПП для самолетов
+-- FATO - зона конечного этапа захода на посадку и взлета для вертолетов
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayType
 CREATE DOMAIN CodeRunwayType AS VARCHAR(60)
 CHECK (VALUE ~ '(RWY|FATO|OTHER: [A-Z]{0,30})');
 
 
-/*
-Код указывающий на материал ВПП.
-ASPH - асфальт
-ASPH_GRASS - асфальт и трава
-CONC - бетон
-CONC_ASPH - бетон и асфальт
-CONC_GRS - бетон и трава
-GRASS - трава с дерном или голой землей
-SAND - песок
-WATER - вода
-BITUM - битумная смола (Bituminous tar) или асфальт и/или масло или смесь битума с песком, замешанные на месте поверхности (часто относимые к "цементу земли" .Чтобы приготовить битумную смолу или асфальт нужно раскопать поверхность, смешать материал с битумным или масляным связующим веществом и покрыть поверхность получившейся смесью. Битум - это смола, полученная из масла или асфальта, который получен из масла.
-BRICK - кирпич
-MACADAM - поверхность из щебня или дёгтебетона, состоящая из связанных водой раздробленных камней
-STONE - камень
-CORAL - кораллы
-CLAY - глина
-LATERITE -латерит
-GRAVEL - гравий
-EARTH - преимущественно земля
-ICE - лед
-SNOW - снег
-MEMBRANE - защищающий слоистый материал, обычно из резины
-METAL - металл: сталь, аллюминий
-MATS - настил для посадки, обычно из аллюминия
-PIERCED_STEEL - перфорированная металлическая плита
-WOOD - дерево
-NON_BITUM_MIX - смесь без битума
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
-*/
+-- Код указывающий на материал ВПП.
+-- ASPH - асфальт
+-- ASPH_GRASS - асфальт и трава
+-- CONC - бетон
+-- CONC_ASPH - бетон и асфальт
+-- CONC_GRS - бетон и трава
+-- GRASS - трава с дерном или голой землей
+-- SAND - песок
+-- WATER - вода
+-- BITUM - битумная смола (Bituminous tar) или асфальт и/или масло или смесь битума с песком, замешанные на месте поверхности (часто относимые к "цементу земли" .Чтобы приготовить битумную смолу или асфальт нужно раскопать поверхность, смешать материал с битумным или масляным связующим веществом и покрыть поверхность получившейся смесью. Битум - это смола, полученная из масла или асфальта, который получен из масла.
+-- BRICK - кирпич
+-- MACADAM - поверхность из щебня или дёгтебетона, состоящая из связанных водой раздробленных камней
+-- STONE - камень
+-- CORAL - кораллы
+-- CLAY - глина
+-- LATERITE -латерит
+-- GRAVEL - гравий
+-- EARTH - преимущественно земля
+-- ICE - лед
+-- SNOW - снег
+-- MEMBRANE - защищающий слоистый материал, обычно из резины
+-- METAL - металл: сталь, аллюминий
+-- MATS - настил для посадки, обычно из аллюминия
+-- PIERCED_STEEL - перфорированная металлическая плита
+-- WOOD - дерево
+-- NON_BITUM_MIX - смесь без битума
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceCompositionType
 CREATE DOMAIN CodeSurfaceCompositionType AS VARCHAR(60)
-CHECK (VALUE ~ '(ASPH|ASPH_GRASS|CONC|CONC_ASPH|CONC_GRS|GRASS|SAND|WATER|BITUM|BRICK|MACADAM|STONE|CORAL|CLAY|LATERITE|GRAVEL|EARTH|ICE|SNOW|MEMBRANE|METAL|MATS|PIERCED_STEEL|WOOD|NON_BITUM_MIX|OTHER: [A-Z]{0,40})');
+CHECK (VALUE ~
+       '(ASPH|ASPH_GRASS|CONC|CONC_ASPH|CONC_GRS|GRASS|SAND|WATER|BITUM|BRICK|MACADAM|STONE|CORAL|CLAY|LATERITE|GRAVEL|EARTH|ICE|SNOW|MEMBRANE|METAL|MATS|PIERCED_STEEL|WOOD|NON_BITUM_MIX|OTHER: [A-Z]{0,40})');
 
-/*
-Код указывающий на технику подотовки ВПП.
-NATURAL - естественная поверхность, без обработки
-ROLLED - обкатанная
-COMPACTED - сжатая (уплотненная)
-GRADED - выположенная
-GROOVED - бороздчатая
-OILED - масляная
-PAVED - мощёная
-PFC - пористое фрикционное покрытие
-AFSC - спресованное уплотненное фрикционное покрытие
-RFSC - гуммированное уплотненное фрикционное покрытие
-NON_GROOVED - не бороздчатый асфальт
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
-*/
+-- Код указывающий на технику подотовки ВПП.
+-- NATURAL - естественная поверхность, без обработки
+-- ROLLED - обкатанная
+-- COMPACTED - сжатая (уплотненная)
+-- GRADED - выположенная
+-- GROOVED - бороздчатая
+-- OILED - масляная
+-- PAVED - мощёная
+-- PFC - пористое фрикционное покрытие
+-- AFSC - спресованное уплотненное фрикционное покрытие
+-- RFSC - гуммированное уплотненное фрикционное покрытие
+-- NON_GROOVED - не бороздчатый асфальт
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfacePreparationBaseType
 CREATE DOMAIN CodeSurfacePreparationType AS VARCHAR(60)
 CHECK (VALUE ~ '(NATURAL|ROLLED|COMPACTED|GRADED|GROOVED|OILED|PAVED|PFC|AFSC|RFSC|NON_GROOVED|OTHER: [A-Z]{0,30})');
 
-/*
-Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
-GOOD - хорошее
-FAIR - чистое (?)
-POOR - плохое
-UNSAFE - ненадежное
-DEFORMED - деформированное
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
-*/
+-- Код обозначающий состояние поверхности, такой как ВПП, рулежная дорожка, маркировка порога и т.п.
+-- GOOD - хорошее
+-- FAIR - чистое (?)
+-- POOR - плохое
+-- UNSAFE - ненадежное
+-- DEFORMED - деформированное
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSurfaceConditionType
 CREATE DOMAIN CodeSurfaceConditionType AS VARCHAR(60)
 CHECK (VALUE ~ '(GOOD|FAIR|POOR|UNSAFE|DEFORMED|OTHER: [A-Z]{0,30})');
 
-/*
-Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость)
-покрытия ВПП аэродрома для эксплуатации без ограничений, используемый совместно с классификационным числом воздушного судна.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
-*/
+-- Классификационное число покрытия - параметр выражающий несущую способность (грузонапряжённость)
+-- покрытия ВПП аэродрома для эксплуатации без ограничений, используемый совместно с классификационным числом воздушного судна.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPCNType
 CREATE DOMAIN ValPCNType AS DECIMAL(4, 1);
 
-/*
-Код, обозначающий упругие свойства покрытия (жесткое или гибкое), используемого для определения ACN.
-RIGID - жесткое покрытие
-FLEXIBLE - гибкое покрытие
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
-*/
+-- Код, обозначающий упругие свойства покрытия (жесткое или гибкое), используемого для определения ACN.
+-- RIGID - жесткое покрытие
+-- FLEXIBLE - гибкое покрытие
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNPavementType
 CREATE DOMAIN CodePCNPavementType AS VARCHAR(60)
 CHECK (VALUE ~ '(RIGID|FLEXIBLE|OTHER: [A-Z]{0,30})');
 
-/*
-Код, указывающий на класс прочности покрытия, связанный с PCN числа.
-A - поверхность высокой прочности
-B - поверхность средней прочности
-C - поверхность низкой прочности
-D - поверхность  низкой прочности
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
-*/
+-- Код, указывающий на класс прочности покрытия, связанный с PCN числа.
+-- A - поверхность высокой прочности
+-- B - поверхность средней прочности
+-- C - поверхность низкой прочности
+-- D - поверхность  низкой прочности
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNSubgradeType
 CREATE DOMAIN CodePCNSubgradeType AS VARCHAR(60)
 CHECK (VALUE ~ '(A|B|C|D|OTHER: [A-Z]{0,30})');
 
-/*
-Код, указывающий максимально допустимое давление в шинах, относящуюся. Используется в PCN.
-W - высокий: нет ограничений давления (pressure)
-X - средний: давление до 1.5 МПа (217 psi)
-Y - низкий: давление до 1.0 МПа (145 psi)
-Z - очень низкий: давление до 0.5 МПа (73 psi)
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
-*/
+-- Код, указывающий максимально допустимое давление в шинах, относящуюся. Используется в PCN.
+-- W - высокий: нет ограничений давления (pressure)
+-- X - средний: давление до 1.5 МПа (217 psi)
+-- Y - низкий: давление до 1.0 МПа (145 psi)
+-- Z - очень низкий: давление до 0.5 МПа (73 psi)
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNTyrePressureType
 CREATE DOMAIN CodePCNTyrePressureType AS VARCHAR(60)
 CHECK (VALUE ~ '(W|X|Y|Z|OTHER: [A-Z]{0,30})');
 
-/*
-Код, указывающий на метод, используемый при оценке PCN.
-TECH - техническая оценка
-ACFT - основанная на опыте воздушного судна
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
-*/
+-- Код, указывающий на метод, используемый при оценке PCN.
+-- TECH - техническая оценка
+-- ACFT - основанная на опыте воздушного судна
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodePCNMethodBaseType
 CREATE DOMAIN CodePCNMethodType AS VARCHAR(60)
 CHECK (VALUE ~ '(TECH|ACFT|OTHER: [A-Z]{0,30})');
 
-/*
-The value of a load classification number (LCN) for a surface.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValLCNBaseType
-*/
+-- The value of a load classification number (LCN) for a surface.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValLCNBaseType
 CREATE DOMAIN ValLCNType AS DECIMAL;
 
-/*
-Единицы измерения веса.
-T - тонны
-LB - фунты
-TON - не метрические американские тонны (2000 ob или 907.18474 кг)
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
-*/
+-- Единицы измерения веса.
+-- T - тонны
+-- LB - фунты
+-- TON - не метрические американские тонны (2000 ob или 907.18474 кг)
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
 CREATE DOMAIN UomWeightType AS VARCHAR(60)
 CHECK (VALUE ~ '(KG|T|LB|TON|OTHER: [A-Z]{0,30})');
 
-/*
-Значение веса.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
-*/
+-- Значение веса.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomWeightType
 CREATE DOMAIN ValWeightBaseType AS DECIMAL
 CHECK (VALUE > 0);
 CREATE TYPE ValWeightType AS (
@@ -600,214 +565,181 @@ CREATE TYPE ValWeightType AS (
   unit  UomWeightType
 );
 
-/*
-Единицы измерения давления.
-PSI - Фунт на квадратный дюйм
-BAR - 100000 Па
-TORR - Миллиметр ртутного столба
-ATM - Физическая атмосфера
-HPA - гектопаскали
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomPressureType
-*/
+-- Единицы измерения давления.
+-- PSI - Фунт на квадратный дюйм
+-- BAR - 100000 Па
+-- TORR - Миллиметр ртутного столба
+-- ATM - Физическая атмосфера
+-- HPA - гектопаскали
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomPressureType
 CREATE DOMAIN UomPressureType AS VARCHAR(60)
 CHECK (VALUE ~ '(PA|MPA|PSI|BAR|TORR|ATM|HPA|OTHER: [A-Z]{0,30})');
 
-/*
-Значение давления.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPressureType
-*/
+-- Значение давления.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValPressureType
 CREATE TYPE ValPressureType AS (
   value DECIMAL,
   unit  UomPressureType);
 
-/*
-Код, описывающий положение по отношению к оси ВВП. Например: слева / справа от осевой линии ВПП.
-LEFT - на левой стороне оси
-RIGHT - на правой стороне оси
-BOTH - распределено по двум сторонам оси
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
-*/
+-- Код, описывающий положение по отношению к оси ВВП. Например: слева / справа от осевой линии ВПП.
+-- LEFT - на левой стороне оси
+-- RIGHT - на правой стороне оси
+-- BOTH - распределено по двум сторонам оси
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSideType
 CREATE DOMAIN CodeSideType AS VARCHAR(40)
 CHECK (VALUE ~ '((LEFT|RIGHT|BOTH|EITHER)|OTHER: [A-Z]{30})');
 
-/*
-Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
-TDZ - зона приземления
-AIM - точка назначения
-CL - осевая линия
-EDGE - край
-THR - начало
-DESIG - обозначение ВПП
-AFT_THR - после начала (фиксированное метками расстояние)
-DTHR - перемещённое начало
-END - конец ВПП
-TWY_INT - пересечение рулежных дорожек
-RPD_TWY_INT - частое (или резкое) пересечение рулежных дорожек
-1_THIRD - первая треть ВПП, считая от начала с наименьшим номером определителя (designation number)
-2_THIRD - вторая треть ВПП, считая от начала с наименьшим номером определителя
-3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
-*/
+-- Код, указывающий на позицию элемента на поверхности взлетно-посадочной полосы.
+-- TDZ - зона приземления
+-- AIM - точка назначения
+-- CL - осевая линия
+-- EDGE - край
+-- THR - начало
+-- DESIG - обозначение ВПП
+-- AFT_THR - после начала (фиксированное метками расстояние)
+-- DTHR - перемещённое начало
+-- END - конец ВПП
+-- TWY_INT - пересечение рулежных дорожек
+-- RPD_TWY_INT - частое (или резкое) пересечение рулежных дорожек
+-- 1_THIRD - первая треть ВПП, считая от начала с наименьшим номером определителя (designation number)
+-- 2_THIRD - вторая треть ВПП, считая от начала с наименьшим номером определителя
+-- 3_THIRD - последняя треть ВПП, считая от начала с наименьшим номером определителя
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwaySectionBaseType
 CREATE DOMAIN CodeRunwaySectionType AS VARCHAR(40)
-CHECK (VALUE ~ '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '((TDZ|AIM|CL|EDGE|THR|DESIG|AFT_THR|DTHR|END|TWY_INT|RPD_TWY_INT|1_THIRD|2_THIRD|3_THIRD)|OTHER: [A-Z]{30})');
 
-/*
-Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
-Угол измеряется по часовой стрелке от 0 до 360 градусов. Значение может быть радиалом всенаправленного азимутального радиомаяка (РМА, VHF). Например, направление на запад выражается как 270 градусов.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValBearingType
-*/
+-- Значение индикатора направления (в данной точке), измереннное как угол между данным направлением и направлением на истинный северный или магнитный полюс (может задаваться явно и неянво).
+-- Угол измеряется по часовой стрелке от 0 до 360 градусов. Значение может быть радиалом всенаправленного азимутального радиомаяка (РМА, VHF). Например, направление на запад выражается как 270 градусов.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValBearingType
 CREATE DOMAIN ValBearingType AS DECIMAL
 CHECK ( VALUE >= 0 AND VALUE <= 360);
 
-/*
-Идентификатор направления поворота
-LEFT - налево
-RIGHT - направо
-EITHER	- любое левое или правое направление
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDirectionTurnType
-*/
+-- Идентификатор направления поворота
+-- LEFT - налево
+-- RIGHT - направо
+-- EITHER	- любое левое или правое направление
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDirectionTurnType
 CREATE DOMAIN CodeDirectionTurnType AS VARCHAR(40)
 CHECK (VALUE ~ '((LEFT|RIGHT|EITHER)|OTHER: [A-Z]{30})');
 
-/*
-Значение наклона или градиента восхождения/спуска, выраженное в процентах
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValSlopeType
-*/
+-- Значение наклона или градиента восхождения/спуска, выраженное в процентах
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValSlopeType
 CREATE DOMAIN ValSlopeType AS DECIMAL
 CHECK ( VALUE >= -100 AND VALUE <= 100);
 
-/*
-Код маркировки ВПП, связанный с посадочными категориями, такими как точность, не точность и базовые категории.
-PRECISION - маркировка соответствует заходу на посадку с точностью: используется и поперечная информация (локализатор), и вертикальная (наклон глиссады).
-Маркировка захода на посадку с точностью включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала, пункта назначения, зоны посадки, боковых полос
-NONPRECISION - маркировка соответствует заходу на посадку без точности: используется только поперечная информация (боковая)
-Маркировка захода на посадку без точности включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала и пункта назначения
-BASIC - базовые или визуальные элементы маркировки ВПП включают маркировки для обозначения ВПП (Runway Designation), для геометрической оси, начала (на ВПП, которые намереваются использовать международные торговые самолеты) и пункта назначения (на ВПП в 4000 футов (1200 метров) или длиннее, используемых реактивными самолетами)
-NONE - у ВПП нет маркировки
-RUNWAY_NUMBERS - единственный элемент маркировки ВПП - обозначение ВПП (Runway Designation)
-NON_STANDARD - такие элементы маркировк, как обозначение ВПП, геометрическая ось, начало и пункт назначения могут быть представлены, но они не являются стандартной маркировкой
-HELIPORT - специфичная маркировка для вертолетов
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
-*/
+-- Код маркировки ВПП, связанный с посадочными категориями, такими как точность, не точность и базовые категории.
+-- PRECISION - маркировка соответствует заходу на посадку с точностью: используется и поперечная информация (локализатор), и вертикальная (наклон глиссады).
+-- Маркировка захода на посадку с точностью включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала, пункта назначения, зоны посадки, боковых полос
+-- NONPRECISION - маркировка соответствует заходу на посадку без точности: используется только поперечная информация (боковая)
+-- Маркировка захода на посадку без точности включает маркировку для обозначения ВПП (Runway Designation), для геометрической оси, начала и пункта назначения
+-- BASIC - базовые или визуальные элементы маркировки ВПП включают маркировки для обозначения ВПП (Runway Designation), для геометрической оси, начала (на ВПП, которые намереваются использовать международные торговые самолеты) и пункта назначения (на ВПП в 4000 футов (1200 метров) или длиннее, используемых реактивными самолетами)
+-- NONE - у ВПП нет маркировки
+-- RUNWAY_NUMBERS - единственный элемент маркировки ВПП - обозначение ВПП (Runway Designation)
+-- NON_STANDARD - такие элементы маркировк, как обозначение ВПП, геометрическая ось, начало и пункт назначения могут быть представлены, но они не являются стандартной маркировкой
+-- HELIPORT - специфичная маркировка для вертолетов
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRunwayMarkingType
 CREATE DOMAIN CodeRunwayMarkingType AS VARCHAR(40)
 CHECK (VALUE ~ '((PRECISION|NONPRECISION|BASIC|NONE|RUNWAY_NUMBERS|NON_STANDARD|HELIPORT)|OTHER: [A-Z]{30})');
 
-/*
-Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
-GOOD - маркировка в хорошем состоянии
-FAIR - маркировка в порядочном состоянии
-POOR - маркировка в плохом состоянии
-EXCELLENT - маркировка в прекрасном состоянии
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
-*/
+-- Список значений, идентифицирующих состояние нарисованных поверхностных элементов маркировки
+-- GOOD - маркировка в хорошем состоянии
+-- FAIR - маркировка в порядочном состоянии
+-- POOR - маркировка в плохом состоянии
+-- EXCELLENT - маркировка в прекрасном состоянии
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMarkingConditionType
 CREATE DOMAIN CodeMarkingConditionType AS VARCHAR(40)
 CHECK (VALUE ~ '((GOOD|FAIR|POOR|EXCELLENT)|OTHER: [A-Z]{30})');
 
-/*
-Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
-FALS - полное световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
-IALS - среднее световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - от 420 до 720 м, огни по краям ВПП, в начале ВПП и в конце ВПП
-BALS - базовое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - менее 420 м (или низкая интенсивность посадочной световой системы любой длины), огни по краям ВПП, в начале ВПП и в конце ВПП
-NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
-*/
+-- Классификация посадочной световой системы, с использованием в качестве критерия "JAR-OPS 1 - Subpart E, Appendix 1 to 1.430"
+-- FALS - полное световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - 720 м и более, огни по краям ВПП, в начале ВПП и в конце ВПП
+-- IALS - среднее световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - от 420 до 720 м, огни по краям ВПП, в начале ВПП и в конце ВПП
+-- BALS - базовое световое оборудование, включая маркировки ВПП, высокая/средняя интенсивность посадочной световой системы - менее 420 м (или низкая интенсивность посадочной световой системы любой длины), огни по краям ВПП, в начале ВПП и в конце ВПП
+-- NALS - световое оборудование отсутствует или не эффективно, включая маркировки ВПП, огни по краям ВПП, в начале ВПП и в конце ВПП или отсутствие светового оборудования вообще
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightingJARType
 CREATE DOMAIN CodeLightingJARType AS VARCHAR(40)
 CHECK (VALUE ~ '((FALS|IALS|BALS|NALS)|OTHER: [A-Z]{30})');
 
-/*
-Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
-NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
-ILS_PRECISION_CAT_I - ВПП с заходом на посадку с точностью: категория I
-ILS_PRECISION_CAT_II - ВПП с заходом на посадку с точностью: категория II
-ILS_PRECISION_CAT_IIIA - ВПП с заходом на посадку с точностью: категория III A
-ILS_PRECISION_CAT_IIIB - ВПП с заходом на посадку с точностью: категория III B
-ILS_PRECISION_CAT_IIIC - ВПП с заходом на посадку с точностью: категория III C
-ILS_PRECISION_CAT_IIID - ВПП с заходом на посадку с точностью: категория III D
-MLS_PRECISION - микроволновая точностная система захода на посадки
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
-*/
+-- Уровень, для которого навигационные средства предоставляют точное руководство захода на посадку
+-- NON_PRECISION - ВПП с заходом на посадку без точности: используется только поперечная информация (боковая)
+-- ILS_PRECISION_CAT_I - ВПП с заходом на посадку с точностью: категория I
+-- ILS_PRECISION_CAT_II - ВПП с заходом на посадку с точностью: категория II
+-- ILS_PRECISION_CAT_IIIA - ВПП с заходом на посадку с точностью: категория III A
+-- ILS_PRECISION_CAT_IIIB - ВПП с заходом на посадку с точностью: категория III B
+-- ILS_PRECISION_CAT_IIIC - ВПП с заходом на посадку с точностью: категория III C
+-- ILS_PRECISION_CAT_IIID - ВПП с заходом на посадку с точностью: категория III D
+-- MLS_PRECISION - микроволновая точностная система захода на посадки
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeApproachGuidanceType
 CREATE DOMAIN CodeApproachGuidanceType AS VARCHAR(40)
 CHECK (VALUE ~
        '((NON_PRECISION|ILS_PRECISION_CAT_I|ILS_PRECISION_CAT_II|ILS_PRECISION_CAT_IIIA|ILS_PRECISION_CAT_IIIB|ILS_PRECISION_CAT_IIIC|ILS_PRECISION_CAT_IIID|MLS_PRECISION)|OTHER: [A-Z]{30})');
 
-/*
-Код, идентифицирующий уровень интенсивности источника света
-LIL - низкая интенсивность света
-LIM - средняя интенсивность света
-LIH - высокая интенсивность света
-LIL_LIH - низкая интенсивность для ночного использования, высокая интенсивность для дневного использования, определяется фотоэлементом
-PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
-*/
+-- Код, идентифицирующий уровень интенсивности источника света
+-- LIL - низкая интенсивность света
+-- LIM - средняя интенсивность света
+-- LIH - высокая интенсивность света
+-- LIL_LIH - низкая интенсивность для ночного использования, высокая интенсивность для дневного использования, определяется фотоэлементом
+-- PREDETERMINED - заранее заданный шаг интенсивности, в посадочной системе освещения, которая для радио контроля воздух-земля превосходит по важности систему освещения ВПП, которая установлена, основываясь на условиях видимости.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLightIntensityType
 CREATE DOMAIN CodeLightIntensityType AS VARCHAR(40)
 CHECK (VALUE ~ '((LIL|LIM|LIH|LIL_LIH|PREDETERMINED)|OTHER: [A-Z]{30})');
 
-/*
-Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
-*/
+-- Код, обозначающий цвет. Список допустимых значений включает названные цвета, а не цвета, которые описываются только с использованием RGB или CMYK или какой-либо другой системой цветов.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeColourType
 CREATE DOMAIN CodeColourType AS VARCHAR(40)
 CHECK (VALUE ~
        '((YELLOW|RED|WHITE|BLUE|GREEN|PURPLE|ORANGE|AMBER|BLACK|BROWN|GREY|LIGHT_GREY|MAGENTA|PINK|VIOLET)|OTHER: [A-Z]{30})');
 
-/*
-Codelist containing the Telecom Networks that can be used to address an organisation.
-AFTN - The data interchange in the AFS is performed by the Aeronautical Fixed Telecommunications Network, AFTN. This is a message handling network running according to ICAO Standards documented in Annex 10 to the ICAO Convention
-AMHS - Aeronautical Message Handling System. A standard for aeronautical ground-ground communications (e.g. for the transmission of NOTAM, Flight Plans or Meteorological Data) based on X.400 profiles. It has been defined by the International Civil Aviation Organization (ICAO)
-INTERNET - The Internet is a worldwide, publicly accessible series of interconnected computer networks that transmit data by packet switching using the standard Internet Protocol (IP)
-SITA - SITA network
-ACARS - Aircraft Communications Addressing and Reporting System. A datalink system that enables ground stations (airports, aircraft maintenance bases, etc.) and commercial aircraft to communicate without voice using a datalink system.
-ADNS - ARINC Data Network Service (retired Mar 2007)
-RESURFACING - работы по асфальтированию
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTelecomNetworkType
-*/
+-- Codelist containing the Telecom Networks that can be used to address an organisation.
+-- AFTN - The data interchange in the AFS is performed by the Aeronautical Fixed Telecommunications Network, AFTN. This is a message handling network running according to ICAO Standards documented in Annex 10 to the ICAO Convention
+-- AMHS - Aeronautical Message Handling System. A standard for aeronautical ground-ground communications (e.g. for the transmission of NOTAM, Flight Plans or Meteorological Data) based on X.400 profiles. It has been defined by the International Civil Aviation Organization (ICAO)
+-- INTERNET - The Internet is a worldwide, publicly accessible series of interconnected computer networks that transmit data by packet switching using the standard Internet Protocol (IP)
+-- SITA - SITA network
+-- ACARS - Aircraft Communications Addressing and Reporting System. A datalink system that enables ground stations (airports, aircraft maintenance bases, etc.) and commercial aircraft to communicate without voice using a datalink system.
+-- ADNS - ARINC Data Network Service (retired Mar 2007)
+-- RESURFACING - работы по асфальтированию
+--
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTelecomNetworkType
 CREATE DOMAIN CodeTelecomNetworkType AS VARCHAR(40)
 CHECK (VALUE ~ '((AFTN|AMHS|INTERNET|SITA|ACARS|ADNS)|OTHER: [A-Z]{30})');
 
-/*
-A phone or facsimile number.
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextPhoneBaseType
-*/
+-- A phone or facsimile number.
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextPhoneBaseType
 CREATE DOMAIN TextPhoneType AS VARCHAR
 CHECK (VALUE ~ '(\+)?[0-9\s\-\(\)]+');
 
-/*
-Список значений, идентифицирующих цель полета в зависимости от расположения, таких как прибытие, вылет, перелет
-ARR - прибытие
-DEP - вылет
-OVERFLY - перелет
-ALL - все типы
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightDestinationType
-*/
+-- Список значений, идентифицирующих цель полета в зависимости от расположения, таких как прибытие, вылет, перелет
+-- ARR - прибытие
+-- DEP - вылет
+-- OVERFLY - перелет
+-- ALL - все типы
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightDestinationType
 CREATE DOMAIN CodeFlightDestinationType AS VARCHAR(40)
 CHECK (VALUE ~ '((ARR|DEP|OVERFLY|ALL)|OTHER: [A-Z]{30})');
 
-/*
-Список очередности обслуживания внутри последовательности анологичных видов обслуживания: первичная, вторичная, альтернативная
-PRIMARY
-SECONDARY
-ALTERNATE
-EMERG - аварийная
-GUARD - защитная
-
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFacilityRankingType
-*/
+-- Список очередности обслуживания внутри последовательности анологичных видов обслуживания: первичная, вторичная, альтернативная
+-- PRIMARY - основной
+-- SECONDARY - вторичный
+-- ALTERNATE - альтернативный
+-- EMERG - аварийная
+-- GUARD - защитная
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFacilityRankingType
 CREATE DOMAIN CodeFacilityRankingType AS VARCHAR(40)
 CHECK (VALUE ~ '((PRIMARY|SECONDARY|ALTERNATE|EMERG|GUARD)|OTHER: [A-Z]{30})');
 
@@ -819,7 +751,7 @@ ATFM - служба управления воздушными потоками
 CLEARANCE - служба, предоставляющая разрешения (вход, посадка, перелет, выход и т.д.) в данной точке
 SCHED - служба, составляющая расписание и распределение временных интервалов
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATFMType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATFMType
 */
 CREATE DOMAIN CodeServiceATFMType AS VARCHAR(40)
 CHECK (VALUE ~ '((FPL|FPLV|ATFM|CLEARANCE|SCHED)|OTHER: [A-Z]{30})');
@@ -845,7 +777,7 @@ ALTIMETER - служба предоставления информации на�
 ASOS - автоматизированная служба обследования поверхности
 AWOS - автоматизированная cистема метеонаблюдений
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceInformationType
 */
 CREATE DOMAIN CodeServiceInformationType AS VARCHAR(40)
 CHECK (VALUE ~
@@ -857,7 +789,7 @@ ALRS - служба предупреждения
 SAR - служба поиска и спасения
 RCC - служба по координации спасательных операций
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceSARType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceSARType
 */
 CREATE DOMAIN CodeServiceSARType AS VARCHAR(40)
 CHECK (VALUE ~ '((ALRS|SAR|RCC)|OTHER: [A-Z]{30})');
@@ -937,7 +869,7 @@ ATZ_P - часть зоны движения аэропорта
 HTZ	- зона движения вертодрома
 NAS_P - часть национальной системы воздушного пространства
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceType
 */
 CREATE DOMAIN CodeAirspaceType AS VARCHAR(40)
 CHECK (VALUE ~
@@ -946,7 +878,7 @@ CHECK (VALUE ~
 /*
 Допустимый тип воздушного пространства
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceDesignatorType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceDesignatorType
 */
 CREATE DOMAIN CodeAirspaceDesignatorType AS VARCHAR(10)
 CHECK (VALUE ~ '([A-Z]|[0-9]|[, !"&#$%''\(\)\*\+\-\./:;<=>\?@\[\\\]\^_\|\{\}])*');
@@ -960,7 +892,7 @@ E - класс воздушного пространства по ICAO Annex 11.
 F - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП; все участвующие полёты по ППП снабжены консультативной службой воздушного движения, все полёты получают услуги по летной информации по требованию. Описание: приведение в исполнение консультативная служба воздушного движения обычно считается временной мерой, только до того времени, когда эта служба может быть заменена авиадиспетчерской службой.
 G - класс воздушного пространства по ICAO Annex 11. Appendix 4. Разрешены полёты по ППП и полеты по ПВП и получают службу полетной информации по требованию.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceClassificationType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceClassificationType
 */
 CREATE DOMAIN CodeAirspaceClassificationType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|C|D|E|F|G)|OTHER: [A-Z]{30})');
@@ -983,7 +915,7 @@ RECOMMENDED - рекомендована нижняя высота
 EXPECT_LOWER - ожидать нижнюю высоту от службы управлением воздушным движением
 AS_ASSIGNED - назначается во время операций (например, службой управления воздушным движением)
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAltitudeUseType
 */
 CREATE DOMAIN CodeAltitudeUseType AS VARCHAR(40)
 CHECK (VALUE ~ '((ABOVE_LOWER|BELOW_UPPER|AT_LOWER|BETWEEN|RECOMMENDED|EXPECT_LOWER|AS_ASSIGNED)|OTHER: [A-Z]{30})');
@@ -995,7 +927,7 @@ U - Upper - маршрут расположен в верхнем воздушн
 S - Supersonic - маршрут предназначен для самолетов со сверхзвуковыми скоростями полета
 T - TACAN Route (военный)
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorPrefixType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorPrefixType
 */
 CREATE DOMAIN CodeRouteDesignatorPrefixType AS VARCHAR(40)
 CHECK (VALUE ~ '((K|U|S|T)|OTHER: [A-Z]{30})');
@@ -1003,7 +935,7 @@ CHECK (VALUE ~ '((K|U|S|T)|OTHER: [A-Z]{30})');
 /*
 Однобуквенный указатель для пути
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorLetterType
 */
 CREATE DOMAIN CodeRouteDesignatorLetterType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|G|H|J|L|M|N|P|Q|R|T|V|W|Y|Z)|OTHER: [A-Z]{30})');
@@ -1011,14 +943,14 @@ CHECK (VALUE ~ '((A|B|G|H|J|L|M|N|P|Q|R|T|V|W|Y|Z)|OTHER: [A-Z]{30})');
 /*
 A (positive) number of similar items.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_NoNumberType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_NoNumberType
 */
 CREATE DOMAIN NoNumberType AS INTEGER;
 
 /*
 Буквы латинского алфавита
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
 */
 CREATE DOMAIN CodeUpperAlphaType AS VARCHAR(40)
 CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A-Z]{30})');
@@ -1027,7 +959,7 @@ CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A
 -- ATS - участки, используемые с разрешения службы движения при повышенном внимании (путь ATS описан в ICAO Annex 11).
 -- NAT - маршрут выхода на северо - атлантический трек (часть организовнной системы путей)
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteType
 CREATE DOMAIN CodeRouteType AS VARCHAR(40)
 CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
 
@@ -1035,7 +967,7 @@ CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
 -- IFR
 -- VFR
 -- ALL - IFR и VFR
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightRuleType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightRuleType
 CREATE DOMAIN CodeFlightRuleType AS VARCHAR(40)
 CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
 
@@ -1044,7 +976,7 @@ CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
 -- DOM - местные воздушные линии
 -- BOTH - и то, и другое
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteOriginType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteOriginType
 CREATE DOMAIN CodeRouteOriginType AS VARCHAR(40)
 CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
 
@@ -1052,7 +984,7 @@ CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
 -- MIL - военный
 -- CIVIL - гражданский
 -- ALL - и военный, и гражданский
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryStatusType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryStatusType
 CREATE DOMAIN CodeMilitaryStatusType AS VARCHAR(40)
 CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
 
@@ -1061,7 +993,7 @@ CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
 -- VR - тренировочный путь VFR
 -- SR - тренировочный путь малой скорости и низкой высоты
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryTrainingType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryTrainingType
 CREATE DOMAIN CodeMilitaryTrainingType AS VARCHAR(40)
 CHECK (VALUE ~ '(IR|VR|SR|OTHER: [A-Z]{30})');
 
@@ -1083,9 +1015,10 @@ CHECK (VALUE ~ '(IR|VR|SR|OTHER: [A-Z]{30})');
 -- SPACE_FLIGHT
 -- и т.д.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceActivityType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceActivityType
 CREATE DOMAIN CodeAirspaceActivityType AS VARCHAR(40)
-CHECK (VALUE ~ '(AD_TFC|HELI_TFC|TRAINING|AEROBATICS|AIRSHOW|SPORT|ULM|GLIDING|PARAGLIDER|HANGGLIDING|PARACHUTE|AIR_DROP|BALLOON|RADIOSONDE|SPACE_FLIGHT|UAV|AERIAL_WORK|CROP_DUSTING|FIRE_FIGHTING|MILOPS|REFUEL|JET_CLIMBING|EXERCISE|TOWING|NAVAL_EXER|MISSILES|AIR_GUN|ARTILLERY|SHOOTING|BLASTING|WATER_BLASTING|ANTI_HAIL|BIRD|BIRD_MIGRATION|FIREWORK|HI_RADIO|HI_LIGHT|LASER|NATURE|FAUNA|NO_NOISE|ACCIDENT|POPULATION|VIP|VIP_PRES|VIP_VICE|OIL|GAS|REFINERY|CHEMICAL|NUCLEAR|TECHNICAL|ATS|PROCEDURE|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '(AD_TFC|HELI_TFC|TRAINING|AEROBATICS|AIRSHOW|SPORT|ULM|GLIDING|PARAGLIDER|HANGGLIDING|PARACHUTE|AIR_DROP|BALLOON|RADIOSONDE|SPACE_FLIGHT|UAV|AERIAL_WORK|CROP_DUSTING|FIRE_FIGHTING|MILOPS|REFUEL|JET_CLIMBING|EXERCISE|TOWING|NAVAL_EXER|MISSILES|AIR_GUN|ARTILLERY|SHOOTING|BLASTING|WATER_BLASTING|ANTI_HAIL|BIRD|BIRD_MIGRATION|FIREWORK|HI_RADIO|HI_LIGHT|LASER|NATURE|FAUNA|NO_NOISE|ACCIDENT|POPULATION|VIP|VIP_PRES|VIP_VICE|OIL|GAS|REFINERY|CHEMICAL|NUCLEAR|TECHNICAL|ATS|PROCEDURE|OTHER: [A-Z]{30})');
 
 
 -- Список значений, показывающий состояние активизации воздушного пространства.
@@ -1095,7 +1028,7 @@ CHECK (VALUE ~ '(AD_TFC|HELI_TFC|TRAINING|AEROBATICS|AIRSHOW|SPORT|ULM|GLIDING|P
 -- INACTIVE - воздушное пространство не активно
 -- INTERMITTENT - воздушное пространство активно, но имеются периоды когда оно реально не используется
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirspaceType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirspaceType
 CREATE DOMAIN CodeStatusAirspaceType AS VARCHAR(40)
 CHECK (VALUE ~ '(AVBL_FOR_ACTIVATION|ACTIVE|IN_USE|INТACTIVE|INTERMITTENT|OTHER: [A-Z]{30})');
 
@@ -1104,7 +1037,7 @@ CHECK (VALUE ~ '(AVBL_FOR_ACTIVATION|ACTIVE|IN_USE|INТACTIVE|INTERMITTENT|OTHER
 -- EXIT - точка выхода. Последняя точка оповещения, отнесенная к значимой точке, через которую проходит воздушное судно или предполагается, что пройдёт, при выходе из воздушного пространства.
 -- ENTRY_EXIT - точка входа/выхода. Первая и последняя точка оповещения, отнесенная к значимой точке, через которую проходит воздушное судно или предполагается, что пройдёт, при вхождении в воздушное пространство или выходе из него.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointRoleType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointRoleType
 CREATE DOMAIN CodeAirspacePointRoleType AS VARCHAR(40)
 CHECK (VALUE ~ '(ENTRY|EXIT|ENTRY_EXIT|OTHER: [A-Z]{30})');
 
@@ -1113,7 +1046,7 @@ CHECK (VALUE ~ '(ENTRY|EXIT|ENTRY_EXIT|OTHER: [A-Z]{30})');
 -- OUT - расположена внутри воздушного пространства
 -- BORDER - расположена на границе воздушного пространства
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointPositionType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointPositionType
 CREATE DOMAIN CodeAirspacePointPositionType AS VARCHAR(40)
 CHECK (VALUE ~ '(IN|OUT|BORDER|OTHER: [A-Z]{30})');
 
@@ -1122,7 +1055,7 @@ CHECK (VALUE ~ '(IN|OUT|BORDER|OTHER: [A-Z]{30})');
 -- LOWER - нижнее воздушное пространство
 -- BOTH - верхнее и нижнее воздушное пространство
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLevelType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLevelType
 CREATE DOMAIN CodeLevelType AS VARCHAR(40)
 CHECK (VALUE ~ '(UPPER|LOWER|BOTH|OTHER: [A-Z]{30})');
 
@@ -1131,7 +1064,7 @@ CHECK (VALUE ~ '(UPPER|LOWER|BOTH|OTHER: [A-Z]{30})');
 -- RHL - локсодромия
 -- GDS - геодезическая линия
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteSegmentPathType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteSegmentPathType
 CREATE DOMAIN CodeRouteSegmentPathType AS VARCHAR(40)
 CHECK (VALUE ~ '(GRC|RHL|GDS|OTHER: [A-Z]{30})');
 
@@ -1141,12 +1074,12 @@ CONV - традиционный (обычный) навигационный пу
 RNAV - маршрут зональной навигации
 TACAN - радионавигационная система ближнего действия "Такан"
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteNavigationType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteNavigationType
 */
 CREATE DOMAIN CodeRouteNavigationType AS VARCHAR(40)
 CHECK (VALUE ~ '(CONV|RNAV|TACAN|OTHER: [A-Z]{30})');
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRNPType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRNPType
 CREATE DOMAIN CodeRNPType AS VARCHAR
 CHECK (VALUE ~ '[0-9]{1,2}(\.[0-9]{1}){0,1}');
 
@@ -1154,7 +1087,7 @@ CHECK (VALUE ~ '[0-9]{1,2}(\.[0-9]{1}){0,1}');
 -- F - на части пути доступно только Консультативное ОВД
 -- G - на части пути доступно только Летно - информационное ОВД
 --
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorSuffixType
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorSuffixType
 CREATE DOMAIN CodeRouteDesignatorSuffixType AS VARCHAR(40)
 CHECK (VALUE ~ '(F|G|OTHER: [A-Z]{30})');
 
@@ -1163,7 +1096,7 @@ CHECK (VALUE ~ '(F|G|OTHER: [A-Z]{30})');
 -- ON_REQUEST - по запросу
 -- NO_REPORT - без отчета
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeATCReportingType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeATCReportingType
 CREATE DOMAIN CodeATCReportingType AS VARCHAR(40)
 CHECK (VALUE ~ '(COMPULSORY|ON_REQUEST|NO_REPORT|OTHER: [A-Z]{30})');
 
@@ -1172,7 +1105,7 @@ CHECK (VALUE ~ '(COMPULSORY|ON_REQUEST|NO_REPORT|OTHER: [A-Z]{30})');
 -- PITCH - точка свободного полета PITCH указывает на начало свободного полета
 -- CATCH - точка свободного полета CATCH указывает на конец свободного полета
 --
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFreeFlightType
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFreeFlightType
 CREATE DOMAIN CodeFreeFlightType AS VARCHAR(40)
 CHECK (VALUE ~ '(PITCH|CATCH|OTHER: [A-Z]{30})');
 
@@ -1181,7 +1114,7 @@ CHECK (VALUE ~ '(PITCH|CATCH|OTHER: [A-Z]{30})');
 -- OUT - точка выхода RVSM
 -- IN_OUT - точка входа/выхода RVSM
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRVSMPointRoleType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRVSMPointRoleType
 CREATE DOMAIN CodeRVSMPointRoleType AS VARCHAR(40)
 CHECK (VALUE ~ '(IN|OUT|IN_OUT|OTHER: [A-Z]{30})');
 
@@ -1193,13 +1126,13 @@ CHECK (VALUE ~ '(IN|OUT|IN_OUT|OTHER: [A-Z]{30})');
 -- AX - запасная точка выхода
 -- ASX - запасная точка входа/выхода
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryRoutePointType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryRoutePointType
 CREATE DOMAIN CodeMilitaryRoutePointType AS VARCHAR(40)
 CHECK (VALUE ~ '(S|T|X|AS|AX|ASX|OTHER: [A-Z]{30})');
 
 -- Трехбуквенный код, обозначающий язык (в соответствиии с ISO 639-2)
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLanguageType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLanguageType
 CREATE DOMAIN CodeLanguageType AS VARCHAR(3)
 CHECK (VALUE ~ '[a-z]{3}');
 
@@ -1217,7 +1150,7 @@ HFDL
 VHF_833
 UHF
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
 */
 CREATE DOMAIN CodeCommunicationModeType AS VARCHAR(40)
 CHECK (VALUE ~ '(HF|VHF|VDL1|VDL2|VDL4|AMSS|ADS_B|ADS_B_VD|HFDL|VHF_833|UHF|OTHER: [A-Z]{30})');
@@ -1228,13 +1161,13 @@ CHECK (VALUE ~ '(HF|VHF|VDL1|VDL2|VDL4|AMSS|ADS_B|ADS_B_VD|HFDL|VHF_833|UHF|OTHE
 -- MHZ - МГц
 -- GHZ - ГГц
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFrequencyType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFrequencyType
 CREATE DOMAIN UomFrequencyType AS VARCHAR(40)
 CHECK (VALUE ~ '(HZ|KHZ|MHZ|GHZ|OTHER: [A-Z]{30})');
 
 -- Значение частоты (радио) навигационной системы
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrequencyType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrequencyType
 
 CREATE DOMAIN ValFrequencyBaseType AS DECIMAL
 CHECK (VALUE > 0);
@@ -1261,14 +1194,14 @@ CREATE TYPE ValFrequencyType AS (
 -- NOX
 -- G1D
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRadioEmissionType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRadioEmissionType
 CREATE DOMAIN CodeRadioEmissionType AS VARCHAR(40)
 CHECK (VALUE ~ '(A2|A3A|A3B|A3E|A3H|A3J|A3L|A3U|J3E|NONA1A|NONA2A|PON|A8W|A9W|NOX|G1D|OTHER: [A-Z]{30})');
 
 
 -- Идентификатор радиоканала, по которому осуществляется связь.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationChannelType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationChannelType
 CREATE DOMAIN CodeCommunicationChannelType AS VARCHAR;
 
 -- Код - индикатор для направленности канала связи
@@ -1278,7 +1211,7 @@ CREATE DOMAIN CodeCommunicationChannelType AS VARCHAR;
 -- UPCAST
 -- DOWNCAST
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
 CREATE DOMAIN CodeCommunicationDirectionType AS VARCHAR(40)
 CHECK (VALUE ~ '(UPLINK|DOWNLINK|BIDIRECTIONAL|UPCAST|DOWNCAST|OTHER: [A-Z]{30})');
 
@@ -1330,7 +1263,7 @@ TRACON
 MIL
 MILOPS
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitType
 */
 
 CREATE DOMAIN CodeUnitType AS VARCHAR(40)
@@ -1342,7 +1275,7 @@ CHECK (VALUE ~ '((ACC|ADSU|ADVC|ALPS|AOF|APP|APP_ARR|APP_DEP|ARO|ATCC|ATFMU|ATMU
 -- PROVIDER - объединение (Unit) пользуется обслуживание связанного объединения (RelatedUnit)
 -- ALTERNATE - связанное объединение (RelatedUnit) предоставляет запасное (альтернативное) обслуживание взамен обслуживания текущего объединения
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
 CREATE DOMAIN CodeUnitDependencyType AS VARCHAR(40)
 CHECK (VALUE ~ '(OWNER|PROVIDER|ALTERNATE|OTHER: [A-Z]{30})');
 
@@ -1357,7 +1290,7 @@ CHECK (VALUE ~ '(OWNER|PROVIDER|ALTERNATE|OTHER: [A-Z]{30})');
 -- EFAS - консультационная служба маршрутных полетов
 CTAF - общая консультативная частота аэродромного обслуживания (только США)
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
 */
 CREATE DOMAIN CodeServiceATCType AS VARCHAR(40)
 CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
@@ -1368,7 +1301,7 @@ CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
 -- DLGT - организации назначили или поручили нести ответственности за объект.
 -- AIS - организация ответственна за предоставление аэронавишационной информации на данном объекте.
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
 CREATE DOMAIN CodeAuthorityType AS VARCHAR(40)
 CHECK (VALUE ~ '(OWN|DLGT|AIS|OTHER: [A-Z]{30})');
 
@@ -1393,14 +1326,15 @@ NDB_MKR
 DF - (радио)пеленгатор
 SDF - упрощенное средство направленного действия
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidServiceType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidServiceType
 */
 CREATE DOMAIN CodeNavaidServiceType AS VARCHAR(40)
-CHECK (VALUE ~ '(VOR|DME|NDB|TACAN|MKR|ILS|ILS_DME|MLS|MLS_DME|VORTAC|VOR_DME|NDB_DME|TLS|LOC|LOC_DME|NDB_MKR|DF|OTHER: [A-Z]{30})');
+CHECK (VALUE ~
+       '(VOR|DME|NDB|TACAN|MKR|ILS|ILS_DME|MLS|MLS_DME|VORTAC|VOR_DME|NDB_DME|TLS|LOC|LOC_DME|NDB_MKR|DF|OTHER: [A-Z]{30})');
 
 -- Идентификатор РНС
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidDesignatorType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidDesignatorType
 CREATE DOMAIN CodeNavaidDesignatorType AS VARCHAR(4)
 CHECK (VALUE ~ '([A-Z]|\d)*');
 
@@ -1409,7 +1343,7 @@ CHECK (VALUE ~ '([A-Z]|\d)*');
 -- ENROUTE - маршрутные РНС
 -- ALL - для любых целей
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidPurposeType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidPurposeType
 CREATE DOMAIN CodeNavaidPurposeType AS VARCHAR(40)
 CHECK (VALUE ~ '(TERMINAL|ENROUTE|ALL|OTHER: [A-Z]{30})');
 
@@ -1418,7 +1352,7 @@ CHECK (VALUE ~ '(TERMINAL|ENROUTE|ALL|OTHER: [A-Z]{30})');
 -- II
 -- III
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSignalPerformanceILSType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSignalPerformanceILSType
 CREATE DOMAIN CodeSignalPerformanceILSType AS VARCHAR(40)
 CHECK (VALUE ~ '(I|II|III|OTHER: [A-Z]{30})');
 
@@ -1429,12 +1363,12 @@ CHECK (VALUE ~ '(I|II|III|OTHER: [A-Z]{30})');
 -- E
 -- T
 --
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCourseQualityILSType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCourseQualityILSType
 CREATE DOMAIN CodeCourseQualityILSType AS VARCHAR(40)
 CHECK (VALUE ~ '(A|B|C|D|E|T|OTHER: [A-Z]{30})');
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
 CREATE DOMAIN CodeIntegrityLevelILSType AS VARCHAR(40)
 CHECK (VALUE ~ '(1|2|3|4|OTHER: [A-Z]{30})');
 
@@ -1443,7 +1377,7 @@ TWR - диспетчерская служба с аэродромной вышк
 SMGCS - система контроля и управления движением транспорта на площади маневрирования
 TAXI - служба разрешения рулежки (?)
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceGroundControlType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceGroundControlType
 */
 CREATE DOMAIN CodeServiceGroundControlType AS VARCHAR(40)
 CHECK (VALUE ~ '((TWR|SMGCS|TAXI)|OTHER: [A-Z]{0,30})');
@@ -1455,7 +1389,7 @@ HANGAR - служба укрытия (?)
 REPAIR - ремонтная службы
 REMOVE - вывоз непригодных воздухных суден
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAircraftGroundServiceType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAircraftGroundServiceType
 */
 CREATE DOMAIN CodeAircraftGroundServiceType AS VARCHAR(40)
 CHECK (VALUE ~ '((DEICE|HAND|HANGAR|REPAIR|REMOVE)|OTHER: [A-Z]{0,30})');
@@ -1463,13 +1397,15 @@ CHECK (VALUE ~ '((DEICE|HAND|HANGAR|REPAIR|REMOVE)|OTHER: [A-Z]{0,30})');
 /*
 Код, обозначающий систему измерения времени (например, UTC)
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeReferenceType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeReferenceType
  */
 CREATE DOMAIN CodeTimeReferenceType AS VARCHAR(40)
-CHECK (VALUE ~ '((UTC|UTC-12|UTC-11|UTC-10|UTC-9|UTC-8|UTC-7|UTC-6|UTC-5|UTC-4|UTC-3|UTC-2|UTC-1|UTC+1|UTC+2|UTC+3|UTC+4|UTC+5|UTC+6|UTC+7|UTC+8|UTC+9|UTC+10|UTC+11|UTC+12|UTC+13|UTC+14)|OTHER: [A-Z]{0,30})');
+CHECK (VALUE ~
+       '((UTC|UTC-12|UTC-11|UTC-10|UTC-9|UTC-8|UTC-7|UTC-6|UTC-5|UTC-4|UTC-3|UTC-2|UTC-1|UTC+1|UTC+2|UTC+3|UTC+4|UTC+5|UTC+6|UTC+7|UTC+8|UTC+9|UTC+10|UTC+11|UTC+12|UTC+13|UTC+14)|OTHER: [A-Z]{0,30})');
 
 CREATE DOMAIN DateMonthDayType AS VARCHAR(40)
-CHECK (VALUE ~ '(((0[1-9])|(1[0-9])|(2[0-9]))\-((0[1-9])|10|11|12))|(30\-(01|03|04|05|06|07|08|09|10|11|12))|(31\-(01|03|05|07|08|10|12))|SDLST|EDLST');
+CHECK (VALUE ~
+       '(((0[1-9])|(1[0-9])|(2[0-9]))\-((0[1-9])|10|11|12))|(30\-(01|03|04|05|06|07|08|09|10|11|12))|(31\-(01|03|05|07|08|10|12))|SDLST|EDLST');
 
 /*
 Код, обозначающий определенный день (день недели, праздничные дни, рабочие дни и т.д.)
@@ -1489,29 +1425,30 @@ AFT_HOL - день, следующий после официального пр�
 ANY - любой день
 BUSY_FRI - день объявленный как "занятая пятница" официальными властями, отвественными за предоставление аэронавигационной информации на обозначенной территории, чтобы ввести в действие особые меры управления двитжением.
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDayType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDayType
  */
 CREATE DOMAIN CodeDayType AS VARCHAR(40)
-CHECK (VALUE ~ '((MON|TUE|WED|THU|FRI|SAT|SUN|WORK_DAY|BEF_WORK_DAY|AFT_WORK_DAY|HOL|BEF_HOL|AFT_HOL|ANY|)|OTHER: [A-Z]{0,30})');
+CHECK (VALUE ~
+       '((MON|TUE|WED|THU|FRI|SAT|SUN|WORK_DAY|BEF_WORK_DAY|AFT_WORK_DAY|HOL|BEF_HOL|AFT_HOL|ANY|)|OTHER: [A-Z]{0,30})');
 
 /*
 Код, обозначающий событие (такое как рассвет или закат), которое указываеи на начало периода, описываемого в расписании.
 SR - рассвет
 SS - закат
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeEventType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeEventType
  */
 
 CREATE DOMAIN CodeTimeEventType AS VARCHAR(40)
 CHECK (VALUE ~ '((SR|SS)|OTHER: [A-Z]{0,30})');
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDurationType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomDurationType
 CREATE DOMAIN UomDurationType AS VARCHAR(40)
 CHECK (VALUE ~ '((HR|MIN|SEC)|OTHER: [A-Z]{0,30})');
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDurationType
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDurationType
 CREATE TYPE ValDurationType AS (
-  value      DECIMAL,
-  unit       UomDurationType
+  value DECIMAL,
+  unit  UomDurationType
 );
 
 /*
@@ -1519,7 +1456,7 @@ CREATE TYPE ValDurationType AS (
 EARLIEST - самое первое событие
 LATEST - самое последнее
 
-https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeEventCombinationType
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeTimeEventCombinationType
  */
 CREATE DOMAIN CodeTimeEventCombinationType AS VARCHAR(40)
 CHECK (VALUE ~ '((EARLIEST|LATEST)|OTHER: [A-Z]{0,30})');
@@ -1552,7 +1489,7 @@ DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
 auto_id_segment_point, auto_id_route_portion, auto_id_airspace_layer_class, auto_id_airspace_layer,
-auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability,auto_id_properties_with_schedule CASCADE;
+auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability, auto_id_properties_with_schedule CASCADE;
 
 CREATE SEQUENCE auto_id_properties_with_schedule;
 CREATE SEQUENCE auto_id_timesheet;
@@ -1581,33 +1518,33 @@ CREATE SEQUENCE auto_ground_lighting_availability;
 
 CREATE TABLE PropertiesWithSchedule
 (
-  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_properties_with_schedule')
+  id INTEGER PRIMARY KEY DEFAULT nextval('auto_id_properties_with_schedule')
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Timesheet
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Timesheet
 CREATE TABLE Timesheet
 (
-  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_timesheet'),
-  timeReference	CodeTimeReferenceType,
-  startDate	DateMonthDayType,
-  endDate	DateMonthDayType,
-  day	CodeDayType,
-  dayTil	CodeDayType,
-  startTime	TimeType,
-  startEvent	CodeTimeEventType,
-  startTimeRelativeEvent	ValDurationType,
-  startEventInterpretation	CodeTimeEventCombinationType,
-  endTime	TimeType,
-  endEvent	CodeTimeEventType,
-  endTimeRelativeEvent	ValDurationType,
-  endEventInterpretation	CodeTimeEventCombinationType,
-  daylightSavingAdjust	CodeYesNoType,
-  excluded	CodeYesNoType,
+  id                       INTEGER PRIMARY KEY DEFAULT nextval('auto_id_timesheet'),
+  timeReference            CodeTimeReferenceType,
+  startDate                DateMonthDayType,
+  endDate                  DateMonthDayType,
+  day                      CodeDayType,
+  dayTil                   CodeDayType,
+  startTime                TimeType,
+  startEvent               CodeTimeEventType,
+  startTimeRelativeEvent   ValDurationType,
+  startEventInterpretation CodeTimeEventCombinationType,
+  endTime                  TimeType,
+  endEvent                 CodeTimeEventType,
+  endTimeRelativeEvent     ValDurationType,
+  endEventInterpretation   CodeTimeEventCombinationType,
+  daylightSavingAdjust     CodeYesNoType,
+  excluded                 CodeYesNoType,
   idPropertiesWithSchedule INTEGER REFERENCES PropertiesWithSchedule (id)
 );
 
 
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
 CREATE TABLE OrganisationAuthority
 (
   uuid       id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1620,12 +1557,12 @@ CREATE TABLE OrganisationAuthority
 
 CREATE TABLE OrganisationAuthority_PropertiesWithSchedule
 (
-  uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
-  idPropertiesWithSchedule INTEGER REFERENCES PropertiesWithSchedule (id)
+  uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
+  idPropertiesWithSchedule  INTEGER REFERENCES PropertiesWithSchedule (id)
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Point/
 CREATE TABLE Point
 (
   id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_point'),
@@ -1633,12 +1570,12 @@ CREATE TABLE Point
   longitude          longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
-  magneticVariation ValMagneticVariationType,
+  magneticVariation  ValMagneticVariationType,
   geom               GEOMETRY(POINT, 4326)
 );
 
 
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
   id               INTEGER PRIMARY KEY REFERENCES Point (id),
@@ -1649,16 +1586,17 @@ CREATE TABLE ElevatedPoint
 );
 
 -- Significant Point - это выбор между точками РНС, аэродромами, центральными точками ВПП, назначенными точками (ППМ, Designated Point) и точками взлета-посадки
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
 CREATE TABLE SignificantPoint
 (
   id      INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_significant_point'),
   idPoint INTEGER NOT NULL REFERENCES Point (id)
 );
 
-
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
+--
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
 CREATE TABLE Curve
 (
   id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_curve'),
@@ -1670,20 +1608,23 @@ CREATE TABLE Curve
 
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
+--
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
   id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_surface'),
   horizontalAccuracy ValDistanceType,
   latitude           latitude,
   longitude          longitude,
-  coord VARCHAR,
+  coord              VARCHAR,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   geom               GEOMETRY(POLYGON, 4326)
 );
 
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
+--
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedSurface
 CREATE TABLE ElevatedSurface
 (
   id               INTEGER NOT NULL PRIMARY KEY REFERENCES Surface (id),
@@ -1693,8 +1634,9 @@ CREATE TABLE ElevatedSurface
   verticalAccuracy ValDistanceType
 );
 
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
+--
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
 (
   uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1731,14 +1673,14 @@ CREATE TABLE AirportHeliport
 );
 
 
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
+-- Города
+--
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
   id   INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_city'),
   name TextNameType
 );
-
-INSERT INTO City (name) VALUES ('Spb'), ('Msk');
 
 CREATE TABLE AirportHeliportCity
 (
@@ -1746,7 +1688,7 @@ CREATE TABLE AirportHeliportCity
   idCity              INTEGER NOT NULL REFERENCES City (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
 CREATE TABLE SurveyControlPoint
 (
   uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1756,7 +1698,7 @@ CREATE TABLE SurveyControlPoint
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHotSpot
 CREATE TABLE AirportHotSpot
 (
   uuid                id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1767,7 +1709,7 @@ CREATE TABLE AirportHotSpot
 );
 
 
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSource
 CREATE TABLE AltimeterSource
 (
   uuid      id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1783,7 +1725,7 @@ CREATE TABLE AltimeterSourceAirportHeliport
 );
 
 
---  https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AltimeterSourceStatus
 CREATE TABLE AltimeterSourceStatus
 (
   id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_altimeter_source_status'),
@@ -1791,7 +1733,7 @@ CREATE TABLE AltimeterSourceStatus
   operationalStatus   CodeStatusOperationsType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceContamination
 CREATE TABLE SurfaceContamination
 (
   id                    INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface_contamination'),
@@ -1808,7 +1750,7 @@ CREATE TABLE SurfaceContamination
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportContamination
 CREATE TABLE AirportHeliportContamination
 (
   id                  INTEGER NOT NULL PRIMARY KEY REFERENCES SurfaceContamination (id),
@@ -1816,7 +1758,7 @@ CREATE TABLE AirportHeliportContamination
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliportAvailability
 CREATE TABLE AirportHeliportAvailability
 (
   id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface_arp_availability'),
@@ -1826,7 +1768,7 @@ CREATE TABLE AirportHeliportAvailability
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurfaceCharacteristics
 CREATE TABLE SurfaceCharacteristics
 (
   id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_surface_characteristics'),
@@ -1844,7 +1786,7 @@ CREATE TABLE SurfaceCharacteristics
   weightAUW           ValWeightType
 );
 
---https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Runway
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Runway
 CREATE TABLE Runway
 (
   uuid                     id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1865,7 +1807,7 @@ CREATE TABLE Runway
 );
 
 
---https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayContamination
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayContamination
 CREATE TABLE RunwayContamination
 (
   id                     INTEGER NOT NULL PRIMARY KEY REFERENCES SurfaceContamination (id),
@@ -1881,7 +1823,7 @@ CREATE TABLE RunwayContamination
   apronAvailable         CodeYesNoType
 );
 
---https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwaySectionContamination
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwaySectionContamination
 CREATE TABLE RunwaySectionContamination
 (
   id         INTEGER NOT NULL PRIMARY KEY REFERENCES SurfaceContamination (id),
@@ -1889,7 +1831,7 @@ CREATE TABLE RunwaySectionContamination
   section    CodeRunwaySectionType
 );
 
---https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirection
+--https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirection
 CREATE TABLE RunwayDirection
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1908,7 +1850,7 @@ CREATE TABLE RunwayDirection
   precisionApproachGuidance CodeApproachGuidanceType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystemhttps://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystem
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystemhttps://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystem
 CREATE TABLE GroundLightSystem
 (
   uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1917,7 +1859,7 @@ CREATE TABLE GroundLightSystem
   colour            CodeColourType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightingAvailability
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightingAvailability
 CREATE TABLE GroundLightingAvailability
 (
   id                    INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_ground_lighting_availability'),
@@ -1925,7 +1867,7 @@ CREATE TABLE GroundLightingAvailability
   operationalStatus     CodeStatusOperationsType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
   uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
@@ -1945,8 +1887,7 @@ CREATE TABLE CartographyLabel
 );
 
 
-
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
 CREATE TABLE Unit
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1960,7 +1901,7 @@ CREATE TABLE Unit
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_UnitDependency
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_UnitDependency
 CREATE TABLE UnitDependency
 (
   id              INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_unit_dependency'),
@@ -1969,7 +1910,7 @@ CREATE TABLE UnitDependency
   type            CodeUnitDependencyType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Service
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Service
 CREATE TABLE Service
 (
   uuid             id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1990,7 +1931,7 @@ CREATE TABLE CallsignDetail
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ContactInformation
 CREATE TABLE ContactInformation
 (
   id                        INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_contact_information'),
@@ -2002,7 +1943,7 @@ CREATE TABLE ContactInformation
   title                     TextNameType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_PostalAddress
 CREATE TABLE PostalAddress (
   id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_postal_address'),
   deliveryPoint      TextAddressType,
@@ -2018,7 +1959,7 @@ CREATE TABLE ContactInformationPostalAddress
   idPostalAddress      INTEGER NOT NULL REFERENCES PostalAddress (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OnlineContact
 
 CREATE TABLE OnlineContact (
   id       INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_online_contact'),
@@ -2046,7 +1987,7 @@ CREATE TABLE ContactInformationTelephoneContact
   idTelephoneContact   INTEGER NOT NULL REFERENCES TelephoneContact (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RadioCommunicationChannel
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RadioCommunicationChannel
 CREATE TABLE RadioCommunicationChannel
 (
   uuid                  id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -2069,45 +2010,45 @@ CREATE TABLE Service_RadioCommunicationChannel
   uuidRadioCommunicationChannel id REFERENCES RadioCommunicationChannel (uuid)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
 CREATE TABLE AirTrafficManagementService
 (
   uuid id PRIMARY KEY REFERENCES Service,
   type CodeServiceATFMType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportGroundService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportGroundService
 CREATE TABLE AirportGroundService
 (
   uuid id PRIMARY KEY REFERENCES Service
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AircraftGroundService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AircraftGroundService
 CREATE TABLE AircraftGroundService
 (
   uuidAirportGroundService id PRIMARY KEY REFERENCES AirportGroundService (uuid),
-  type CodeAircraftGroundServiceType
+  type                     CodeAircraftGroundServiceType
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_InformationService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_InformationService
 CREATE TABLE InformationService
 (
-  uuid     id REFERENCES Service,
+  uuid     id PRIMARY KEY REFERENCES Service (uuid),
   type     CodeServiceInformationType,
   voice    CodeYesNoType,
   dataLink CodeYesNoType,
   recorded CodeYesNoType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SearchRescueService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SearchRescueService
 CREATE TABLE SearchRescueService
 (
   uuid id REFERENCES Service,
   type CodeServiceSARType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TrafficSeparationService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TrafficSeparationService
 CREATE TABLE TrafficSeparationService
 (
   uuid            id PRIMARY KEY REFERENCES Service (uuid),
@@ -2116,7 +2057,7 @@ CREATE TABLE TrafficSeparationService
   dataLinkChannel CodeCommunicationChannelType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficControlService
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficControlService
 CREATE TABLE AirTrafficControlService
 (
   uuid id REFERENCES TrafficSeparationService (uuid),
@@ -2130,35 +2071,40 @@ CREATE TABLE GroundTrafficControlService
   type CodeServiceGroundControlType
 );
 
-
-
--- ВОПРОС:
-/*
-CREATE TABLE AirportHeliport_InformationService
+--
+--
+--
+CREATE TABLE AirportHeliportInformationService
 (
   uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
-  uuidInformationService id PRIMARY KEY REFERENCES InformationService (uuid)
+  uuidInformationService id REFERENCES InformationService (uuid)
 );
 
-CREATE TABLE AirportHeliport_AirportGroundService
+--
+--
+--
+CREATE TABLE AirportHeliportAirportGroundService
 (
  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
- uuidAirportGroundService id PRIMARY KEY REFERENCES AirportGroundService (uuid)
+ uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
 );
-*/
 
+--
+--
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_DesignatedPoint
 CREATE TABLE DesignatedPoint
 (
-  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  designator CodeDesignatedPointDesignatorType,
-  type CodeDesignatedPointType,
-  name TextNameType,
-  idPoint INTEGER NOT NULL REFERENCES Point (id),
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  designator         CodeDesignatedPointDesignatorType,
+  type               CodeDesignatedPointType,
+  name               TextNameType,
+  idPoint            INTEGER NOT NULL REFERENCES Point (id),
   idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
+--
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
 CREATE TABLE SegmentPoint
 (
   id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_segment_point'),
@@ -2169,7 +2115,7 @@ CREATE TABLE SegmentPoint
   idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
 CREATE TABLE EnRouteSegmentPoint
 (
   id                   INTEGER NOT NULL PRIMARY KEY REFERENCES SegmentPoint (id),
@@ -2179,7 +2125,7 @@ CREATE TABLE EnRouteSegmentPoint
   roleMilitaryTraining CodeMilitaryRoutePointType
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
 CREATE TABLE Route
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -2197,7 +2143,7 @@ CREATE TABLE Route
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RouteSegment
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RouteSegment
 CREATE TABLE RouteSegment
 (
   uuid                             id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -2231,7 +2177,7 @@ CREATE TABLE RouteSegment
   idEnRouteSegmentPointEnd         INTEGER NOT NULL REFERENCES EnRouteSegmentPoint (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
 CREATE TABLE RoutePortion
 (
   id                             INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_route_portion'),
@@ -2240,7 +2186,7 @@ CREATE TABLE RoutePortion
   idSignificantPointEnd          INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Airspace
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Airspace
 CREATE TABLE Airspace
 (
   uuid                 id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -2260,10 +2206,10 @@ CREATE TABLE Airspace_AirTrafficManagementService
   uuidAirTrafficManagementService id REFERENCES AirTrafficManagementService (uuid)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id),
+  id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id),
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid)
@@ -2275,7 +2221,7 @@ CREATE TABLE AirspaceActivation_OrganisationAuthority
   idAirspaceActivation      INTEGER NOT NULL REFERENCES AirspaceActivation (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayerClass
 CREATE TABLE AirspaceLayerClass
 (
   id             INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer_class'),
@@ -2283,7 +2229,7 @@ CREATE TABLE AirspaceLayerClass
   uuidAirspace   id REFERENCES Airspace (uuid)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
 CREATE TABLE AirspaceLayer
 (
   id                     INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer'),
@@ -2296,7 +2242,7 @@ CREATE TABLE AirspaceLayer
   idAirspaceActivation   INTEGER REFERENCES AirspaceActivation (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceVolume
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceVolume
 CREATE TABLE AirspaceVolume
 (
   id                    INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_volume'),
@@ -2314,7 +2260,7 @@ CREATE TABLE AirspaceVolume
   uuidAirspace          id REFERENCES Airspace (uuid)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace
 CREATE TABLE SignificantPointInAirspace
 (
   uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -2324,7 +2270,7 @@ CREATE TABLE SignificantPointInAirspace
   idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
 CREATE TABLE AuthorityForAirspace
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -2334,70 +2280,79 @@ CREATE TABLE AuthorityForAirspace
 );
 
 
--- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Navaid
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Navaid
 CREATE TABLE Navaid
 (
-  uuid              id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  type              CodeNavaidServiceType,
-  designator        CodeNavaidDesignatorType,
-  name              TextNameType,
-  flightChecked     CodeYesNoType,
-  purpose           CodeNavaidPurposeType,
-  signalPerformance CodeSignalPerformanceILSType,
-  courseQuality     CodeCourseQualityILSType,
-  integrityLevel    CodeIntegrityLevelILSType,
-  idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id),
-  idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type               CodeNavaidServiceType,
+  designator         CodeNavaidDesignatorType,
+  name               TextNameType,
+  flightChecked      CodeYesNoType,
+  purpose            CodeNavaidPurposeType,
+  signalPerformance  CodeSignalPerformanceILSType,
+  courseQuality      CodeCourseQualityILSType,
+  integrityLevel     CodeIntegrityLevelILSType,
+  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id),
+  idSignificantPoint INTEGER REFERENCES SignificantPoint (id)
 
 );
 
 CREATE TABLE AirportHeliport_Navaid
 (
-  uuidNavaid              id REFERENCES Navaid (uuid),
-    uuidAirportHeliport              id REFERENCES AirportHeliport (uuid)
+  uuidNavaid          id REFERENCES Navaid (uuid),
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
 );
 
 
 CREATE OR REPLACE VIEW ARP AS
   SELECT
     uuid,
-    name as nl,
-    designator as nm,
+            name                   AS nl,
+            designator             AS nm,
     controltype,
-    (fieldElevation).value as ha,
-    (SELECT (nominallength).value as length
-      FROM Runway
-      WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
+            (fieldElevation).value AS ha,
+    (SELECT (nominallength).value AS length
+     FROM Runway
+     WHERE Runway.uuidAirportHeliport = AirportHeliport.uuid),
     (SELECT count(surfacecharacteristics.composition) AS cover
      FROM surfacecharacteristics, runway
      WHERE
        runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
        AND surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
-    (SELECT RunwayDirection.trueBearing as ugol
-    FROM RunwayDirection, Runway
-    WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid),
-    abandoned as closed,
+    (SELECT RunwayDirection.trueBearing AS ugol
+     FROM RunwayDirection, Runway
+     WHERE RunwayDirection.uuidRunway = Runway.uuid AND Runway.uuidAirportHeliport = AirportHeliport.uuid),
+            abandoned              AS closed,
     (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
      FROM runwaydirectionlightsystem, runwaydirection, runway
      WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
            runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, Unit
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit=Unit.uuid AND Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit
-    WHERE Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, Unit
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit
+     WHERE Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
     (SELECT point.id
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-        (SELECT point.latitude
+    (SELECT point.latitude
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
     (SELECT point.longitude
@@ -2407,48 +2362,58 @@ CREATE OR REPLACE VIEW ARP AS
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
 
-  FROM airportheliport WHERE airportheliport.type IS NULL;
+  FROM airportheliport
+  WHERE airportheliport.type IS NULL;
 
 CREATE OR REPLACE VIEW ALS AS
   SELECT
     uuid,
-    name as nl,
-    designator as nm,
+            name                   AS nl,
+            designator             AS nm,
     type,
-    (fieldElevation).value as ha,
-    (SELECT (nominallength).value as length
-      FROM Runway
-      WHERE Runway.uuidAirportHeliport=AirportHeliport.uuid    ),
+            (fieldElevation).value AS ha,
+    (SELECT (nominallength).value AS length
+     FROM Runway
+     WHERE Runway.uuidAirportHeliport = AirportHeliport.uuid),
     (SELECT count(surfacecharacteristics.composition) AS cover
      FROM surfacecharacteristics, runway
      WHERE
        runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
        AND surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
-    (SELECT RunwayDirection.trueBearing as ugol
-    FROM RunwayDirection, Runway
-    WHERE RunwayDirection.uuidRunway=Runway.uuid AND Runway.uuidAirportHeliport=AirportHeliport.uuid),
-    abandoned as closed,
+    (SELECT RunwayDirection.trueBearing AS ugol
+     FROM RunwayDirection, Runway
+     WHERE RunwayDirection.uuidRunway = Runway.uuid AND Runway.uuidAirportHeliport = AirportHeliport.uuid),
+            abandoned              AS closed,
     (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
      FROM runwaydirectionlightsystem, runwaydirection, runway
      WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
            runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, Unit
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit=Unit.uuid AND Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuidUnit=Unit.uuid and Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit
-    WHERE Unit.uuidAirportHeliport=AirportHeliport.uuid LIMIT 1),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, Unit
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
+           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit
+     WHERE Unit.uuidAirportHeliport = AirportHeliport.uuid
+     LIMIT 1),
     (SELECT point.id
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-        (SELECT point.latitude
+    (SELECT point.latitude
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
     (SELECT point.longitude
@@ -2458,398 +2423,609 @@ CREATE OR REPLACE VIEW ALS AS
      FROM point, elevatedpoint
      WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
 
-  FROM airportheliport WHERE airportheliport.type IS NOT NULL;
+  FROM airportheliport
+  WHERE airportheliport.type IS NOT NULL;
 
 CREATE OR REPLACE FUNCTION arp_function()
-RETURNS TRIGGER
+  RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
-   BEGIN
-      IF TG_OP = 'INSERT' THEN
-        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.nm,NEW.nl,NEW.controltype,NEW.ha,NEW.closed);
-        INSERT INTO Runway VALUES (NEW.length);
-        INSERT INTO RunwayDirection VALUES (NEW.ugol);
-        INSERT INTO CallsignDetail VALUES (NEW.cs);
-        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
-        INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
-        RETURN NEW;
-      ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,controltype=NEW.controltype, fieldElevation.value = NEW.ha, abandoned=NEW.closed WHERE AirportHeliport.uuid=OLD.uuid;
-       UPDATE Runway SET nominalLength.value = NEW.length WHERE  runway.uuidairportheliport=OLD.uuid;
-       UPDATE RunwayDirection SET trueBearing = NEW.ugol WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
-       UPDATE CallsignDetail SET callSign = NEW.cs WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
-       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
-       UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
-       RETURN NEW;
-      ELSIF TG_OP = 'DELETE' THEN
-       DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
-       DELETE FROM Runway WHERE runway.uuidairportheliport=OLD.uuid;
-       DELETE FROM RunwayDirection WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
-       DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
-       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
-       DELETE FROM Point WHERE Point.id=OLD.id;
-       RETURN NULL;
-      END IF;
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.nm, NEW.nl, NEW.controltype, NEW.ha, NEW.closed);
+    INSERT INTO Runway VALUES (NEW.length);
+    INSERT INTO RunwayDirection VALUES (NEW.ugol);
+    INSERT INTO CallsignDetail VALUES (NEW.cs);
+    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
+    INSERT INTO Point VALUES (NEW.latitude, NEW.longitude, NEW.geom);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE AirportHeliport
+      SET uuid               = NEW.uuid, designator = NEW.nm, name = NEW.nl, controltype = NEW.controltype,
+        fieldElevation.value = NEW.ha, abandoned = NEW.closed
+      WHERE AirportHeliport.uuid = OLD.uuid;
+      UPDATE Runway
+      SET nominalLength.value = NEW.length
+      WHERE runway.uuidairportheliport = OLD.uuid;
+      UPDATE RunwayDirection
+      SET trueBearing = NEW.ugol
+      WHERE RunwayDirection.uuidRunway = (SELECT uuid
+                                          FROM Runway
+                                          WHERE runway.uuidairportheliport = OLD.uuid);
+      UPDATE CallsignDetail
+      SET callSign = NEW.cs
+      WHERE CallsignDetail.uuidService IN (SELECT Service.uuid
+                                           FROM Service, Unit
+                                           WHERE uuidUnit IN (SELECT Unit.uuid
+                                                              FROM Unit
+                                                              WHERE Unit.uuidAirportHeliport = OLD.uuid));
+      UPDATE RadioCommunicationChannel
+      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
+      WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel
+                                               FROM Service_RadioCommunicationChannel, Service
+                                               WHERE uuidService IN (SELECT Service.uuid
+                                                                     FROM Service, Unit
+                                                                     WHERE uuidUnit IN (SELECT Unit.uuid
+                                                                                        FROM Unit
+                                                                                        WHERE uuidAirportHeliport =
+                                                                                              OLD.uuid)));
+      UPDATE Point
+      SET latitude = NEW.latitude, longitude = NEW.longitude, geom = NEW.geom
+      WHERE Point.id = OLD.id;
       RETURN NEW;
-    END;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM AirportHeliport
+      WHERE AirportHeliport.uuid = OLD.uuid;
+      DELETE FROM Runway
+      WHERE runway.uuidairportheliport = OLD.uuid;
+      DELETE FROM RunwayDirection
+      WHERE RunwayDirection.uuidRunway = (SELECT uuid
+                                          FROM Runway
+                                          WHERE runway.uuidairportheliport = OLD.uuid);
+      DELETE FROM CallsignDetail
+      WHERE CallsignDetail.uuidService IN (SELECT Service.uuid
+                                           FROM Service, Unit
+                                           WHERE uuidUnit IN (SELECT Unit.uuid
+                                                              FROM Unit
+                                                              WHERE Unit.uuidAirportHeliport = OLD.uuid));
+      DELETE FROM RadioCommunicationChannel
+      WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel
+                                               FROM Service_RadioCommunicationChannel, Service
+                                               WHERE uuidService IN (SELECT Service.uuid
+                                                                     FROM Service, Unit
+                                                                     WHERE uuidUnit IN (SELECT Unit.uuid
+                                                                                        FROM Unit
+                                                                                        WHERE uuidAirportHeliport =
+                                                                                              OLD.uuid)));
+      DELETE FROM Point
+      WHERE Point.id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
 $function$;
 
 CREATE TRIGGER arp_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      ARP FOR EACH ROW EXECUTE PROCEDURE arp_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  ARP FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
 CREATE OR REPLACE FUNCTION als_function()
-RETURNS TRIGGER
+  RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
-   BEGIN
-      IF TG_OP = 'INSERT' THEN
-        INSERT INTO  AirportHeliport VALUES(NEW.uuid,NEW.nm,NEW.nl,NEW.type,NEW.ha,NEW.closed);
-        INSERT INTO Runway VALUES (NEW.length);
-        INSERT INTO RunwayDirection VALUES (NEW.ugol);
-        INSERT INTO CallsignDetail VALUES (NEW.cs);
-        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
-        INSERT INTO  Point VALUES(NEW.latitude,NEW.longitude,NEW.geom);
-        RETURN NEW;
-      ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE AirportHeliport SET uuid=NEW.uuid,designator=NEW.nm,name=NEW.nl,type=NEW.type, fieldElevation.value = NEW.ha, abandoned=NEW.closed        WHERE AirportHeliport.uuid=OLD.uuid;
-       UPDATE Runway SET nominalLength.value = NEW.length WHERE  runway.uuidairportheliport=OLD.uuid;
-       UPDATE RunwayDirection SET trueBearing = NEW.ugol WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
-       UPDATE CallsignDetail SET callSign = NEW.cs WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
-       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
-       UPDATE Point SET latitude=NEW.latitude,longitude=NEW.longitude,geom=NEW.geom WHERE Point.id=OLD.id;
-       RETURN NEW;
-      ELSIF TG_OP = 'DELETE' THEN
-       DELETE FROM AirportHeliport WHERE AirportHeliport.uuid=OLD.uuid;
-       DELETE FROM Runway WHERE runway.uuidairportheliport=OLD.uuid;
-       DELETE FROM RunwayDirection WHERE RunwayDirection.uuidRunway = (SELECT uuid FROM Runway WHERE runway.uuidairportheliport=OLD.uuid);
-       DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN ( SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport=OLD.uuid));
-       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel,Service WHERE uuidService IN (SELECT Service.uuid FROM Service,Unit WHERE uuidUnit IN (SELECT Unit.uuid FROM Unit WHERE uuidAirportHeliport= OLD.uuid)));
-       DELETE FROM Point WHERE Point.id=OLD.id;
-       RETURN NULL;
-      END IF;
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.nm, NEW.nl, NEW.type, NEW.ha, NEW.closed);
+    INSERT INTO Runway VALUES (NEW.length);
+    INSERT INTO RunwayDirection VALUES (NEW.ugol);
+    INSERT INTO CallsignDetail VALUES (NEW.cs);
+    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
+    INSERT INTO Point VALUES (NEW.latitude, NEW.longitude, NEW.geom);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE AirportHeliport
+      SET uuid    = NEW.uuid, designator = NEW.nm, name = NEW.nl, type = NEW.type, fieldElevation.value = NEW.ha,
+        abandoned = NEW.closed
+      WHERE AirportHeliport.uuid = OLD.uuid;
+      UPDATE Runway
+      SET nominalLength.value = NEW.length
+      WHERE runway.uuidairportheliport = OLD.uuid;
+      UPDATE RunwayDirection
+      SET trueBearing = NEW.ugol
+      WHERE RunwayDirection.uuidRunway = (SELECT uuid
+                                          FROM Runway
+                                          WHERE runway.uuidairportheliport = OLD.uuid);
+      UPDATE CallsignDetail
+      SET callSign = NEW.cs
+      WHERE CallsignDetail.uuidService IN (SELECT Service.uuid
+                                           FROM Service, Unit
+                                           WHERE uuidUnit IN (SELECT Unit.uuid
+                                                              FROM Unit
+                                                              WHERE Unit.uuidAirportHeliport = OLD.uuid));
+      UPDATE RadioCommunicationChannel
+      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
+      WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel
+                                               FROM Service_RadioCommunicationChannel, Service
+                                               WHERE uuidService IN (SELECT Service.uuid
+                                                                     FROM Service, Unit
+                                                                     WHERE uuidUnit IN (SELECT Unit.uuid
+                                                                                        FROM Unit
+                                                                                        WHERE uuidAirportHeliport =
+                                                                                              OLD.uuid)));
+      UPDATE Point
+      SET latitude = NEW.latitude, longitude = NEW.longitude, geom = NEW.geom
+      WHERE Point.id = OLD.id;
       RETURN NEW;
-    END;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM AirportHeliport
+      WHERE AirportHeliport.uuid = OLD.uuid;
+      DELETE FROM Runway
+      WHERE runway.uuidairportheliport = OLD.uuid;
+      DELETE FROM RunwayDirection
+      WHERE RunwayDirection.uuidRunway = (SELECT uuid
+                                          FROM Runway
+                                          WHERE runway.uuidairportheliport = OLD.uuid);
+      DELETE FROM CallsignDetail
+      WHERE CallsignDetail.uuidService IN (SELECT Service.uuid
+                                           FROM Service, Unit
+                                           WHERE uuidUnit IN (SELECT Unit.uuid
+                                                              FROM Unit
+                                                              WHERE Unit.uuidAirportHeliport = OLD.uuid));
+      DELETE FROM RadioCommunicationChannel
+      WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel
+                                               FROM Service_RadioCommunicationChannel, Service
+                                               WHERE uuidService IN (SELECT Service.uuid
+                                                                     FROM Service, Unit
+                                                                     WHERE uuidUnit IN (SELECT Unit.uuid
+                                                                                        FROM Unit
+                                                                                        WHERE uuidAirportHeliport =
+                                                                                              OLD.uuid)));
+      DELETE FROM Point
+      WHERE Point.id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
 $function$;
 
 CREATE TRIGGER als_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      ALS FOR EACH ROW EXECUTE PROCEDURE als_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  ALS FOR EACH ROW EXECUTE PROCEDURE als_function();
 
 
 CREATE VIEW CTA AS
   SELECT
     uuid,
-    designator as nm,
-    name as nl,
-    controlType as tp,
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
     (SELECT (upperLimit).value AS top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).unit AS top_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).nonNumeric AS UNL
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.upperLimitReference AS format_top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).value AS bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).unit AS bottom_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).nonNumeric AS GND
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT id
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
-  FROM Airspace WHERE Airspace.type='CTA';
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'CTA';
 
 CREATE OR REPLACE FUNCTION cta_function()
-RETURNS TRIGGER
+  RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
-   BEGIN
-      IF TG_OP = 'INSERT' THEN
-        INSERT INTO  Airspace VALUES(NEW.uuid,NEW.nm,NEW.nl,NEW.tp);
-        INSERT INTO AirspaceVolume VALUES (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom, NEW.geom);
-        INSERT INTO CallsignDetail VALUES (NEW.cs);
-        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
-        RETURN NEW;
-      ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE Airspace SET uuid = NEW.uuid, designator = NEW.nm,name = NEW.nl,controlType=NEW.tp
-         WHERE Airspace.uuid=OLD.uuid;
-       UPDATE AirspaceVolume SET
-         upperLimit=ROW(NEW.top, NEW.UNL, NEW.top_unit),
-         upperLimitReference=NEW.format_top,
-         lowerLimit= ROW(NEW.bottom, NEW.GND, NEW.bottom_unit),
-         lowerLimitReference=NEW.format_bottom
-        WHERE AirspaceVolume.id=OLD.id;
-       UPDATE CallsignDetail SET callSign = NEW.cs;
-       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
-        RETURN NEW;
-      ELSIF TG_OP = 'DELETE' THEN
-       DELETE FROM Airspace WHERE Airspace.uuid=OLD.uuid;
-      DELETE FROM AirspaceVolume WHERE AirspaceVolume.id=OLD.id;
-       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
-       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
-        RETURN NULL;
-      END IF;
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO Airspace VALUES (NEW.uuid, NEW.nm, NEW.nl, NEW.tp);
+    INSERT INTO AirspaceVolume VALUES
+      (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
+       NEW.geom);
+    INSERT INTO CallsignDetail VALUES (NEW.cs);
+    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Airspace
+      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl, controlType = NEW.tp
+      WHERE Airspace.uuid = OLD.uuid;
+      UPDATE AirspaceVolume
+      SET
+        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+        upperLimitReference = NEW.format_top,
+        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+        lowerLimitReference = NEW.format_bottom
+      WHERE AirspaceVolume.id = OLD.id;
+      UPDATE CallsignDetail
+      SET callSign = NEW.cs;
+      UPDATE RadioCommunicationChannel
+      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
       RETURN NEW;
-    END;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM Airspace
+      WHERE Airspace.uuid = OLD.uuid;
+      DELETE FROM AirspaceVolume
+      WHERE AirspaceVolume.id = OLD.id;
+      DELETE FROM CallsignDetail
+      WHERE CallsignDetail.id = OLD.id;
+      DELETE FROM RadioCommunicationChannel
+      WHERE RadioCommunicationChannel.uuid = OLD.uuid;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
 $function$;
 
 CREATE TRIGGER cta_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      CTA FOR EACH ROW EXECUTE PROCEDURE cta_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  CTA FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
 CREATE VIEW CTR AS
   SELECT
     uuid,
-    designator as nm,
-    name as nl,
-    controlType as tp,
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
     (SELECT (upperLimit).value AS top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).unit AS top_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).nonNumeric AS UNL
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.upperLimitReference AS format_top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).value AS bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).unit AS bottom_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).nonNumeric AS GND
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT id
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
-  FROM Airspace WHERE Airspace.type='CTR';
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'CTR';
 
 
 CREATE TRIGGER ctr_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      CTR FOR EACH ROW EXECUTE PROCEDURE cta_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  CTR FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
 -- TMA
 CREATE VIEW TMA AS
   SELECT
     uuid,
-    designator as nm,
-    name as nl,
-    controlType as tp,
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
     (SELECT (upperLimit).value AS top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).unit AS top_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).nonNumeric AS UNL
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.upperLimitReference AS format_top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).value AS bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).unit AS bottom_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).nonNumeric AS GND
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT id
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
-  FROM Airspace WHERE Airspace.type='TMA';
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'TMA';
 
 
 CREATE TRIGGER tma_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      TMA FOR EACH ROW EXECUTE PROCEDURE cta_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  TMA FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
 -- UAA
 CREATE VIEW UAA AS
   SELECT
     uuid,
-    designator as nm,
-    name as nl,
-    controlType as tp,
+            designator  AS nm,
+            name        AS nl,
+            controlType AS tp,
     (SELECT (upperLimit).value AS top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).unit AS top_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).nonNumeric AS UNL
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.upperLimitReference AS format_top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).value AS bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).unit AS bottom_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).nonNumeric AS GND
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT id
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
-  FROM Airspace WHERE Airspace.type='ATZ';
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'ATZ';
 
 
 CREATE TRIGGER uaa_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      UAA FOR EACH ROW EXECUTE PROCEDURE cta_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  UAA FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
 -- FIR
 CREATE VIEW FIR AS
   SELECT
     uuid,
-    designator as nm,
-    name as nl,
+            designator AS nm,
+            name       AS nl,
     (SELECT (upperLimit).value AS top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).unit AS top_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (upperLimit).nonNumeric AS UNL
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.upperLimitReference AS format_top
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).value AS bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).unit AS bottom_unit
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT (lowerLimit).nonNumeric AS GND
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT day as day_of_the_week
-    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT day AS day_of_the_week
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT startTime
-    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT endTime
-    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT id
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
-  FROM Airspace WHERE Airspace.type='FIR';
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'FIR';
 
 
 CREATE VIEW MVL AS
@@ -2859,108 +3035,145 @@ CREATE VIEW MVL AS
     designatorSecondLetter,
     designatorNumber,
     (SELECT magneticTrack AS mta
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT reverseMagneticTrack AS rmta
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT length
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
 
 
     (SELECT (upperLimit).value AS top
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT (upperLimit).unit AS top_unit
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT (upperLimit).nonNumeric AS UNL
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT AirspaceVolume.upperLimitReference AS format_top
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT (lowerLimit).value AS bottom
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT (lowerLimit).unit AS bottom_unit
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT (lowerLimit).nonNumeric AS GND
-    FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-   FROM RouteSegment
-    WHERE RouteSegment.uuidRoute=Route.uuid),
+     FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
 
-    (SELECT CallsignDetail.callSign as cs
-    FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyTransmission).value as tf
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service,  AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT (frequencyReception).value as tr
-    FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE RadioCommunicationChannel.uuid=Service_RadioCommunicationChannel.uuidRadioCommunicationChannel and Service_RadioCommunicationChannel.uuidService=Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
-    (SELECT day as day_of_the_week
-    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
+       Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
+           Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT day AS day_of_the_week
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT startTime
-    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT endTime
-    FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-    WHERE Timesheet.idPropertiesWithSchedule=PropertiesWithSchedule.id AND PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace=Airspace.uuid LIMIT 1),
-    (SELECT Unit.type as unit_type
-    FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-    WHERE Unit.uuid=Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid  LIMIT 1),
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
+           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
+     LIMIT 1),
     (SELECT id
-    FROM AirspaceVolume
-    WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
     (SELECT Surface.geom
-    FROM Surface, AirspaceVolume
-    WHERE Surface.id=AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace=Airspace.uuid)
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
   FROM Route;
 
 
 CREATE OR REPLACE FUNCTION fir_function()
-RETURNS TRIGGER
+  RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
-   BEGIN
-      IF TG_OP = 'INSERT' THEN
-        INSERT INTO  Airspace VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controlType);
-        INSERT INTO AirspaceVolume VALUES (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom, NEW.geom);
-        INSERT INTO CallsignDetail VALUES (NEW.cs);
-        INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
-        RETURN NEW;
-      ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE Airspace SET uuid = NEW.uuid, designator = NEW.designator,name = NEW.name,controlType=NEW.controlType
-         WHERE Airspace.uuid=OLD.uuid;
-       UPDATE AirspaceVolume SET
-         upperLimit=ROW(NEW.top, NEW.UNL, NEW.top_unit),
-         upperLimitReference=NEW.format_top,
-         lowerLimit= ROW(NEW.bottom, NEW.GND, NEW.bottom_unit),
-         lowerLimitReference=NEW.format_bottom
-        WHERE AirspaceVolume.id=OLD.id;
-       UPDATE CallsignDetail SET callSign = NEW.cs;
-       UPDATE RadioCommunicationChannel SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
-        RETURN NEW;
-      ELSIF TG_OP = 'DELETE' THEN
-       DELETE FROM Airspace WHERE Airspace.uuid=OLD.uuid;
-      DELETE FROM AirspaceVolume WHERE AirspaceVolume.id=OLD.id;
-       DELETE FROM CallsignDetail WHERE CallsignDetail.id = OLD.id;
-       DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid=OLD.uuid;
-        RETURN NULL;
-      END IF;
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO Airspace VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controlType);
+    INSERT INTO AirspaceVolume VALUES
+      (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
+       NEW.geom);
+    INSERT INTO CallsignDetail VALUES (NEW.cs);
+    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Airspace
+      SET uuid = NEW.uuid, designator = NEW.designator, name = NEW.name, controlType = NEW.controlType
+      WHERE Airspace.uuid = OLD.uuid;
+      UPDATE AirspaceVolume
+      SET
+        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+        upperLimitReference = NEW.format_top,
+        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+        lowerLimitReference = NEW.format_bottom
+      WHERE AirspaceVolume.id = OLD.id;
+      UPDATE CallsignDetail
+      SET callSign = NEW.cs;
+      UPDATE RadioCommunicationChannel
+      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
       RETURN NEW;
-    END;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM Airspace
+      WHERE Airspace.uuid = OLD.uuid;
+      DELETE FROM AirspaceVolume
+      WHERE AirspaceVolume.id = OLD.id;
+      DELETE FROM CallsignDetail
+      WHERE CallsignDetail.id = OLD.id;
+      DELETE FROM RadioCommunicationChannel
+      WHERE RadioCommunicationChannel.uuid = OLD.uuid;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
 $function$;
 
 CREATE TRIGGER fir_trigger
-    INSTEAD OF INSERT OR UPDATE OR DELETE ON
-      FIR FOR EACH ROW EXECUTE PROCEDURE fir_function();
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  FIR FOR EACH ROW EXECUTE PROCEDURE fir_function();
 
 -- Триггеры для координат
 
@@ -3016,14 +3229,14 @@ CREATE OR REPLACE FUNCTION trigger_insert_polygon()
   RETURNS TRIGGER AS $$
 BEGIN
   IF (TG_OP = 'INSERT' OR
-      (TG_OP = 'UPDATE' AND (NEW.coord<>OLD.coord)))
+      (TG_OP = 'UPDATE' AND (NEW.coord <> OLD.coord)))
   THEN
     IF (NEW.srid = 4326)
     THEN
-      NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord),NEW.srid));
+      NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid));
     ELSE
-      NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord),NEW.srid)),4326));
-   END IF;
+      NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)), 4326));
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -3038,24 +3251,26 @@ EXECUTE PROCEDURE trigger_insert_polygon();
 
 -- TPM - ППМ МВЛ
 CREATE VIEW TPM AS
-  SELECT uuid,
-    designator as nm,
-    (SELECT SegmentPoint.reportingATC as tp
-    FROM SegmentPoint, SignificantPoint
-    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id and SignificantPoint.id = SegmentPoint.idSignificantPoint),
-    (SELECT point.magneticVariation as md
-      FROM point
-      WHERE point.id = DesignatedPoint.idPoint),
+  SELECT
+    uuid,
+            designator AS nm,
+    (SELECT SegmentPoint.reportingATC AS tp
+     FROM SegmentPoint, SignificantPoint
+     WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint),
+    (SELECT point.magneticVariation AS md
+     FROM point
+     WHERE point.id = DesignatedPoint.idPoint),
     (SELECT point.id
-    FROM point
-    WHERE point.id = DesignatedPoint.idPoint),
+     FROM point
+     WHERE point.id = DesignatedPoint.idPoint),
     (SELECT point.latitude
-    FROM point
-    WHERE point.id = DesignatedPoint.idPoint),
+     FROM point
+     WHERE point.id = DesignatedPoint.idPoint),
     (SELECT point.longitude
-    FROM point
-    WHERE point.id = DesignatedPoint.idPoint),
+     FROM point
+     WHERE point.id = DesignatedPoint.idPoint),
     (SELECT point.geom
-    FROM point
-    WHERE point.id = DesignatedPoint.idPoint)
+     FROM point
+     WHERE point.id = DesignatedPoint.idPoint)
   FROM DesignatedPoint;
