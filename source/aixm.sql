@@ -12,7 +12,7 @@ AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, Significan
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
 GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
-PropertiesWithSchedule, Timesheet,airportheliport_navaid CASCADE;
+PropertiesWithSchedule, Timesheet,airportheliport_navaid, DesignatedPoint CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -32,7 +32,8 @@ CodePCNPavementType,CodePCNSubgradeType,CodePCNTyrePressureType,CodePCNMethodTyp
 CodeAirspaceActivityType,CodeStatusAirspaceType,CodeAirspacePointRoleType,CodeAirspacePointPositionType,CodeLevelType,CodeRouteSegmentPathType,
 CodeRouteNavigationType,CodeRouteDesignatorSuffixType,CodeATCReportingType,CodeFreeFlightType,CodeRVSMPointRoleType,CodeMilitaryRoutePointType,
 CodeCommunicationModeType,CodeRadioEmissionType,CodeCommunicationDirectionType,CodeUnitDependencyType,CodeAuthorityType,CodeNavaidServiceType,
-CodeNavaidPurposeType,CodeSignalPerformanceILSType,CodeCourseQualityILSType,CodeIntegrityLevelILSType CASCADE;
+CodeNavaidPurposeType,CodeSignalPerformanceILSType,CodeCourseQualityILSType,CodeIntegrityLevelILSType, CodeDesignatedPointDesignatorType,
+CodeDesignatedPointType CASCADE;
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, valflbasetype, valdistancebasetype,
 ValDistanceVerticalType, valdistanceverticalbasetype,ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
@@ -1523,6 +1524,30 @@ https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_
 CREATE DOMAIN CodeTimeEventCombinationType AS VARCHAR(40)
 CHECK (VALUE ~ '((EARLIEST|LATEST)|OTHER: [A-Z]{0,30})');
 
+/*
+Закодированное наименование обозначенной точки.
+
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDesignatedPointDesignatorType
+ */
+CREATE DOMAIN CodeDesignatedPointDesignatorType AS VARCHAR(5)
+CHECK (VALUE ~ '([A-Z]|\d)*');
+
+/*
+ICAO - 5-буквенный идентификатор названия
+COORD - точка с идентификатором, производным от географических координат
+CNF - Computer Navigation Fix - точка, используемая с целью обозначить навигационный путь в бортовой вычислительной машине (GPS, FMS).
+  CNF включают в себя фиксированные дальномерные системы DME, начальные и конечные точки дуг DME, точки захода на посадку на GPS.
+  Оборудование RNAV может создавать собственные точки, которые будут видны на дисплее, но которых нет в АИПах и на дисплеях диспетчеров ОВД. Эти точки создаются при активации из базы данных "наложенных" процедур SID, STAR и GPS-OVERLAY Approach.
+DESIGNED - точка с наименованием в виде угла или расстояния, используемая как контрольная точка для процедуры проектирования, которая не публикается.
+MTR  - точка, используемая в военных тренировочных путях.
+TERMINAL - точка с 5-значным буквенно-цифровым наименованием, используемая как путевая точка в процедурах зональной навигации, но не имеющая 5-буквенника ИКАО.
+BRG_DIST - точка с 5-значным буквенно-цифровым наименованием, составленным по правилам ARINC-424 для неименованных путевых точек.
+
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDesignatedPointType
+ */
+CREATE DOMAIN CodeDesignatedPointType AS VARCHAR(40)
+CHECK (VALUE ~ '((ICAO|COORD|CNF|DESIGNED|MTR|TERMINAL|BRG_DIST)|OTHER: [A-Z]{0,30})');
+
 DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
@@ -1608,6 +1633,7 @@ CREATE TABLE Point
   longitude          longitude,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
+  magneticVariation ValMagneticVariationType,
   geom               GEOMETRY(POINT, 4326)
 );
 
@@ -1622,12 +1648,15 @@ CREATE TABLE ElevatedPoint
   verticalAccuracy ValDistanceType
 );
 
+-- Significant Point - это выбор между точками РНС, аэродромами, центральными точками ВПП, назначенными точками (ППМ, Designated Point) и точками взлета-посадки
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
 CREATE TABLE SignificantPoint
 (
   id      INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_significant_point'),
   idPoint INTEGER NOT NULL REFERENCES Point (id)
 );
+
+
 
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
 CREATE TABLE Curve
@@ -1671,7 +1700,7 @@ CREATE TABLE AirportHeliport
   uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4(),
   designator                  CodeAirportHeliportDesignatorType,
   name                        TextNameType,
-  locationIndicatorICAO       CodeICAOType,
+  locationIndicatorICAO       CodeICAOType UNIQUE,
   designatorIATA              CodeIATAType,
   type                        CodeAirportHeliportType,
   certifiedICAO               CodeYesNoType,
@@ -2118,6 +2147,17 @@ CREATE TABLE AirportHeliport_AirportGroundService
 );
 */
 
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_DesignatedPoint
+CREATE TABLE DesignatedPoint
+(
+  uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  designator CodeDesignatedPointDesignatorType,
+  type CodeDesignatedPointType,
+  name TextNameType,
+  idPoint INTEGER NOT NULL REFERENCES Point (id),
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
+);
+
 -- https://extranet.eurocontrol.int/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
 CREATE TABLE SegmentPoint
 (
@@ -2553,13 +2593,13 @@ LANGUAGE plpgsql
 AS $function$
    BEGIN
       IF TG_OP = 'INSERT' THEN
-        INSERT INTO  Airspace VALUES(NEW.uuid,NEW.designator,NEW.name,NEW.controlType);
+        INSERT INTO  Airspace VALUES(NEW.uuid,NEW.nm,NEW.nl,NEW.tp);
         INSERT INTO AirspaceVolume VALUES (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom, NEW.geom);
         INSERT INTO CallsignDetail VALUES (NEW.cs);
         INSERT INTO RadioCommunicationChannel VALUES (NEW.tf,NEW.tr);
         RETURN NEW;
       ELSIF TG_OP = 'UPDATE' THEN
-       UPDATE Airspace SET uuid = NEW.uuid, designator = NEW.designator,name = NEW.name,controlType=NEW.controlType
+       UPDATE Airspace SET uuid = NEW.uuid, designator = NEW.nm,name = NEW.nl,controlType=NEW.tp
          WHERE Airspace.uuid=OLD.uuid;
        UPDATE AirspaceVolume SET
          upperLimit=ROW(NEW.top, NEW.UNL, NEW.top_unit),
@@ -2588,9 +2628,9 @@ CREATE TRIGGER cta_trigger
 CREATE VIEW CTR AS
   SELECT
     uuid,
-    designator,
-    name,
-    controlType,
+    designator as nm,
+    name as nl,
+    controlType as tp,
     (SELECT (upperLimit).value AS top
     FROM AirspaceVolume
     WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
@@ -2644,9 +2684,9 @@ CREATE TRIGGER ctr_trigger
 CREATE VIEW TMA AS
   SELECT
     uuid,
-    designator,
-    name,
-    controlType,
+    designator as nm,
+    name as nl,
+    controlType as tp,
     (SELECT (upperLimit).value AS top
     FROM AirspaceVolume
     WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
@@ -2700,9 +2740,9 @@ CREATE TRIGGER tma_trigger
 CREATE VIEW UAA AS
   SELECT
     uuid,
-    designator,
-    name,
-    controlType,
+    designator as nm,
+    name as nl,
+    controlType as tp,
     (SELECT (upperLimit).value AS top
     FROM AirspaceVolume
     WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
@@ -2756,8 +2796,8 @@ CREATE TRIGGER uaa_trigger
 CREATE VIEW FIR AS
   SELECT
     uuid,
-    designator,
-    name,
+    designator as nm,
+    name as nl,
     (SELECT (upperLimit).value AS top
     FROM AirspaceVolume
     WHERE AirspaceVolume.uuidAirspace=Airspace.uuid),
@@ -2994,3 +3034,28 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER inserting_surface
 BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_polygon();
+
+
+-- TPM - ППМ МВЛ
+CREATE VIEW TPM AS
+  SELECT uuid,
+    designator as nm,
+    (SELECT SegmentPoint.reportingATC as tp
+    FROM SegmentPoint, SignificantPoint
+    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id and SignificantPoint.id = SegmentPoint.idSignificantPoint),
+    (SELECT point.magneticVariation as md
+      FROM point
+      WHERE point.id = DesignatedPoint.idPoint),
+    (SELECT point.id
+    FROM point
+    WHERE point.id = DesignatedPoint.idPoint),
+    (SELECT point.latitude
+    FROM point
+    WHERE point.id = DesignatedPoint.idPoint),
+    (SELECT point.longitude
+    FROM point
+    WHERE point.id = DesignatedPoint.idPoint),
+    (SELECT point.geom
+    FROM point
+    WHERE point.id = DesignatedPoint.idPoint)
+  FROM DesignatedPoint;

@@ -193,7 +193,7 @@ The altitude at or below which the vertical position of an aircraft is controlle
 - F ~~RadarSystem~~
 - F ~~GroundTrafficControlService~~
 - F ~~NavigationSystemCheckpoint~~
-- F ~~DesignatedPoint~~
+- F DesignatedPoint
 - C SignificantPoint
 - F ~~AeronauticalGroundLight~~
 - F Unit
