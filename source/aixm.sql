@@ -13,7 +13,8 @@ AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, Significan
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
 GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
-PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint CASCADE;
+PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint, airportheliportinformationservice,
+airportheliportairportgroundservice CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -1640,6 +1641,7 @@ CREATE TABLE ElevatedSurface
 CREATE TABLE AirportHeliport
 (
   uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  _transasID  varchar(20),
   designator                  CodeAirportHeliportDesignatorType,
   name                        TextNameType,
   locationIndicatorICAO       CodeICAOType UNIQUE,
@@ -2307,6 +2309,7 @@ CREATE TABLE AirportHeliport_Navaid
 CREATE OR REPLACE VIEW ARP AS
   SELECT
     uuid,
+    _transasID as trID,
             name                   AS nl,
             designator             AS nm,
     controltype,
@@ -2433,7 +2436,7 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.nm, NEW.nl, NEW.controltype, NEW.ha, NEW.closed);
+    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl, NEW.controltype, NEW.ha, NEW.closed);
     INSERT INTO Runway VALUES (NEW.length);
     INSERT INTO RunwayDirection VALUES (NEW.ugol);
     INSERT INTO CallsignDetail VALUES (NEW.cs);
@@ -3253,11 +3256,12 @@ EXECUTE PROCEDURE trigger_insert_polygon();
 CREATE VIEW TPM AS
   SELECT
     uuid,
-            designator AS nm,
+    designator AS nm,
     (SELECT SegmentPoint.reportingATC AS tp
      FROM SegmentPoint, SignificantPoint
      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
            SignificantPoint.id = SegmentPoint.idSignificantPoint),
+
     (SELECT point.magneticVariation AS md
      FROM point
      WHERE point.id = DesignatedPoint.idPoint),
@@ -3274,3 +3278,4 @@ CREATE VIEW TPM AS
      FROM point
      WHERE point.id = DesignatedPoint.idPoint)
   FROM DesignatedPoint;
+
