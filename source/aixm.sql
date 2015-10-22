@@ -1579,7 +1579,7 @@ CREATE TABLE Point
 --  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedPoint
 CREATE TABLE ElevatedPoint
 (
-  id               INTEGER PRIMARY KEY REFERENCES Point (id),
+  id               INTEGER PRIMARY KEY REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE,
   elevation        ValDistanceVerticalType,
   geoidUndulation  ValDistanceSignedType,
   verticalDatum    CodeVerticalDatumType,
@@ -1792,7 +1792,7 @@ CREATE TABLE SurfaceCharacteristics
 CREATE TABLE Runway
 (
   uuid                     id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
+  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   idSurfaceCharacteristics INTEGER REFERENCES SurfaceCharacteristics (id),
   designator               TextDesignatorType,
   type                     CodeRunwayType,
@@ -1837,7 +1837,7 @@ CREATE TABLE RunwaySectionContamination
 CREATE TABLE RunwayDirection
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  uuidRunway                id REFERENCES Runway (uuid),
+  uuidRunway                id REFERENCES Runway (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   designator                TextDesignatorType,
   trueBearing               ValBearingType,
   trueBearingAccuracy       ValAngleType,
@@ -1873,18 +1873,18 @@ CREATE TABLE GroundLightingAvailability
 CREATE TABLE RunwayDirectionLightSystem
 (
   uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
-  uuidRunwayDirection id REFERENCES RunwayDirection (uuid),
+  uuidRunwayDirection id REFERENCES RunwayDirection (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   position            CodeRunwaySectionType
 );
 
 CREATE TABLE CartographyLabel
 (
-  id                  INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_cartography_label'),
+  id                  INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label') ,
   xlbl                latitude,
   ylbl                longitude,
   rotation            ValAngleType,
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
-  uuidairportheliport id REFERENCES AirportHeliport,
+  uuidairportheliport id REFERENCES AirportHeliport ON DELETE CASCADE ON UPDATE CASCADE,
   geom                GEOMETRY(POINT, 4326)
 );
 
@@ -1899,7 +1899,7 @@ CREATE TABLE Unit
   designator                CodeOrganisationDesignatorType,
   military                  CodeMilitaryOperationsType,
   idElevatedPoint           INTEGER REFERENCES ElevatedPoint (id),
-  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid),
+  uuidAirportHeliport       id REFERENCES AirportHeliport (uuid)  ON DELETE CASCADE ON UPDATE CASCADE,
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
@@ -1921,7 +1921,7 @@ CREATE TABLE Service
   compliantICAO    CodeYesNoType,
   name             TextNameType,
   idElevatedPoint  INTEGER REFERENCES ElevatedPoint (id),
-  uuidUnit         id REFERENCES Unit (uuid)
+  uuidUnit         id REFERENCES Unit (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE CallsignDetail
@@ -1929,7 +1929,7 @@ CREATE TABLE CallsignDetail
   id          INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_callsign'),
   callSign    TextNameType,
   language    CodeLanguageType,
-  uuidService id REFERENCES Service (uuid)
+  uuidService id REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
@@ -2008,21 +2008,21 @@ CREATE TABLE RadioCommunicationChannel
 
 CREATE TABLE Service_RadioCommunicationChannel
 (
-  uuidService                   id REFERENCES Service (uuid),
+  uuidService                   id REFERENCES Service (uuid)  ON DELETE CASCADE ON UPDATE CASCADE,
   uuidRadioCommunicationChannel id REFERENCES RadioCommunicationChannel (uuid)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
 CREATE TABLE AirTrafficManagementService
 (
-  uuid id PRIMARY KEY REFERENCES Service,
+  uuid id PRIMARY KEY REFERENCES Service ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceATFMType
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportGroundService
 CREATE TABLE AirportGroundService
 (
-  uuid id PRIMARY KEY REFERENCES Service
+  uuid id PRIMARY KEY REFERENCES Service ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AircraftGroundService
@@ -2036,7 +2036,7 @@ CREATE TABLE AircraftGroundService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_InformationService
 CREATE TABLE InformationService
 (
-  uuid     id PRIMARY KEY REFERENCES Service (uuid),
+  uuid     id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type     CodeServiceInformationType,
   voice    CodeYesNoType,
   dataLink CodeYesNoType,
@@ -2046,14 +2046,14 @@ CREATE TABLE InformationService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SearchRescueService
 CREATE TABLE SearchRescueService
 (
-  uuid id REFERENCES Service,
+  uuid id REFERENCES Service ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceSARType
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TrafficSeparationService
 CREATE TABLE TrafficSeparationService
 (
-  uuid            id PRIMARY KEY REFERENCES Service (uuid),
+  uuid            id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   radarAssisted   CodeYesNoType,
   dataLinkEnabled CodeYesNoType,
   dataLinkChannel CodeCommunicationChannelType
@@ -2062,14 +2062,14 @@ CREATE TABLE TrafficSeparationService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficControlService
 CREATE TABLE AirTrafficControlService
 (
-  uuid id REFERENCES TrafficSeparationService (uuid),
+  uuid id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceATCType
 );
 
 -- https://extranet.eurocontrol.int/redirect/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundTrafficControlService
 CREATE TABLE GroundTrafficControlService
 (
-  uuid id REFERENCES TrafficSeparationService (uuid),
+  uuid id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceGroundControlType
 );
 
