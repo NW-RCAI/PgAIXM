@@ -2192,6 +2192,7 @@ CREATE TABLE RoutePortion
 CREATE TABLE Airspace
 (
   uuid                 id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  _transasID  varchar(20),
   type                 CodeAirspaceType,
   designator           CodeAirspaceDesignatorType,
   localType            TextNameType,
@@ -2607,9 +2608,10 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE VIEW CTA AS
   SELECT
     uuid,
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
+    _transasID as trID,
+    designator  AS nm,
+    name        AS nl,
+    controlType AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -2680,7 +2682,7 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Airspace VALUES (NEW.uuid, NEW.nm, NEW.nl, NEW.tp);
+    INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl, NEW.tp);
     INSERT INTO AirspaceVolume VALUES
       (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
        NEW.geom);
@@ -2727,9 +2729,10 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE VIEW CTR AS
   SELECT
     uuid,
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
+    _transasID as trID,
+    designator  AS nm,
+    name        AS nl,
+    controlType AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -2802,9 +2805,10 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE VIEW TMA AS
   SELECT
     uuid,
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
+    _transasID as trID,
+    designator  AS nm,
+    name        AS nl,
+    controlType AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -2877,9 +2881,10 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE VIEW UAA AS
   SELECT
     uuid,
-            designator  AS nm,
-            name        AS nl,
-            controlType AS tp,
+    _transasID as trID,
+    designator  AS nm,
+    name        AS nl,
+    controlType AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
