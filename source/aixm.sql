@@ -2310,10 +2310,10 @@ CREATE OR REPLACE VIEW ARP AS
   SELECT
     uuid,
     _transasID as trID,
-            name                   AS nl,
-            designator             AS nm,
+    name                   AS nl,
+    designator             AS nm,
     controltype,
-            (fieldElevation).value AS ha,
+    (fieldElevation).value AS ha,
     (SELECT (nominallength).value AS length
      FROM Runway
      WHERE Runway.uuidAirportHeliport = AirportHeliport.uuid),
@@ -2367,14 +2367,16 @@ CREATE OR REPLACE VIEW ARP AS
 
   FROM airportheliport
   WHERE airportheliport.type IS NULL;
+-- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
 
 CREATE OR REPLACE VIEW ALS AS
   SELECT
     uuid,
-            name                   AS nl,
-            designator             AS nm,
+    _transasID as trID,
+    name                   AS nl,
+    designator             AS nm,
     type,
-            (fieldElevation).value AS ha,
+    (fieldElevation).value AS ha,
     (SELECT (nominallength).value AS length
      FROM Runway
      WHERE Runway.uuidAirportHeliport = AirportHeliport.uuid),
@@ -2522,7 +2524,7 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.nm, NEW.nl, NEW.type, NEW.ha, NEW.closed);
+    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl, NEW.type, NEW.ha, NEW.closed);
     INSERT INTO Runway VALUES (NEW.length);
     INSERT INTO RunwayDirection VALUES (NEW.ugol);
     INSERT INTO CallsignDetail VALUES (NEW.cs);
