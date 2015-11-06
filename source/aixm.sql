@@ -782,7 +782,7 @@ https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceIn
 */
 CREATE DOMAIN CodeServiceInformationType AS VARCHAR(40)
 CHECK (VALUE ~
-       '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
+       '((AFIS|AIS|ATIS|BRIEFING|FIS|OFIS_VHF|OFIS_HF|NOTAM|INFO|RAF|METAR|SIGMET|TWEB|TAF|VOLMET|ALTIMETER|ASOS|AWOS)|OTHER: [A-Z]{30})');
 
 /*
 Список значений, используемых для определения сервиса по поиску и спасению
@@ -2205,7 +2205,7 @@ CREATE TABLE Airspace
 
 CREATE TABLE Airspace_AirTrafficManagementService
 (
-  uuidAirspace                    id REFERENCES Airspace (uuid),
+  uuidAirspace                    id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidAirTrafficManagementService id REFERENCES AirTrafficManagementService (uuid)
 );
 
@@ -2215,7 +2215,7 @@ CREATE TABLE AirspaceActivation
   id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id),
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
-  uuidAirspace id REFERENCES Airspace (uuid)
+  uuidAirspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE AirspaceActivation_OrganisationAuthority
@@ -2260,7 +2260,7 @@ CREATE TABLE AirspaceVolume
   width                 ValDistanceType,
   idSurface             INTEGER REFERENCES Surface (id),
   idCurve               INTEGER REFERENCES Curve (id),
-  uuidAirspace          id REFERENCES Airspace (uuid)
+  uuidAirspace          id REFERENCES Airspace (uuid)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace
@@ -2957,8 +2957,9 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE VIEW FIR AS
   SELECT
     uuid,
-            designator AS nm,
-            name       AS nl,
+    _transasID as trID,
+    designator AS nm,
+    name       AS nl,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -3037,6 +3038,229 @@ CREATE VIEW FIR AS
   FROM Airspace
   WHERE Airspace.type = 'FIR';
 
+-- DRA
+CREATE VIEW DRA AS
+  SELECT
+    uuid,
+    _transasID as trID,
+    designator AS nm,
+    name       AS nl,
+    (SELECT (upperLimit).value AS top
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT day AS day_of_the_week
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT startTime
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT endTime
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT id
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'D';
+
+-- PRA
+CREATE VIEW PRA AS
+  SELECT
+    uuid,
+    _transasID as trID,
+    designator AS nm,
+    name       AS nl,
+    (SELECT (upperLimit).value AS top
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+
+    (SELECT day AS day_of_the_week
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT startTime
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT endTime
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT id
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'P';
+
+-- RSA
+CREATE VIEW RSA AS
+  SELECT
+    uuid,
+    _transasID as trID,
+    designator AS nm,
+    name       AS nl,
+    (SELECT (upperLimit).value AS top
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (upperLimit).unit AS top_unit
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (upperLimit).nonNumeric AS UNL
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT AirspaceVolume.upperLimitReference AS format_top
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).value AS bottom
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).unit AS bottom_unit
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT (lowerLimit).nonNumeric AS GND
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+
+    (SELECT day AS day_of_the_week
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT startTime
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT endTime
+     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
+           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT id
+     FROM AirspaceVolume
+     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
+  FROM Airspace
+  WHERE Airspace.type = 'R';
+
+
+CREATE OR REPLACE FUNCTION dra_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+    THEN
+      INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl);
+      INSERT INTO AirspaceVolume VALUES
+        (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
+         NEW.geom);
+      INSERT INTO Timesheet VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime);
+      RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Airspace
+      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
+      WHERE Airspace.uuid = OLD.uuid;
+      UPDATE AirspaceVolume
+      SET
+        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+        upperLimitReference = NEW.format_top,
+        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+        lowerLimitReference = NEW.format_bottom
+      WHERE AirspaceVolume.id = OLD.id;
+      UPDATE Timesheet
+      SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM Airspace
+      WHERE Airspace.uuid = OLD.uuid;
+      DELETE FROM AirspaceVolume
+      WHERE AirspaceVolume.id = OLD.id;
+      DELETE FROM Timesheet
+      WHERE Timesheet.id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+
+CREATE TRIGGER dra_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  DRA FOR EACH ROW EXECUTE PROCEDURE dra_function();
+
+CREATE TRIGGER pra_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  PRA FOR EACH ROW EXECUTE PROCEDURE dra_function();
+
+
+CREATE TRIGGER rsa_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  RSA FOR EACH ROW EXECUTE PROCEDURE dra_function();
 
 CREATE VIEW MVL AS
   SELECT
@@ -3053,8 +3277,6 @@ CREATE VIEW MVL AS
     (SELECT length
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
-
-
     (SELECT (upperLimit).value AS top
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
@@ -3141,17 +3363,20 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Airspace VALUES (NEW.uuid, NEW.designator, NEW.name, NEW.controlType);
+    INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl);
     INSERT INTO AirspaceVolume VALUES
       (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
        NEW.geom);
     INSERT INTO CallsignDetail VALUES (NEW.cs);
     INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
+    INSERT INTO Timesheet VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime);
+    INSERT INTO Unit VALUES (NEW.unit_type);
+
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
       UPDATE Airspace
-      SET uuid = NEW.uuid, designator = NEW.designator, name = NEW.name, controlType = NEW.controlType
+      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
       WHERE Airspace.uuid = OLD.uuid;
       UPDATE AirspaceVolume
       SET
@@ -3164,6 +3389,10 @@ BEGIN
       SET callSign = NEW.cs;
       UPDATE RadioCommunicationChannel
       SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+      UPDATE Timesheet
+      SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
+      UPDATE Unit
+      SET type = NEW.unit_type;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
@@ -3175,6 +3404,8 @@ BEGIN
       WHERE CallsignDetail.id = OLD.id;
       DELETE FROM RadioCommunicationChannel
       WHERE RadioCommunicationChannel.uuid = OLD.uuid;
+      DELETE FROM Timesheet
+      WHERE Timesheet.id = OLD.id;
       RETURN NULL;
   END IF;
   RETURN NEW;
