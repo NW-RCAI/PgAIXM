@@ -2131,6 +2131,7 @@ CREATE TABLE EnRouteSegmentPoint
 CREATE TABLE Route
 (
   uuid                      id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  _transasID  varchar(20),
   designatorPrefix          CodeRouteDesignatorPrefixType,
   designatorSecondLetter    CodeRouteDesignatorLetterType,
   designatorNumber          NoNumberType,
@@ -3045,6 +3046,7 @@ CREATE VIEW DRA AS
     _transasID as trID,
     designator AS nm,
     name       AS nl,
+    type       AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -3100,6 +3102,7 @@ CREATE VIEW PRA AS
     _transasID as trID,
     designator AS nm,
     name       AS nl,
+    type       AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -3156,6 +3159,7 @@ CREATE VIEW RSA AS
     _transasID as trID,
     designator AS nm,
     name       AS nl,
+    type       AS tp,
     (SELECT (upperLimit).value AS top
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -3265,18 +3269,36 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE VIEW MVL AS
   SELECT
     uuid,
-    designatorPrefix,
-    designatorSecondLetter,
-    designatorNumber,
+    _transasID as trID,
+   -- designatorPrefix,
+    -- designatorSecondLetter,
+    -- designatorNumber,
+    locationDesignator as nm,
     (SELECT magneticTrack AS mta
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT reverseMagneticTrack AS rmta
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT length
+    (SELECT length as lb
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
+    (SELECT coalesce((widthLeft).value + (widthRight).value) as wd
+    FROM RouteSegment
+     WHERE RouteSegment.uuidRoute = Route.uuid),
+    -- осталось вставить здесь PS и PE
+    (SELECT designator as PS
+     FROM DesignatedPoint, SignificantPoint, RouteSegment, SegmentPoint
+    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart AND
+           RouteSegment.uuidRoute = Route.uuid),
+    (SELECT designator as PE
+     FROM DesignatedPoint, SignificantPoint, RouteSegment, SegmentPoint
+    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd AND
+           RouteSegment.uuidRoute = Route.uuid),
     (SELECT (upperLimit).value AS top
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
@@ -3286,7 +3308,7 @@ CREATE VIEW MVL AS
     (SELECT (upperLimit).nonNumeric AS UNL
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
+    (SELECT RouteSegment.upperLimitReference AS format_top
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
     (SELECT (lowerLimit).value AS bottom
@@ -3298,62 +3320,11 @@ CREATE VIEW MVL AS
     (SELECT (lowerLimit).nonNumeric AS GND
      FROM RouteSegment
      WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
+    (SELECT RouteSegment.lowerLimitReference AS format_bottom
      FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
+     WHERE RouteSegment.uuidRoute = Route.uuid)
 
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT day AS day_of_the_week
-     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
-           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT startTime
-     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
-           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT endTime
-     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
-           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT Unit.type AS unit_type
-     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT Surface.geom
-     FROM Surface, AirspaceVolume
-     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Route;
+  FROM Route WHERE Route.internationalUse = 'DOM';
 
 
 CREATE OR REPLACE FUNCTION fir_function()
