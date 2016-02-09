@@ -257,7 +257,7 @@ CREATE TYPE ValDistanceSignedType AS (
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValDistanceBaseType
 CREATE DOMAIN ValDistanceBaseType AS DECIMAL(30, 20)
-CHECK (VALUE > 0);
+CHECK (VALUE >= 0);
 
 
 -- A (positive) distance.
@@ -1603,6 +1603,7 @@ CREATE TABLE Curve
   id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_curve'),
   latitude           latitude,
   longitude          longitude,
+  coord              VARCHAR,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(LINESTRING, 4326)
@@ -1872,8 +1873,8 @@ CREATE TABLE GroundLightingAvailability
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
-  uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid),
-  uuidRunwayDirection id REFERENCES RunwayDirection (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid                id PRIMARY KEY REFERENCES GroundLightSystem (uuid)  ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidRunwayDirection id REFERENCES RunwayDirection (uuid)  ON DELETE CASCADE ON UPDATE CASCADE,
   position            CodeRunwaySectionType
 );
 
@@ -1884,7 +1885,7 @@ CREATE TABLE CartographyLabel
   ylbl                longitude,
   rotation            ValAngleType,
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
-  uuidairportheliport id REFERENCES AirportHeliport ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidairportheliport id REFERENCES AirportHeliport (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   geom                GEOMETRY(POINT, 4326)
 );
 
@@ -2150,6 +2151,7 @@ CREATE TABLE Route
 CREATE TABLE RouteSegment
 (
   uuid                             id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  _transasID  varchar(20),
   level                            CodeLevelType,
   upperLimit                       ValDistanceVerticalType,
   upperLimitReference              CodeVerticalReferenceType,
@@ -2176,8 +2178,8 @@ CREATE TABLE RouteSegment
   designatorSuffix                 CodeRouteDesignatorSuffixType,
   uuidRoute                        id REFERENCES Route (uuid),
   idCurve                          INTEGER NOT NULL REFERENCES Curve (id),
-  idEnRouteSegmentPointStart       INTEGER NOT NULL REFERENCES EnRouteSegmentPoint (id),
-  idEnRouteSegmentPointEnd         INTEGER NOT NULL REFERENCES EnRouteSegmentPoint (id)
+  idEnRouteSegmentPointStart       INTEGER REFERENCES EnRouteSegmentPoint (id),
+  idEnRouteSegmentPointEnd         INTEGER REFERENCES EnRouteSegmentPoint (id)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
@@ -2910,36 +2912,6 @@ CREATE VIEW UAA AS
     (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT Unit.type AS unit_type
-     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
     (SELECT id
      FROM AirspaceVolume
      WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
@@ -3266,12 +3238,13 @@ CREATE TRIGGER rsa_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   RSA FOR EACH ROW EXECUTE PROCEDURE dra_function();
 
-CREATE VIEW MVL AS
+/*
+CREATE VIEW MVL2 AS
   SELECT
-    uuid,
+    uuiPrefix,
+    -- designatd,
     _transasID as trID,
-   -- designatorPrefix,
-    -- designatorSecondLetter,
+   -- designatororSecondLetter,
     -- designatorNumber,
     locationDesignator as nm,
     (SELECT magneticTrack AS mta
@@ -3325,6 +3298,96 @@ CREATE VIEW MVL AS
      WHERE RouteSegment.uuidRoute = Route.uuid)
 
   FROM Route WHERE Route.internationalUse = 'DOM';
+*/
+
+CREATE VIEW MVL AS
+  SELECT
+    uuid,
+    _transasID as trID,
+    (SELECT locationDesignator as nm
+       FROM Route
+         WHERE RouteSegment.uuidRoute = Route.uuid),
+    magneticTrack AS mta,
+    reverseMagneticTrack AS rmta,
+    length as lb,
+    coalesce((widthLeft).value + (widthRight).value) as wd,
+    -- осталось вставить здесь PS и PE
+    (SELECT DesignatedPoint.designator as PS
+     FROM DesignatedPoint, SignificantPoint, SegmentPoint
+    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart),
+    (SELECT DesignatedPoint.designator as PE
+     FROM DesignatedPoint, SignificantPoint, SegmentPoint
+    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd),
+     (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+     upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    lowerLimitReference AS format_bottom,
+    (SELECT Curve.geom
+     FROM Curve
+     WHERE Curve.id = RouteSegment.idCurve )
+
+  FROM RouteSegment WHERE  RouteSegment.uuidRoute = (SELECT Route.uuid FROM Route WHERE Route.internationalUse = 'DOM');
+
+CREATE OR REPLACE FUNCTION mvl_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+    THEN
+      INSERT INTO RouteSegment VALUES (NEW.uuid, NEW.trID, NEW.mta, NEW.rmta, NEW.lb, NEW.wd, NEW.top,NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom);
+      INSERT INTO Route VALUES
+        (NEW.nm);
+      INSERT INTO Curve VALUES
+        (NEW.geom);
+      INSERT INTO DesignatedPoint VALUES
+        (NEW.PS, NEW.PE);
+      RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE RouteSegment
+      SET uuid = NEW.uuid, _transasID = NEW.trID, magneticTrack = NEW.mta, reverseMagneticTrack = NEW.rmta, length.value = NEW.lb,
+        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+        upperLimitReference = NEW.format_top,
+        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+        lowerLimitReference = NEW.format_bottom
+      WHERE RouteSegment.uuid = OLD.uuid;
+      UPDATE Route
+      SET locationDesignator = NEW.nm
+      WHERE Route.uuid = OLD.uuid;
+      UPDATE Curve
+      SET geom = NEW.geom;
+      UPDATE DesignatedPoint
+      SET designator = NEW.PS, designator = NEW.PE;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM RouteSegment
+      WHERE RouteSegment.uuid = OLD.uuid;
+      DELETE FROM Route
+      WHERE Route.id = OLD.id;
+      DELETE FROM Curve
+      WHERE Curve.id = OLD.id;
+      DELETE FROM DesignatedPoint
+      WHERE DesignatedPoint.id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+
+CREATE TRIGGER mvl_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  MVL FOR EACH ROW EXECUTE PROCEDURE mvl_function();
 
 
 CREATE OR REPLACE FUNCTION fir_function()
@@ -3459,6 +3522,30 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER inserting_surface
 BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_polygon();
+
+
+CREATE OR REPLACE FUNCTION trigger_insert_curve()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' OR
+      (TG_OP = 'UPDATE' AND (NEW.coord <> OLD.coord)))
+  THEN
+    IF (NEW.srid = 4326)
+    THEN
+      NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid));
+    ELSE
+      NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)), 4326));
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER inserting_curve
+BEFORE INSERT OR UPDATE ON Curve FOR EACH ROW
+EXECUTE PROCEDURE trigger_insert_curve();
 
 
 -- TPM - ППМ МВЛ
