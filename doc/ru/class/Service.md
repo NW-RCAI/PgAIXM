@@ -11,10 +11,10 @@ Service
 ### Родительский класс для:
 
 - F AirTrafficManagementService
-- F ~~AirportGroundService~~
-- F ~~InformationService~~
-- F ~~SearchRescueService~~
-- F ~~TrafficSeparationService~~
+- F AirportGroundService
+- F InformationService
+- F SearchRescueService
+- F TrafficSeparationService
 
 ## Атрибуты
 

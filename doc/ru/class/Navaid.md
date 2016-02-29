@@ -58,14 +58,14 @@ That quality which relates to the trust which can be placed in the correctness o
 
 ### Один ко многим:
 
-- F ~~NavaidOperationalStatus~~
+- O ~~NavaidOperationalStatus~~
 - O ~~Note~~
 
 ### Многие ко многим:
 
 - F AirportHeliport
 - F TouchDownLiftOff
-- F ~~NavaidEquipment~~
+- F NavaidEquipment
 - F ~~RunwayDirection~~
 
 ### Многие к одному:

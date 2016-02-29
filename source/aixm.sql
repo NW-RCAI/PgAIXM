@@ -14,7 +14,8 @@ AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radi
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
 GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
 PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint, airportheliportinformationservice,
-airportheliportairportgroundservice CASCADE;
+airportheliportairportgroundservice, NavaidEquipment, Azimuth, DME, DirectionFinder, Localizer, Elevation, Glidepath, MarkerBeacon, NDB,
+TACAN, SDF, VOR,Navaid_NavaidEquipment CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -35,7 +36,9 @@ CodeAirspaceActivityType, CodeStatusAirspaceType, CodeAirspacePointRoleType, Cod
 CodeRouteNavigationType, CodeRouteDesignatorSuffixType, CodeATCReportingType, CodeFreeFlightType, CodeRVSMPointRoleType, CodeMilitaryRoutePointType,
 CodeCommunicationModeType, CodeRadioEmissionType, CodeCommunicationDirectionType, CodeUnitDependencyType, CodeAuthorityType, CodeNavaidServiceType,
 CodeNavaidPurposeType, CodeSignalPerformanceILSType, CodeCourseQualityILSType, CodeIntegrityLevelILSType, CodeDesignatedPointDesignatorType,
-CodeDesignatedPointType CASCADE;
+CodeDesignatedPointType, CodeMLSAzimuthType, CodeMLSChannelBaseType, CodeDMEType, CodeDMEChannelType, CodeILSBackCourseType,
+CodeMarkerBeaconSignalType, CodeAuralMorseType, CodeNDBUsageType, CodeEmissionBandType, CodeTACANChannelType,
+CodeVORType, CodeNorthReferenceType, codemlschanneltype CASCADE;
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, valflbasetype, valdistancebasetype,
 ValDistanceVerticalType, valdistanceverticalbasetype, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
@@ -1169,7 +1172,6 @@ CHECK (VALUE ~ '(HZ|KHZ|MHZ|GHZ|OTHER: [A-Z]{30})');
 -- Значение частоты (радио) навигационной системы
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_ValFrequencyType
-
 CREATE DOMAIN ValFrequencyBaseType AS DECIMAL
 CHECK (VALUE > 0);
 CREATE TYPE ValFrequencyType AS (
@@ -1205,14 +1207,16 @@ CHECK (VALUE ~ '(A2|A3A|A3B|A3E|A3H|A3J|A3L|A3U|J3E|NONA1A|NONA2A|PON|A8W|A9W|NO
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationChannelType
 CREATE DOMAIN CodeCommunicationChannelType AS VARCHAR;
 
--- Код - индикатор для направленности канала связи
--- UPLINK
--- DOWNLINK
--- BIDIRECTIONAL
--- UPCAST
--- DOWNCAST
---
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
+/*
+Код - индикатор для направленности канала связи
+UPLINK
+DOWNLINK
+BIDIRECTIONAL
+UPCAST
+DOWNCAST
+
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
+*/
 CREATE DOMAIN CodeCommunicationDirectionType AS VARCHAR(40)
 CHECK (VALUE ~ '(UPLINK|DOWNLINK|BIDIRECTIONAL|UPCAST|DOWNCAST|OTHER: [A-Z]{30})');
 
@@ -1321,7 +1325,7 @@ VORTAC - совмещенные маяк VOR и стандартное УВЧ д
 VOR_DME - совмещенное навигационное средство VOR и стандартное УВЧ дальномерное оборудование системы TACAN
 NDB_DME
 TLS
-LOC
+LOC - курсовой посадочный радиомаяк
 LOC_DME
 NDB_MKR
 DF - (радио)пеленгатор
@@ -1484,7 +1488,108 @@ BRG_DIST - точка с 5-значным буквенно-цифровым на
 https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeDesignatedPointType
  */
 CREATE DOMAIN CodeDesignatedPointType AS VARCHAR(40)
-CHECK (VALUE ~ '((ICAO|COORD|CNF|DESIGNED|MTR|TERMINAL|BRG_DIST)|OTHER: [A-Z]{0,30})');
+CHECK (VALUE ~ '(ICAO|COORD|CNF|DESIGNED|MTR|TERMINAL|BRG_DIST)|OTHER: [A-Z]{0,30}');
+
+/*
+Код, указывающий тип азимутального оборудования: нормальное или обратное:
+FWD - прямое
+BWD - обратное
+ */
+CREATE DOMAIN CodeMLSAzimuthType AS VARCHAR(40)
+CHECK (VALUE ~ 'FWD|BWD|OTHER: [A-Z]{0,30}');
+
+--Код, указывающий канал, на котором работает микроволновая система посадки (от 500 до 699)
+CREATE DOMAIN CodeMLSChannelType AS SMALLINT
+CHECK (VALUE >= 500 AND VALUE <= 699);
+
+/*
+The particular spectrum characteristics or accuracy of Ultra High Frequency (UHF) Distance Measuring Equipment (DME), as a category.
+Определенные спектральные характеристики или точность дальномерного оборудования дециметрового диапазона, как категории:
+
+NARROW - характеристики узкого спектра
+PRECISION
+WIDE - широкоспектральные характеристики
+ */
+CREATE DOMAIN CodeDMEType AS VARCHAR(40)
+CHECK (VALUE ~ 'NARROW|PRECISION|WIDE|OTHER: [A-Z]{0,30}');
+
+-- Канал дальномерного оборудования (от 1 до 126 + индекс W,X,Y,Z)
+CREATE DOMAIN CodeDMEChannelType AS VARCHAR(40)
+CHECK (VALUE ~ '[0-9]{1,3}[W-Z]{1}|OTHER: [A-Z]{0,30}');
+
+/*
+Код, указывающий использование сигнала курсового посадочного радиомаяка (localizer) в секторе обратного направления.
+Значения: YES, NO и RSTR (запрещено)
+ */
+CREATE DOMAIN CodeILSBackCourseType AS VARCHAR(40)
+CHECK (VALUE ~ 'YES|NO|RSTR|OTHER: [A-Z]{0,30}');
+
+
+/*
+Код, указывающий класс маркерного радиомаяка:
+FAN - маркерный радиомаяк с веерной диаграммой направленности антенны
+LOW_PWR_FAN - маркерный радиомаяк с веерной диаграммой направленности антенны малой мощности
+Z - Z-радиомаяк
+BONES - маркерный радиомаяк в форме кости
+ */
+CREATE DOMAIN CodeMarkerBeaconSignalType AS VARCHAR(40)
+CHECK (VALUE ~ 'FAN|LOW_PWR_FAN|Z|BONES|OTHER: [A-Z]{0,30}');
+
+-- Последовательность точек и тире, соответствующих коду Морзе
+CREATE DOMAIN CodeAuralMorseType AS VARCHAR(40)
+CHECK (VALUE ~ '([\-\.]*)');
+
+/*
+Класс ненаправленного радиомаяка:
+ENR - путевой ненаправленный радиомаяк
+L - локатор - ненаправленный радиомаяк низкой мощности, используемые как помощь при финальном заходе (радиокомпас)
+MAR - морской радиомаяк
+ */
+CREATE DOMAIN CodeNDBUsageType AS VARCHAR(40)
+CHECK (VALUE ~ 'ENR|L|MAR|OTHER: [A-Z]{0,30}');
+
+/*
+Тип полосы частот:
+U - очень высокие частоты
+H - высокие частоты
+M - средние частоты
+ */
+CREATE DOMAIN CodeEmissionBandType AS VARCHAR(40)
+CHECK (VALUE ~ 'U|H|M|OTHER: [A-Z]{0,30}');
+
+-- A code indicating the channel of a TACAN. Код, обозначающий канал TACAN.
+CREATE DOMAIN CodeTACANChannelType AS VARCHAR(40)
+CHECK (VALUE ~ '1X|	1Y|	2X|	2Y|	3X|	3Y|	4X|	4Y|	5X|	5Y|	6X|	6Y|	7X|	7Y|	8X|	8Y|	9X|	9Y|	10X|	10Y|	11X|	11Y|	12X|	12Y|	13X|	13Y|	14X|	14Y|	15X|	15Y|	16X|	16Y|	17X|	17Y|	17Z|	18X|	18W|	18Y|	18Z|
+  19X|	19Y|	19Z|	20X|	20W|	20Y|	20Z|	21X|	21Y|	21Z|	22X|	22W|	22Y|	22Z|	23X|	23Y|	23Z|	24X|	24W|	24Y|	24Z|	25X|	25Y|	25Z|	26X|	26W|	26Y|	26Z|	27X|	27Y|	27Z|	28X|	28W|	28Y|	28Z|
+  29X|	29Y|	29Z|	30X|	30W|	30Y|	30Z|	31X|	31Y|	31Z|	32X|	32W|	32Y|	32Z|	33X|	33Y|	33Z|	34X|	34W|	34Y|	34Z|	35X|	35Y|	35Z|	36X|	36W|	36Y|	36Z|	37X|	37Y|	37Z|	38X|	38W|	38Y|	38Z|
+  39X|	39Y|	39Z|	40X|	40W|	40Y|	40Z|	41X|	41Y|	41Z|	42X|	42W|	42Y|	42Z|	43X|	43Y|	43Z|	44X|	44W|	44Y|	44Z|	45X|	45Y|	45Z|	46X|	46W|	46Y|	46Z|	47X|	47Y|	47Z|	48X|	48W|	48Y|	48Z|
+  49X|	49Y|	49Z|	50X|	50W|	50Y|	50Z|	51X|	51Y|	51Z|	52X|	52W|	52Y|	52Z|	53X|	53Y|	53Z|	54X|	54W|	54Y|	54Z|	55X|	55Y|	55Z|	56X|	56W|	56Y|	56Z|	57X|	57Y|	58X|	58Y|	59X|	59Y|	60X|	60Y|
+  61X|	61Y|	62X|	62Y|	63X|	63Y|	64X|	64Y|	65X|	65Y|	66X|	66Y|	67X|	67Y|	68X|	68Y|	69X|	69Y|	70X|	70Y|	71X|	71Y|	72X|	72Y|	73X|	73Y|	74X|	74Y|	75X|	75Y|	76X|	76Y|	77X|	77Y|	78X|	78Y|
+  79X|	79Y|	80X|	80Y|	80Z|	81X|	81Y|	81Z|	82X|	82Y|	82Z|	83X|	83Y|	83Z|	84X|	84Y|	84Z|	85X|	85Y|	85Z|	86X|	86Y|	86Z|	87X|	87Y|	87Z|	88X|	88Y|	88Z|	89X|	89Y|	89Z|	90X|	90Y|	90Z|
+  91X|	91Y|	91Z|	92X|	92Y|	92Z|	93X|	93Y|	93Z|	94X|	94Y|	94Z|	95X|	95Y|	95Z|	96X|	96Y|	96Z|	97X|	97Y|	97Z|	98X|	98Y|	98Z|	99X|	99Y|	99Z|	100X|	100Y|	100Z|	101X|	101Y|	101Z|	102X|	102Y|	102Z|
+  103X|	103Y|	103Z|	104X|	104Y|	104Z|	105X|	105Y|	105Z|	106X|	106Y|	106Z|	107X|	107Y|	107Z|	108X|	108Y|	108Z|	109X|	109Y|	109Z|	110X|	110Y|	110Z|	111X|	111Y|	111Z|	112X|	112Y|	112Z|	113X|	113Y|	113Z|	114X|	114Y|	114Z|
+  115X|	115Y|	115Z|	116X|	116Y|	116Z|	117X|	117Y|	117Z|	118X|	118Y|	118Z|	119X|	119Y|	119Z|	120X|	120Y|	121X|	121Y|	122X|	122Y|	123X|	123Y|	124X|	124Y|	125X|	125Y|	126X|	126Y|OTHER: [A-Z]{0,30}');
+
+/*
+A code indicating the type of path to the next point. For example, great circle, clockwise arc, counter clockwise arc, etc.
+Тип пути до следующей точки. Например: дуга большого круга, дуга по часовой стрелке, дуга против часовой стрелки
+VOR - стандартный курсовой всенаправленный радиомаяк ОВЧ-диапазона
+DVOR - доплеровский курсовой всенаправленный радиомаяк ОВЧ-диапазона
+VOT - испытательное оборудование VOR
+*/
+CREATE DOMAIN CodeVORType AS VARCHAR(40)
+CHECK (VALUE ~ 'VOR|DVOR|VOT|OTHER: [A-Z]{0,30}');
+
+/*
+A code indicating the type of the North reference used. Используемый тип северного полюса.
+TRUE - истинный
+MAG - магнитный
+GRID - направление линий север-юг сетки UTM, наложенной на топографические карты США или НАТО.
+The direction of the north-south lines of the Universal Transverse Mercator (UTM) grid imposed on topographic maps by the United States and NATO.
+https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNorthReferenceType
+ */
+CREATE DOMAIN CodeNorthReferenceType AS VARCHAR(40)
+CHECK (VALUE ~ 'TRUE|MAG|GRID|OTHER: [A-Z]{0,30}');
 
 DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
@@ -2097,6 +2202,7 @@ CREATE TABLE AirportHeliportAirportGroundService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_DesignatedPoint
 CREATE TABLE DesignatedPoint
 (
+   _transasID  varchar(20),
   uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
   designator         CodeDesignatedPointDesignatorType,
   type               CodeDesignatedPointType,
@@ -2121,7 +2227,7 @@ CREATE TABLE SegmentPoint
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
 CREATE TABLE EnRouteSegmentPoint
 (
-  id                   INTEGER NOT NULL PRIMARY KEY REFERENCES SegmentPoint (id),
+  id                   INTEGER PRIMARY KEY REFERENCES SegmentPoint (id),
   roleFreeFlight       CodeFreeFlightType,
   roleRVSM             CodeRVSMPointRoleType,
   turnRadius           ValDistanceType,
@@ -2290,6 +2396,7 @@ CREATE TABLE AuthorityForAirspace
 CREATE TABLE Navaid
 (
   uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  _transasID  varchar(20),
   type               CodeNavaidServiceType,
   designator         CodeNavaidDesignatorType,
   name               TextNameType,
@@ -2305,8 +2412,143 @@ CREATE TABLE Navaid
 
 CREATE TABLE AirportHeliport_Navaid
 (
-  uuidNavaid          id REFERENCES Navaid (uuid),
+  uuidNavaid          id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_NavaidEquipment
+CREATE TABLE NavaidEquipment
+(
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  designator 	CodeNavaidDesignatorType,
+  name 	TextNameType,
+  emissionClass 	CodeRadioEmissionType,
+  mobile	CodeYesNoType,
+  magneticVariation	ValMagneticVariationType,
+  magneticVariationAccuracy	ValAngleType,
+  dateMagneticVariation	DateYearType,
+  flightChecked	CodeYesNoType
+);
+
+-- связь многие-ко-многим, поэтому добавляем связующую таблицу:
+CREATE TABLE Navaid_NavaidEquipment
+(
+  uuidNavaid          id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidNavaidEquipment id REFERENCES NavaidEquipment (uuid)
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Azimuth
+CREATE TABLE Azimuth
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  type	CodeMLSAzimuthType,
+  trueBearing	ValBearingType,
+  trueBearingAccuracy	ValAngleType,
+  magneticBearing	ValBearingType,
+  angleProportionalLeft	ValAngleType,
+  angleProportionalRight	ValAngleType,
+  angleCoverLeft	ValAngleType,
+  angleCoverRight	ValAngleType,
+  channel	CodeMLSChannelType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_DME
+CREATE TABLE DME
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  type 	CodeDMEType,
+  channel	CodeDMEChannelType,
+  ghostFrequency	ValFrequencyType,
+  displace	ValDistanceType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_DirectionFinder
+CREATE TABLE DirectionFinder
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  doppler	CodeYesNoType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Elevation
+CREATE TABLE Elevation
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  angleNominal	ValAngleType,
+  angleMinimum	ValAngleType,
+  angleSpan	ValAngleType,
+  angleAccuracy	ValAngleType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Glidepath
+CREATE TABLE Glidepath
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  frequency	ValFrequencyType,
+  slope	ValAngleType,
+  angleAccuracy	ValAngleType,
+  rdh	ValDistanceVerticalType,
+  rdhAccuracy	ValDistanceVerticalType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Localizer
+CREATE TABLE Localizer
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  frequency	ValFrequencyType,
+  magneticBearing	ValBearingType,
+  magneticBearingAccuracy	ValAngleType,
+  trueBearing	ValBearingType,
+  trueBearingAccuracy	ValAngleType,
+  declination	ValMagneticVariationType,
+  widthCourse	ValAngleType,
+  widthCourseAccuracy	ValAngleType,
+  backCourseUsable	CodeILSBackCourseType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_MarkerBeacon
+CREATE TABLE MarkerBeacon
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  class 		CodeMarkerBeaconSignalType,
+  frequency	ValFrequencyType,
+  axisBearing	ValBearingType,
+  auralMorseCode	CodeAuralMorseType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_NDB
+CREATE TABLE NDB
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  frequency	ValFrequencyType,
+  class 		CodeNDBUsageType,
+  emissionBand	CodeEmissionBandType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SDF
+CREATE TABLE SDF
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  frequency	ValFrequencyType,
+  magneticBearing	ValBearingType,
+  trueBearing	ValBearingType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TACAN
+CREATE TABLE TACAN
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  channel	CodeTACANChannelType,
+  declination	ValMagneticVariationType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_VOR
+CREATE TABLE VOR
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  type	CodeVORType,
+  frequency	ValFrequencyType,
+  zeroBearingDirection	CodeNorthReferenceType,
+  declination	ValMagneticVariationType
 );
 
 
@@ -3238,80 +3480,16 @@ CREATE TRIGGER rsa_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   RSA FOR EACH ROW EXECUTE PROCEDURE dra_function();
 
-/*
-CREATE VIEW MVL2 AS
-  SELECT
-    uuiPrefix,
-    -- designatd,
-    _transasID as trID,
-   -- designatororSecondLetter,
-    -- designatorNumber,
-    locationDesignator as nm,
-    (SELECT magneticTrack AS mta
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT reverseMagneticTrack AS rmta
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT length as lb
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT coalesce((widthLeft).value + (widthRight).value) as wd
-    FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    -- осталось вставить здесь PS и PE
-    (SELECT designator as PS
-     FROM DesignatedPoint, SignificantPoint, RouteSegment, SegmentPoint
-    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
-           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart AND
-           RouteSegment.uuidRoute = Route.uuid),
-    (SELECT designator as PE
-     FROM DesignatedPoint, SignificantPoint, RouteSegment, SegmentPoint
-    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
-           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd AND
-           RouteSegment.uuidRoute = Route.uuid),
-    (SELECT (upperLimit).value AS top
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT RouteSegment.upperLimitReference AS format_top
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid),
-    (SELECT RouteSegment.lowerLimitReference AS format_bottom
-     FROM RouteSegment
-     WHERE RouteSegment.uuidRoute = Route.uuid)
-
-  FROM Route WHERE Route.internationalUse = 'DOM';
-*/
 
 CREATE VIEW MVL AS
   SELECT
-    uuid,
-    _transasID as trID,
-    (SELECT locationDesignator as nm
-       FROM Route
-         WHERE RouteSegment.uuidRoute = Route.uuid),
-    magneticTrack AS mta,
-    reverseMagneticTrack AS rmta,
-    length as lb,
+    RouteSegment.uuid AS uuid,
+    RouteSegment._transasID as trID,
+    Route.locationDesignator as nm,
+    RouteSegment.magneticTrack AS mta,
+    RouteSegment.reverseMagneticTrack AS rmta,
+    (length).value as lb,
     coalesce((widthLeft).value + (widthRight).value) as wd,
-    -- осталось вставить здесь PS и PE
     (SELECT DesignatedPoint.designator as PS
      FROM DesignatedPoint, SignificantPoint, SegmentPoint
     WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
@@ -3330,11 +3508,11 @@ CREATE VIEW MVL AS
     (lowerLimit).unit AS bottom_unit,
     (lowerLimit).nonNumeric AS GND,
     lowerLimitReference AS format_bottom,
-    (SELECT Curve.geom
+    (SELECT Curve.geom AS geom
      FROM Curve
      WHERE Curve.id = RouteSegment.idCurve )
 
-  FROM RouteSegment WHERE  RouteSegment.uuidRoute = (SELECT Route.uuid FROM Route WHERE Route.internationalUse = 'DOM');
+  FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.internationalUse = 'DOM';
 
 CREATE OR REPLACE FUNCTION mvl_function()
   RETURNS TRIGGER
@@ -3552,6 +3730,7 @@ EXECUTE PROCEDURE trigger_insert_curve();
 CREATE VIEW TPM AS
   SELECT
     uuid,
+    DesignatedPoint._transasID as trID,
     designator AS nm,
     (SELECT SegmentPoint.reportingATC AS tp
      FROM SegmentPoint, SignificantPoint
@@ -3575,3 +3754,113 @@ CREATE VIEW TPM AS
      WHERE point.id = DesignatedPoint.idPoint)
   FROM DesignatedPoint;
 
+CREATE OR REPLACE FUNCTION tpm_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO DesignatedPoint VALUES (NEW.uuid, NEW.trID, NEW.nm);
+    INSERT INTO SegmentPoint VALUES (NEW.tp);
+    INSERT INTO Point VALUES (NEW.md, NEW.id, NEW.latitude, NEW.longitude, NEW.geom);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE DesignatedPoint
+      SET uuid = NEW.uuid, _transasID = NEW.trID, designator = NEW.nm
+      WHERE DesignatedPoint.uuid = OLD.uuid;
+      UPDATE Point
+      SET
+        magneticVariation = NEW.md,
+        latitude = NEW.latitude,
+        longitude = NEW.longitude,
+        geom = NEW.geom
+      WHERE Point.id = OLD.id;
+      UPDATE SegmentPoint
+      SET reportingATC = NEW.tp;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM DesignatedPoint
+      WHERE DesignatedPoint.uuid = OLD.uuid;
+      DELETE FROM Point
+      WHERE Point.id = OLD.id;
+      DELETE FROM SegmentPoint
+      WHERE SegmentPoint.id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER tpm_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  TPM FOR EACH ROW EXECUTE PROCEDURE tpm_function();
+
+-- РНС
+CREATE VIEW NAV AS
+  SELECT
+    uuid,
+    _transasID as trID,
+    designator AS nm,
+    name as nl,
+    type as tp,
+    CASE WHEN Navaid.type = 'NDB' THEN  (SELECT (frequency).value AS tf
+     FROM NDB
+     WHERE NDB.uuid  = Navaid.uuid)
+      WHEN Navaid.type = 'DME' THEN  (SELECT (ghostFrequency).value AS tf
+     FROM DME
+     WHERE DME.uuid = Navaid.uuid)
+      WHEN Navaid.type = 'ILS_DME' THEN   (SELECT (frequency).value AS tf
+     FROM Localizer
+     WHERE Localizer.uuid = Navaid.uuid )
+      WHEN Navaid.type = 'VORTAC' THEN   (SELECT (frequency).value AS tf
+     FROM VOR
+     WHERE VOR.uuid = Navaid.uuid )
+      ELSE  (SELECT (frequency).value AS tf -- Navaid.type = 'VOR_DME'
+     FROM VOR
+     WHERE VOR.uuid  = Navaid.uuid )
+      END ,
+
+     (SELECT point.magneticVariation AS md
+     FROM point, ElevatedPoint
+     WHERE point.id = ElevatedPoint.id AND
+    ElevatedPoint.id = Navaid.idElevatedPoint),
+    (SELECT point.id
+     FROM point, ElevatedPoint
+     WHERE point.id = ElevatedPoint.id AND
+    ElevatedPoint.id = Navaid.idElevatedPoint),
+    (SELECT point.latitude
+     FROM point, ElevatedPoint
+     WHERE point.id = ElevatedPoint.id AND
+    ElevatedPoint.id = Navaid.idElevatedPoint),
+    (SELECT point.longitude
+     FROM point, ElevatedPoint
+     WHERE point.id = ElevatedPoint.id AND
+    ElevatedPoint.id = Navaid.idElevatedPoint),
+    (SELECT point.geom
+     FROM point, ElevatedPoint
+     WHERE point.id = ElevatedPoint.id AND
+    ElevatedPoint.id = Navaid.idElevatedPoint),
+    (SELECT (elevation).value AS height
+     FROM point, ElevatedPoint
+     WHERE point.id = ElevatedPoint.id AND
+    ElevatedPoint.id = Navaid.idElevatedPoint)
+
+/*
+    N2.ghostFrequency as tf,
+    N3.frequency as tf
+  FROM Navaid N1
+      inner JOIN DME N2 on N2.uuid = N1.uuid
+      INNER JOIN Localizer N3 on N3.uuid = N1.uuid;
+
+       inner join (SELECT uuid, (ghostFrequency).value as tf
+     FROM DME) N2
+on N1.uuid = N2.uuid WHERE  N1.type = 'DME')
+  inner join (SELECT uuid, (frequency).value as tf
+     FROM Localizer
+     ) N3
+on N1.uuid = N3.uuid WHERE  N1.type = 'ILS_DME'; */
+
+FROM Navaid;

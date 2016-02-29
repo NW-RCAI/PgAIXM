@@ -66,6 +66,7 @@ Unit
 
 - O ContactInformation
 - F ~~SurveillanceRadar~~
+- F ~~VerticalStructure~~
 
 ### Многие к одному:
 
