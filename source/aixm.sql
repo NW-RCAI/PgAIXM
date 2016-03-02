@@ -2427,7 +2427,8 @@ CREATE TABLE NavaidEquipment
   magneticVariation	ValMagneticVariationType,
   magneticVariationAccuracy	ValAngleType,
   dateMagneticVariation	DateYearType,
-  flightChecked	CodeYesNoType
+  flightChecked	CodeYesNoType,
+  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id)
 );
 
 -- связь многие-ко-многим, поэтому добавляем связующую таблицу:
@@ -3490,16 +3491,41 @@ CREATE VIEW MVL AS
     RouteSegment.reverseMagneticTrack AS rmta,
     (length).value as lb,
     coalesce((widthLeft).value + (widthRight).value) as wd,
-    (SELECT DesignatedPoint.designator as PS
+    case when (SELECT DesignatedPoint.designator
+       FROM DesignatedPoint, SignificantPoint, SegmentPoint
+      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart) is not null then
+      (SELECT DesignatedPoint.designator as PS
+       FROM DesignatedPoint, SignificantPoint, SegmentPoint
+      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
+      else
+        (SELECT Navaid.designator as PS
+       FROM Navaid, SignificantPoint, SegmentPoint
+      WHERE Navaid.idSignificantPoint = SignificantPoint.id AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
+        end,
+    case when (SELECT DesignatedPoint.designator
+       FROM DesignatedPoint, SignificantPoint, SegmentPoint
+      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd) is not null then
+
+      (SELECT DesignatedPoint.designator as PE
      FROM DesignatedPoint, SignificantPoint, SegmentPoint
     WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
            SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart),
-    (SELECT DesignatedPoint.designator as PE
-     FROM DesignatedPoint, SignificantPoint, SegmentPoint
-    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
+      else
+      (SELECT Navaid.designator as PE
+     FROM Navaid, SignificantPoint, SegmentPoint
+    WHERE Navaid.idSignificantPoint = SignificantPoint.id AND
            SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd),
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
+        end,
      (upperLimit).value AS top,
     (upperLimit).unit AS top_unit,
     (upperLimit).nonNumeric AS UNL,
@@ -3815,10 +3841,7 @@ CREATE VIEW NAV AS
       WHEN Navaid.type = 'ILS_DME' THEN   (SELECT (frequency).value AS tf
      FROM Localizer
      WHERE Localizer.uuid = Navaid.uuid )
-      WHEN Navaid.type = 'VORTAC' THEN   (SELECT (frequency).value AS tf
-     FROM VOR
-     WHERE VOR.uuid = Navaid.uuid )
-      ELSE  (SELECT (frequency).value AS tf -- Navaid.type = 'VOR_DME'
+      ELSE  (SELECT (frequency).value AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
      FROM VOR
      WHERE VOR.uuid  = Navaid.uuid )
       END ,
@@ -3864,3 +3887,63 @@ on N1.uuid = N2.uuid WHERE  N1.type = 'DME')
 on N1.uuid = N3.uuid WHERE  N1.type = 'ILS_DME'; */
 
 FROM Navaid;
+
+
+CREATE OR REPLACE FUNCTION nav_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO Navaid VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl, NEW.tp);
+    INSERT INTO NDB VALUES (NEW.tf);
+    INSERT INTO DME VALUES (NEW.tf);
+    INSERT INTO Localizer VALUES (NEW.tf);
+    INSERT INTO VOR VALUES (NEW.tf);
+    INSERT INTO Point VALUES (NEW.md, NEW.id, NEW.latitude, NEW.longitude, NEW.geom);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Navaid
+      SET uuid = NEW.uuid, _transasID = NEW.trID, designator = NEW.nm, name = NEW.nl, type = NEW.tp
+      WHERE Navaid.uuid = OLD.uuid;
+      UPDATE Point
+      SET
+        magneticVariation = NEW.md,
+        latitude = NEW.latitude,
+        longitude = NEW.longitude,
+        geom = NEW.geom
+      WHERE Point.id = OLD.id;
+      UPDATE NDB
+      SET frequency.value = NEW.tf;
+      UPDATE DME
+      SET ghostFrequency.value = NEW.tf;
+      UPDATE Localizer
+      SET frequency.value = NEW.tf;
+      UPDATE VOR
+      SET frequency.value = NEW.tf;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM Navaid
+      WHERE Navaid.uuid = OLD.uuid;
+      DELETE FROM Point
+      WHERE Point.id = OLD.id;
+      DELETE FROM NDB
+      WHERE NDB.uuid = OLD.uuid;
+      DELETE FROM DME
+      WHERE DME.uuid = OLD.uuid;
+      DELETE FROM Localizer
+      WHERE Localizer.uuid = OLD.uuid;
+      DELETE FROM VOR
+      WHERE VOR.uuid = OLD.uuid;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER nav_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  NAV FOR EACH ROW EXECUTE PROCEDURE nav_function();
