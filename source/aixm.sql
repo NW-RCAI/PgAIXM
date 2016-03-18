@@ -957,7 +957,7 @@ CREATE DOMAIN NoNumberType AS INTEGER;
 https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUpperAlphaType
 */
 CREATE DOMAIN CodeUpperAlphaType AS VARCHAR(40)
-CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A-Z]{0,30})');
 
 -- Классификация путей на пути ATS и северно-атлантические пути.
 -- ATS - участки, используемые с разрешения службы движения при повышенном внимании (путь ATS описан в ICAO Annex 11).
@@ -965,7 +965,7 @@ CHECK (VALUE ~ '((A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)|OTHER: [A
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteType
 CREATE DOMAIN CodeRouteType AS VARCHAR(40)
-CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{0,30})');
 
 -- Правила полета, которые должны соблюдаится воздушным судном.
 -- IFR
@@ -973,7 +973,7 @@ CHECK (VALUE ~ '((ATS|NAT)|OTHER: [A-Z]{30})');
 -- ALL - IFR и VFR
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFlightRuleType
 CREATE DOMAIN CodeFlightRuleType AS VARCHAR(40)
-CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{0,30})');
 
 -- Код, обозначающий, является путь международным или региональным (местным)
 -- INTL - международный
@@ -982,7 +982,7 @@ CHECK (VALUE ~ '((IFR|VFR|ALL)|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteOriginType
 CREATE DOMAIN CodeRouteOriginType AS VARCHAR(40)
-CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{0,30})');
 
 -- Код, разделяющий военный и гражданский типы
 -- MIL - военный
@@ -990,7 +990,7 @@ CHECK (VALUE ~ '((INTL|DOM|BOTH)|OTHER: [A-Z]{30})');
 -- ALL - и военный, и гражданский
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryStatusType
 CREATE DOMAIN CodeMilitaryStatusType AS VARCHAR(40)
-CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{0,30})');
 
 -- Код, обозначающий тип полета на военном тренировочном пути
 -- IR - тренировочный путь IFR
@@ -999,7 +999,7 @@ CHECK (VALUE ~ '((MIL|CIVIL|ALL)|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryTrainingType
 CREATE DOMAIN CodeMilitaryTrainingType AS VARCHAR(40)
-CHECK (VALUE ~ '(IR|VR|SR|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(IR|VR|SR|OTHER: [A-Z]{0,30})');
 
 -- Код, обозначающий первичную активность, имеющую место на воздушном пространстве или причину ее появления
 -- AD_TFC
@@ -1022,7 +1022,7 @@ CHECK (VALUE ~ '(IR|VR|SR|OTHER: [A-Z]{30})');
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspaceActivityType
 CREATE DOMAIN CodeAirspaceActivityType AS VARCHAR(40)
 CHECK (VALUE ~
-       '(AD_TFC|HELI_TFC|TRAINING|AEROBATICS|AIRSHOW|SPORT|ULM|GLIDING|PARAGLIDER|HANGGLIDING|PARACHUTE|AIR_DROP|BALLOON|RADIOSONDE|SPACE_FLIGHT|UAV|AERIAL_WORK|CROP_DUSTING|FIRE_FIGHTING|MILOPS|REFUEL|JET_CLIMBING|EXERCISE|TOWING|NAVAL_EXER|MISSILES|AIR_GUN|ARTILLERY|SHOOTING|BLASTING|WATER_BLASTING|ANTI_HAIL|BIRD|BIRD_MIGRATION|FIREWORK|HI_RADIO|HI_LIGHT|LASER|NATURE|FAUNA|NO_NOISE|ACCIDENT|POPULATION|VIP|VIP_PRES|VIP_VICE|OIL|GAS|REFINERY|CHEMICAL|NUCLEAR|TECHNICAL|ATS|PROCEDURE|OTHER: [A-Z]{30})');
+       '(AD_TFC|HELI_TFC|TRAINING|AEROBATICS|AIRSHOW|SPORT|ULM|GLIDING|PARAGLIDER|HANGGLIDING|PARACHUTE|AIR_DROP|BALLOON|RADIOSONDE|SPACE_FLIGHT|UAV|AERIAL_WORK|CROP_DUSTING|FIRE_FIGHTING|MILOPS|REFUEL|JET_CLIMBING|EXERCISE|TOWING|NAVAL_EXER|MISSILES|AIR_GUN|ARTILLERY|SHOOTING|BLASTING|WATER_BLASTING|ANTI_HAIL|BIRD|BIRD_MIGRATION|FIREWORK|HI_RADIO|HI_LIGHT|LASER|NATURE|FAUNA|NO_NOISE|ACCIDENT|POPULATION|VIP|VIP_PRES|VIP_VICE|OIL|GAS|REFINERY|CHEMICAL|NUCLEAR|TECHNICAL|ATS|PROCEDURE|OTHER: [A-Z]{0,30})');
 
 
 -- Список значений, показывающий состояние активизации воздушного пространства.
@@ -1034,7 +1034,7 @@ CHECK (VALUE ~
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeStatusAirspaceType
 CREATE DOMAIN CodeStatusAirspaceType AS VARCHAR(40)
-CHECK (VALUE ~ '(AVBL_FOR_ACTIVATION|ACTIVE|IN_USE|INТACTIVE|INTERMITTENT|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(AVBL_FOR_ACTIVATION|ACTIVE|IN_USE|INТACTIVE|INTERMITTENT|OTHER: [A-Z]{0,30})');
 
 -- Код, указывающий на тип связи между значимой точкой и воздушным пространством.
 -- ENTRY - первая точка оповещения, отнесенная к значимой точке, через которую проходит воздушное судно или предполагается, что пройдёт, при вхождении в воздушное пространство.
@@ -1043,7 +1043,7 @@ CHECK (VALUE ~ '(AVBL_FOR_ACTIVATION|ACTIVE|IN_USE|INТACTIVE|INTERMITTENT|OTHER
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointRoleType
 CREATE DOMAIN CodeAirspacePointRoleType AS VARCHAR(40)
-CHECK (VALUE ~ '(ENTRY|EXIT|ENTRY_EXIT|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(ENTRY|EXIT|ENTRY_EXIT|OTHER: [A-Z]{0,30})');
 
 -- Код, обозначающий расположение значимой точки в воздушном пространстве
 -- IN - расположена внутри воздушного пространства
@@ -1052,7 +1052,7 @@ CHECK (VALUE ~ '(ENTRY|EXIT|ENTRY_EXIT|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAirspacePointPositionType
 CREATE DOMAIN CodeAirspacePointPositionType AS VARCHAR(40)
-CHECK (VALUE ~ '(IN|OUT|BORDER|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(IN|OUT|BORDER|OTHER: [A-Z]{0,30})');
 
 -- Код, обозначающий уровень
 -- UPPER - верхнее воздушное пространство
@@ -1061,7 +1061,7 @@ CHECK (VALUE ~ '(IN|OUT|BORDER|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeLevelType
 CREATE DOMAIN CodeLevelType AS VARCHAR(40)
-CHECK (VALUE ~ '(UPPER|LOWER|BOTH|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(UPPER|LOWER|BOTH|OTHER: [A-Z]{0,30})');
 
 -- Тип сегмента пути
 -- GRC - окружность большого круга
@@ -1070,7 +1070,7 @@ CHECK (VALUE ~ '(UPPER|LOWER|BOTH|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteSegmentPathType
 CREATE DOMAIN CodeRouteSegmentPathType AS VARCHAR(40)
-CHECK (VALUE ~ '(GRC|RHL|GDS|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(GRC|RHL|GDS|OTHER: [A-Z]{0,30})');
 
 /*
 Тип маршрута с навигационной точки зрения
@@ -1081,7 +1081,7 @@ TACAN - радионавигационная система ближнего д�
 https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteNavigationType
 */
 CREATE DOMAIN CodeRouteNavigationType AS VARCHAR(40)
-CHECK (VALUE ~ '(CONV|RNAV|TACAN|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(CONV|RNAV|TACAN|OTHER: [A-Z]{0,30})');
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRNPType
 CREATE DOMAIN CodeRNPType AS VARCHAR
@@ -1093,7 +1093,7 @@ CHECK (VALUE ~ '[0-9]{1,2}(\.[0-9]{1}){0,1}');
 --
 --  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRouteDesignatorSuffixType
 CREATE DOMAIN CodeRouteDesignatorSuffixType AS VARCHAR(40)
-CHECK (VALUE ~ '(F|G|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(F|G|OTHER: [A-Z]{0,30})');
 
 -- Тип отчета о позиции, требуемого диспетчерской службой аэродрома (ATC Unit)
 -- COMPULSORY - обязательный
@@ -1102,7 +1102,7 @@ CHECK (VALUE ~ '(F|G|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeATCReportingType
 CREATE DOMAIN CodeATCReportingType AS VARCHAR(40)
-CHECK (VALUE ~ '(COMPULSORY|ON_REQUEST|NO_REPORT|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(COMPULSORY|ON_REQUEST|NO_REPORT|OTHER: [A-Z]{0,30})');
 
 
 -- Классификация точек входа и выхода на свободные зоны полета
@@ -1111,7 +1111,7 @@ CHECK (VALUE ~ '(COMPULSORY|ON_REQUEST|NO_REPORT|OTHER: [A-Z]{30})');
 --
 --  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeFreeFlightType
 CREATE DOMAIN CodeFreeFlightType AS VARCHAR(40)
-CHECK (VALUE ~ '(PITCH|CATCH|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(PITCH|CATCH|OTHER: [A-Z]{0,30})');
 
 -- Код, показывающий, что у точки есть особенная роль в контексте RVSM (Cокращенный минимум вертикального эшелонирования)
 -- IN - точка входа RVSM
@@ -1120,7 +1120,7 @@ CHECK (VALUE ~ '(PITCH|CATCH|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRVSMPointRoleType
 CREATE DOMAIN CodeRVSMPointRoleType AS VARCHAR(40)
-CHECK (VALUE ~ '(IN|OUT|IN_OUT|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(IN|OUT|IN_OUT|OTHER: [A-Z]{0,30})');
 
 -- Код, указывающий на использование точки на военном тренировочном пути.
 -- S - точка входа (начала)
@@ -1132,7 +1132,7 @@ CHECK (VALUE ~ '(IN|OUT|IN_OUT|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeMilitaryRoutePointType
 CREATE DOMAIN CodeMilitaryRoutePointType AS VARCHAR(40)
-CHECK (VALUE ~ '(S|T|X|AS|AX|ASX|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(S|T|X|AS|AX|ASX|OTHER: [A-Z]{0,30})');
 
 -- Трехбуквенный код, обозначающий язык (в соответствиии с ISO 639-2)
 --
@@ -1157,7 +1157,7 @@ UHF
 https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationModeType
 */
 CREATE DOMAIN CodeCommunicationModeType AS VARCHAR(40)
-CHECK (VALUE ~ '(HF|VHF|VDL1|VDL2|VDL4|AMSS|ADS_B|ADS_B_VD|HFDL|VHF_833|UHF|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(HF|VHF|VDL1|VDL2|VDL4|AMSS|ADS_B|ADS_B_VD|HFDL|VHF_833|UHF|OTHER: [A-Z]{0,30})');
 
 
 -- HZ - Гц
@@ -1167,7 +1167,7 @@ CHECK (VALUE ~ '(HF|VHF|VDL1|VDL2|VDL4|AMSS|ADS_B|ADS_B_VD|HFDL|VHF_833|UHF|OTHE
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_UomFrequencyType
 CREATE DOMAIN UomFrequencyType AS VARCHAR(40)
-CHECK (VALUE ~ '(HZ|KHZ|MHZ|GHZ|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(HZ|KHZ|MHZ|GHZ|OTHER: [A-Z]{0,30})');
 
 -- Значение частоты (радио) навигационной системы
 --
@@ -1199,7 +1199,7 @@ CREATE TYPE ValFrequencyType AS (
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeRadioEmissionType
 CREATE DOMAIN CodeRadioEmissionType AS VARCHAR(40)
-CHECK (VALUE ~ '(A2|A3A|A3B|A3E|A3H|A3J|A3L|A3U|J3E|NONA1A|NONA2A|PON|A8W|A9W|NOX|G1D|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(A2|A3A|A3B|A3E|A3H|A3J|A3L|A3U|J3E|NONA1A|NONA2A|PON|A8W|A9W|NOX|G1D|OTHER: [A-Z]{0,30})');
 
 
 -- Идентификатор радиоканала, по которому осуществляется связь.
@@ -1218,7 +1218,7 @@ DOWNCAST
 https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCommunicationDirectionType
 */
 CREATE DOMAIN CodeCommunicationDirectionType AS VARCHAR(40)
-CHECK (VALUE ~ '(UPLINK|DOWNLINK|BIDIRECTIONAL|UPCAST|DOWNCAST|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(UPLINK|DOWNLINK|BIDIRECTIONAL|UPCAST|DOWNCAST|OTHER: [A-Z]{0,30})');
 
 /*
 Объединение, предоставляющее отдельный вид обслуживания воздушного движения (ОВД).
@@ -1282,7 +1282,7 @@ CHECK (VALUE ~ '((ACC|ADSU|ADVC|ALPS|AOF|APP|APP_ARR|APP_DEP|ARO|ATCC|ATFMU|ATMU
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeUnitDependencyType
 CREATE DOMAIN CodeUnitDependencyType AS VARCHAR(40)
-CHECK (VALUE ~ '(OWNER|PROVIDER|ALTERNATE|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(OWNER|PROVIDER|ALTERNATE|OTHER: [A-Z]{0,30})');
 
 /*
 Классификация служб эшелонирования полетов и наземного контроля
@@ -1298,7 +1298,7 @@ CTAF - общая консультативная частота аэродром
 https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeServiceATCType
 */
 CREATE DOMAIN CodeServiceATCType AS VARCHAR(40)
-CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{0,30})');
 
 
 -- Тип ответственности, которую организация нест за аэронавигационный объект (например, за воздушное пространство)
@@ -1308,7 +1308,7 @@ CHECK (VALUE ~ '((ACS|UAC|OACS|APP|TWR|ADVS|CTAF)|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeAuthorityType
 CREATE DOMAIN CodeAuthorityType AS VARCHAR(40)
-CHECK (VALUE ~ '(OWN|DLGT|AIS|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(OWN|DLGT|AIS|OTHER: [A-Z]{0,30})');
 
 /*
 Типы служб навигационных средств
@@ -1335,7 +1335,7 @@ https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidSer
 */
 CREATE DOMAIN CodeNavaidServiceType AS VARCHAR(40)
 CHECK (VALUE ~
-       '(VOR|DME|NDB|TACAN|MKR|ILS|ILS_DME|MLS|MLS_DME|VORTAC|VOR_DME|NDB_DME|TLS|LOC|LOC_DME|NDB_MKR|DF|OTHER: [A-Z]{30})');
+       '(VOR|DME|NDB|TACAN|MKR|ILS|ILS_DME|MLS|MLS_DME|VORTAC|VOR_DME|NDB_DME|TLS|LOC|LOC_DME|NDB_MKR|DF|OTHER: [A-Z]{0,30})');
 
 -- Идентификатор РНС
 --
@@ -1350,7 +1350,7 @@ CHECK (VALUE ~ '([A-Z]|\d)*');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNavaidPurposeType
 CREATE DOMAIN CodeNavaidPurposeType AS VARCHAR(40)
-CHECK (VALUE ~ '(TERMINAL|ENROUTE|ALL|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(TERMINAL|ENROUTE|ALL|OTHER: [A-Z]{0,30})');
 
 -- ...
 -- I
@@ -1359,7 +1359,7 @@ CHECK (VALUE ~ '(TERMINAL|ENROUTE|ALL|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeSignalPerformanceILSType
 CREATE DOMAIN CodeSignalPerformanceILSType AS VARCHAR(40)
-CHECK (VALUE ~ '(I|II|III|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(I|II|III|OTHER: [A-Z]{0,30})');
 
 -- A
 -- B
@@ -1370,12 +1370,12 @@ CHECK (VALUE ~ '(I|II|III|OTHER: [A-Z]{30})');
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeCourseQualityILSType
 CREATE DOMAIN CodeCourseQualityILSType AS VARCHAR(40)
-CHECK (VALUE ~ '(A|B|C|D|E|T|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(A|B|C|D|E|T|OTHER: [A-Z]{0,30})');
 
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeIntegrityLevelILSType
 CREATE DOMAIN CodeIntegrityLevelILSType AS VARCHAR(40)
-CHECK (VALUE ~ '(1|2|3|4|OTHER: [A-Z]{30})');
+CHECK (VALUE ~ '(1|2|3|4|OTHER: [A-Z]{0,30})');
 
 /*
 TWR - диспетчерская служба с аэродромной вышки
@@ -1696,8 +1696,8 @@ CREATE TABLE ElevatedPoint
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
 CREATE TABLE SignificantPoint
 (
-  id      INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_significant_point'),
-  idPoint INTEGER NOT NULL REFERENCES Point (id)
+  id      INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_significant_point'),
+  idPoint INTEGER NOT NULL REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 --
@@ -1775,7 +1775,7 @@ CREATE TABLE AirportHeliport
   certificationDate           DateType,
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
-  idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id),
+  idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
   idElevatedSurface           INTEGER REFERENCES ElevatedSurface (id),
   idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
 );
@@ -2004,7 +2004,7 @@ CREATE TABLE Unit
   compliantICAO             CodeYesNoType,
   designator                CodeOrganisationDesignatorType,
   military                  CodeMilitaryOperationsType,
-  idElevatedPoint           INTEGER REFERENCES ElevatedPoint (id),
+  idElevatedPoint           INTEGER REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidAirportHeliport       id REFERENCES AirportHeliport (uuid)  ON DELETE CASCADE ON UPDATE CASCADE,
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
@@ -2026,7 +2026,7 @@ CREATE TABLE Service
   rank             CodeFacilityRankingType,
   compliantICAO    CodeYesNoType,
   name             TextNameType,
-  idElevatedPoint  INTEGER REFERENCES ElevatedPoint (id),
+  idElevatedPoint  INTEGER REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidUnit         id REFERENCES Unit (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -2109,7 +2109,7 @@ CREATE TABLE RadioCommunicationChannel
   selectiveCall         CodeYesNoType,
   flightChecked         CodeYesNoType,
   trafficDirection      CodeCommunicationDirectionType,
-  idElevatedPoint       INTEGER REFERENCES ElevatedPoint (id)
+  idElevatedPoint       INTEGER REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Service_RadioCommunicationChannel
@@ -2207,8 +2207,8 @@ CREATE TABLE DesignatedPoint
   designator         CodeDesignatedPointDesignatorType,
   type               CodeDesignatedPointType,
   name               TextNameType,
-  idPoint            INTEGER NOT NULL REFERENCES Point (id),
-  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
+  idPoint            INTEGER NOT NULL REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 --
@@ -2221,13 +2221,13 @@ CREATE TABLE SegmentPoint
   flyOver            CodeYesNoType,
   waypoint           CodeYesNoType,
   radarGuidance      CodeYesNoType,
-  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
 CREATE TABLE EnRouteSegmentPoint
 (
-  id                   INTEGER PRIMARY KEY REFERENCES SegmentPoint (id),
+  id                   INTEGER PRIMARY KEY REFERENCES SegmentPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
   roleFreeFlight       CodeFreeFlightType,
   roleRVSM             CodeRVSMPointRoleType,
   turnRadius           ValDistanceType,
@@ -2283,9 +2283,9 @@ CREATE TABLE RouteSegment
   requiredNavigationPerformance    CodeRNPType,
   designatorSuffix                 CodeRouteDesignatorSuffixType,
   uuidRoute                        id REFERENCES Route (uuid),
-  idCurve                          INTEGER NOT NULL REFERENCES Curve (id),
-  idEnRouteSegmentPointStart       INTEGER REFERENCES EnRouteSegmentPoint (id),
-  idEnRouteSegmentPointEnd         INTEGER REFERENCES EnRouteSegmentPoint (id)
+  idCurve                          INTEGER NOT NULL REFERENCES Curve (id)  ON DELETE CASCADE ON UPDATE CASCADE,
+  idEnRouteSegmentPointStart       INTEGER REFERENCES EnRouteSegmentPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE,
+  idEnRouteSegmentPointEnd         INTEGER REFERENCES EnRouteSegmentPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
@@ -2309,7 +2309,7 @@ CREATE TABLE Airspace
   designatorICAO       CodeYesNoType,
   controlType          CodeMilitaryOperationsType,
   upperLowerSeparation ValFLType,
-  uuidRoute            id REFERENCES Route (uuid)
+  uuidRoute            id REFERENCES Route (uuid)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Airspace_AirTrafficManagementService
@@ -2321,7 +2321,7 @@ CREATE TABLE Airspace_AirTrafficManagementService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id),
+  id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id)  ON DELETE CASCADE ON UPDATE CASCADE,
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
@@ -2379,7 +2379,7 @@ CREATE TABLE SignificantPointInAirspace
   type               CodeAirspacePointRoleType,
   relativeLocation   CodeAirspacePointPositionType,
   uuidAirspace       id REFERENCES Airspace (uuid),
-  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
@@ -2405,15 +2405,15 @@ CREATE TABLE Navaid
   signalPerformance  CodeSignalPerformanceILSType,
   courseQuality      CodeCourseQualityILSType,
   integrityLevel     CodeIntegrityLevelILSType,
-  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id),
-  idSignificantPoint INTEGER REFERENCES SignificantPoint (id)
+  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  idSignificantPoint INTEGER REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 
 );
 
 CREATE TABLE AirportHeliport_Navaid
 (
   uuidNavaid          id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
-  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_NavaidEquipment
@@ -2428,14 +2428,14 @@ CREATE TABLE NavaidEquipment
   magneticVariationAccuracy	ValAngleType,
   dateMagneticVariation	DateYearType,
   flightChecked	CodeYesNoType,
-  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id)
+  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- связь многие-ко-многим, поэтому добавляем связующую таблицу:
 CREATE TABLE Navaid_NavaidEquipment
 (
   uuidNavaid          id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
-  uuidNavaidEquipment id REFERENCES NavaidEquipment (uuid)
+  uuidNavaidEquipment id REFERENCES NavaidEquipment (uuid)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Azimuth
@@ -3254,6 +3254,66 @@ CREATE VIEW FIR AS
   FROM Airspace
   WHERE Airspace.type = 'FIR';
 
+CREATE OR REPLACE FUNCTION fir_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl);
+    INSERT INTO AirspaceVolume VALUES
+      (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
+       NEW.geom);
+    INSERT INTO CallsignDetail VALUES (NEW.cs);
+    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
+    INSERT INTO Timesheet VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime);
+    INSERT INTO Unit VALUES (NEW.unit_type);
+
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Airspace
+      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
+      WHERE Airspace.uuid = OLD.uuid;
+      UPDATE AirspaceVolume
+      SET
+        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+        upperLimitReference = NEW.format_top,
+        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+        lowerLimitReference = NEW.format_bottom
+      WHERE AirspaceVolume.id = OLD.id;
+      UPDATE CallsignDetail
+      SET callSign = NEW.cs;
+      UPDATE RadioCommunicationChannel
+      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+      UPDATE Timesheet
+      SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
+      UPDATE Unit
+      SET type = NEW.unit_type;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM Airspace
+      WHERE Airspace.uuid = OLD.uuid;
+      DELETE FROM AirspaceVolume
+      WHERE AirspaceVolume.id = OLD.id;
+      DELETE FROM CallsignDetail
+      WHERE CallsignDetail.id = OLD.id;
+      DELETE FROM RadioCommunicationChannel
+      WHERE RadioCommunicationChannel.uuid = OLD.uuid;
+      DELETE FROM Timesheet
+      WHERE Timesheet.id = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER fir_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  FIR FOR EACH ROW EXECUTE PROCEDURE fir_function();
+
 -- DRA
 CREATE VIEW DRA AS
   SELECT
@@ -3534,11 +3594,14 @@ CREATE VIEW MVL AS
     (lowerLimit).unit AS bottom_unit,
     (lowerLimit).nonNumeric AS GND,
     lowerLimitReference AS format_bottom,
+    (SELECT Curve.id
+     FROM Curve
+     WHERE Curve.id = RouteSegment.idCurve ),
     (SELECT Curve.geom AS geom
      FROM Curve
      WHERE Curve.id = RouteSegment.idCurve )
 
-  FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.internationalUse = 'DOM';
+  FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.type = 'ATS';
 
 CREATE OR REPLACE FUNCTION mvl_function()
   RETURNS TRIGGER
@@ -3566,93 +3629,44 @@ BEGIN
       WHERE RouteSegment.uuid = OLD.uuid;
       UPDATE Route
       SET locationDesignator = NEW.nm
-      WHERE Route.uuid = OLD.uuid;
+      WHERE Route.uuid = (SELECT RouteSegment.uuidRoute FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid);
       UPDATE Curve
-      SET geom = NEW.geom;
+      SET geom = NEW.geom
+      WHERE Curve.id = OLD.id;
       UPDATE DesignatedPoint
-      SET designator = NEW.PS, designator = NEW.PE;
+      SET designator = NEW.PE
+      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+          (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointEnd FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
+      UPDATE DesignatedPoint
+      SET designator = NEW.PS
+      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+          (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointStart FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
       DELETE FROM RouteSegment
       WHERE RouteSegment.uuid = OLD.uuid;
       DELETE FROM Route
-      WHERE Route.id = OLD.id;
+      WHERE Route.uuid = (SELECT RouteSegment.uuidRoute FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid);
       DELETE FROM Curve
       WHERE Curve.id = OLD.id;
       DELETE FROM DesignatedPoint
-      WHERE DesignatedPoint.id = OLD.id;
+      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+          (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointEnd FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
+      DELETE FROM DesignatedPoint
+      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+          (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointStart FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
       RETURN NULL;
   END IF;
   RETURN NEW;
 END;
 $function$;
-
 
 CREATE TRIGGER mvl_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   MVL FOR EACH ROW EXECUTE PROCEDURE mvl_function();
 
 
-CREATE OR REPLACE FUNCTION fir_function()
-  RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-  IF TG_OP = 'INSERT'
-  THEN
-    INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl);
-    INSERT INTO AirspaceVolume VALUES
-      (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
-       NEW.geom);
-    INSERT INTO CallsignDetail VALUES (NEW.cs);
-    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
-    INSERT INTO Timesheet VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime);
-    INSERT INTO Unit VALUES (NEW.unit_type);
-
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE'
-    THEN
-      UPDATE Airspace
-      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
-      WHERE Airspace.uuid = OLD.uuid;
-      UPDATE AirspaceVolume
-      SET
-        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
-        upperLimitReference = NEW.format_top,
-        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-        lowerLimitReference = NEW.format_bottom
-      WHERE AirspaceVolume.id = OLD.id;
-      UPDATE CallsignDetail
-      SET callSign = NEW.cs;
-      UPDATE RadioCommunicationChannel
-      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
-      UPDATE Timesheet
-      SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
-      UPDATE Unit
-      SET type = NEW.unit_type;
-      RETURN NEW;
-  ELSIF TG_OP = 'DELETE'
-    THEN
-      DELETE FROM Airspace
-      WHERE Airspace.uuid = OLD.uuid;
-      DELETE FROM AirspaceVolume
-      WHERE AirspaceVolume.id = OLD.id;
-      DELETE FROM CallsignDetail
-      WHERE CallsignDetail.id = OLD.id;
-      DELETE FROM RadioCommunicationChannel
-      WHERE RadioCommunicationChannel.uuid = OLD.uuid;
-      DELETE FROM Timesheet
-      WHERE Timesheet.id = OLD.id;
-      RETURN NULL;
-  END IF;
-  RETURN NEW;
-END;
-$function$;
-
-CREATE TRIGGER fir_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  FIR FOR EACH ROW EXECUTE PROCEDURE fir_function();
 
 -- Триггеры для координат
 
@@ -3762,7 +3776,6 @@ CREATE VIEW TPM AS
      FROM SegmentPoint, SignificantPoint
      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
            SignificantPoint.id = SegmentPoint.idSignificantPoint),
-
     (SELECT point.magneticVariation AS md
      FROM point
      WHERE point.id = DesignatedPoint.idPoint),
@@ -3778,7 +3791,9 @@ CREATE VIEW TPM AS
     (SELECT point.geom
      FROM point
      WHERE point.id = DesignatedPoint.idPoint)
-  FROM DesignatedPoint;
+  FROM DesignatedPoint   ;
+--  WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id=(SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id=
+  --            (SELECT idEnRouteSegmentPointStart FROM RouteSegment WHERE RouteSegment.uuidRoute = (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL'))));
 
 CREATE OR REPLACE FUNCTION tpm_function()
   RETURNS TRIGGER
@@ -3870,22 +3885,6 @@ CREATE VIEW NAV AS
      FROM point, ElevatedPoint
      WHERE point.id = ElevatedPoint.id AND
     ElevatedPoint.id = Navaid.idElevatedPoint)
-
-/*
-    N2.ghostFrequency as tf,
-    N3.frequency as tf
-  FROM Navaid N1
-      inner JOIN DME N2 on N2.uuid = N1.uuid
-      INNER JOIN Localizer N3 on N3.uuid = N1.uuid;
-
-       inner join (SELECT uuid, (ghostFrequency).value as tf
-     FROM DME) N2
-on N1.uuid = N2.uuid WHERE  N1.type = 'DME')
-  inner join (SELECT uuid, (frequency).value as tf
-     FROM Localizer
-     ) N3
-on N1.uuid = N3.uuid WHERE  N1.type = 'ILS_DME'; */
-
 FROM Navaid;
 
 
@@ -3928,6 +3927,12 @@ BEGIN
     THEN
       DELETE FROM Navaid
       WHERE Navaid.uuid = OLD.uuid;
+      DELETE FROM EnRouteSegmentPoint
+      WHERE EnRouteSegmentPoint.id = OLD.id;
+      DELETE FROM SegmentPoint
+      WHERE SegmentPoint.id = OLD.id;
+      DELETE FROM SignificantPoint
+      WHERE SignificantPoint.id = OLD.id;
       DELETE FROM Point
       WHERE Point.id = OLD.id;
       DELETE FROM NDB
