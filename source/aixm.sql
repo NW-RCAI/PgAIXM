@@ -49,7 +49,7 @@ DROP FUNCTION IF EXISTS trigger_insert();
 DROP FUNCTION IF EXISTS trigger_update();
 DROP FUNCTION IF EXISTS trigger_insert_polygon();
 
-DROP VIEW IF EXISTS airports, AIRP_TABLE, CTA, CTA_2, CTR, DRA, PRA, RSA;
+--DROP VIEW IF EXISTS airports, AIRP_TABLE, CTA, CTA_2, CTR, DRA, PRA, RSA;
 
 
 --
@@ -1691,17 +1691,8 @@ CREATE TABLE ElevatedPoint
   verticalAccuracy ValDistanceType
 );
 
--- Significant Point - это выбор между точками РНС, аэродромами, центральными точками ВПП, назначенными точками (ППМ, Designated Point) и точками взлета-посадки
---
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
-CREATE TABLE SignificantPoint
-(
-  id      INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_significant_point'),
-  idPoint INTEGER NOT NULL REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE
-);
 
---
---
+
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
 CREATE TABLE Curve
 (
@@ -1776,8 +1767,7 @@ CREATE TABLE AirportHeliport
   certificationExpirationDate DateType,
   uuidOrganisationAuthority   id REFERENCES OrganisationAuthority (uuid),
   idElevatedPoint             INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
-  idElevatedSurface           INTEGER REFERENCES ElevatedSurface (id),
-  idSignificantPoint          INTEGER REFERENCES SignificantPoint (id)
+  idElevatedSurface           INTEGER REFERENCES ElevatedSurface (id)
 );
 
 
@@ -2189,16 +2179,13 @@ CREATE TABLE AirportHeliportInformationService
 );
 
 --
---
---
 CREATE TABLE AirportHeliportAirportGroundService
 (
  uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
  uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
 );
 
---
---
+
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_DesignatedPoint
 CREATE TABLE DesignatedPoint
 (
@@ -2207,32 +2194,9 @@ CREATE TABLE DesignatedPoint
   designator         CodeDesignatedPointDesignatorType,
   type               CodeDesignatedPointType,
   name               TextNameType,
-  idPoint            INTEGER NOT NULL REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE,
-  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
+  idPoint            INTEGER NOT NULL REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
---
---
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
-CREATE TABLE SegmentPoint
-(
-  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_segment_point'),
-  reportingATC       CodeATCReportingType,
-  flyOver            CodeYesNoType,
-  waypoint           CodeYesNoType,
-  radarGuidance      CodeYesNoType,
-  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
-CREATE TABLE EnRouteSegmentPoint
-(
-  id                   INTEGER PRIMARY KEY REFERENCES SegmentPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
-  roleFreeFlight       CodeFreeFlightType,
-  roleRVSM             CodeRVSMPointRoleType,
-  turnRadius           ValDistanceType,
-  roleMilitaryTraining CodeMilitaryRoutePointType
-);
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
 CREATE TABLE Route
@@ -2253,49 +2217,6 @@ CREATE TABLE Route
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid)
 );
 
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RouteSegment
-CREATE TABLE RouteSegment
-(
-  uuid                             id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  _transasID  varchar(20),
-  level                            CodeLevelType,
-  upperLimit                       ValDistanceVerticalType,
-  upperLimitReference              CodeVerticalReferenceType,
-  lowerLimit                       ValDistanceVerticalType,
-  lowerLimitReference              CodeVerticalReferenceType,
-  minimumObstacleClearanceAltitude ValDistanceVerticalType,
-  pathType                         CodeRouteSegmentPathType,
-  trueTrack                        ValBearingType,
-  magneticTrack                    ValBearingType,
-  reverseTrueTrack                 ValBearingType,
-  reverseMagneticTrack             ValBearingType,
-  length                           ValDistanceType,
-  widthLeft                        ValDistanceType,
-  widthRight                       ValDistanceType,
-  turnDirection                    CodeDirectionTurnType,
-  signalGap                        CodeYesNoType,
-  minimumEnrouteAltitude           ValDistanceVerticalType,
-  minimumCrossingAtEnd             ValDistanceVerticalType,
-  minimumCrossingAtEndReference    CodeVerticalReferenceType,
-  maximumCrossingAtEnd             ValDistanceVerticalType,
-  maximumCrossingAtEndReference    CodeVerticalReferenceType,
-  navigationType                   CodeRouteNavigationType,
-  requiredNavigationPerformance    CodeRNPType,
-  designatorSuffix                 CodeRouteDesignatorSuffixType,
-  uuidRoute                        id REFERENCES Route (uuid),
-  idCurve                          INTEGER NOT NULL REFERENCES Curve (id)  ON DELETE CASCADE ON UPDATE CASCADE,
-  idEnRouteSegmentPointStart       INTEGER REFERENCES EnRouteSegmentPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE,
-  idEnRouteSegmentPointEnd         INTEGER REFERENCES EnRouteSegmentPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
-CREATE TABLE RoutePortion
-(
-  id                             INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_route_portion'),
-  idSignificantPointStart        INTEGER NOT NULL REFERENCES SignificantPoint (id),
-  idSignificantPointIntermediate INTEGER NOT NULL REFERENCES SignificantPoint (id),
-  idSignificantPointEnd          INTEGER NOT NULL REFERENCES SignificantPoint (id)
-);
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Airspace
 CREATE TABLE Airspace
@@ -2372,15 +2293,6 @@ CREATE TABLE AirspaceVolume
   uuidAirspace          id REFERENCES Airspace (uuid)  ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace
-CREATE TABLE SignificantPointInAirspace
-(
-  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  type               CodeAirspacePointRoleType,
-  relativeLocation   CodeAirspacePointPositionType,
-  uuidAirspace       id REFERENCES Airspace (uuid),
-  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE
-);
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
 CREATE TABLE AuthorityForAirspace
@@ -2396,7 +2308,7 @@ CREATE TABLE AuthorityForAirspace
 CREATE TABLE Navaid
 (
   uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
-  _transasID  varchar(20),
+  _transasID         varchar(20),
   type               CodeNavaidServiceType,
   designator         CodeNavaidDesignatorType,
   name               TextNameType,
@@ -2405,15 +2317,101 @@ CREATE TABLE Navaid
   signalPerformance  CodeSignalPerformanceILSType,
   courseQuality      CodeCourseQualityILSType,
   integrityLevel     CodeIntegrityLevelILSType,
-  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
-  idSignificantPoint INTEGER REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
-
+  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE AirportHeliport_Navaid
 (
   uuidNavaid          id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid)  ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+-- Significant Point - это выбор между точками РНС, аэродромами, центральными точками ВПП, назначенными точками (ППМ, Designated Point) и точками взлета-посадки
+--
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
+CREATE TABLE SignificantPoint
+(
+  id      INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_significant_point'),
+  idPoint INTEGER REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidDesignatedPoint id REFERENCES DesignatedPoint (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidNavaid id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidAirportHeliport id REFERENCES AirportHeliport (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SegmentPoint
+CREATE TABLE SegmentPoint
+(
+  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_segment_point'),
+  reportingATC       CodeATCReportingType,
+  flyOver            CodeYesNoType,
+  waypoint           CodeYesNoType,
+  radarGuidance      CodeYesNoType,
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_EnRouteSegmentPoint0
+CREATE TABLE EnRouteSegmentPoint
+(
+  id                   INTEGER PRIMARY KEY REFERENCES SegmentPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  roleFreeFlight       CodeFreeFlightType,
+  roleRVSM             CodeRVSMPointRoleType,
+  turnRadius           ValDistanceType,
+  roleMilitaryTraining CodeMilitaryRoutePointType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RouteSegment
+CREATE TABLE RouteSegment
+(
+  uuid                             id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  _transasID  varchar(20),
+  level                            CodeLevelType,
+  upperLimit                       ValDistanceVerticalType,
+  upperLimitReference              CodeVerticalReferenceType,
+  lowerLimit                       ValDistanceVerticalType,
+  lowerLimitReference              CodeVerticalReferenceType,
+  minimumObstacleClearanceAltitude ValDistanceVerticalType,
+  pathType                         CodeRouteSegmentPathType,
+  trueTrack                        ValBearingType,
+  magneticTrack                    ValBearingType,
+  reverseTrueTrack                 ValBearingType,
+  reverseMagneticTrack             ValBearingType,
+  length                           ValDistanceType,
+  widthLeft                        ValDistanceType,
+  widthRight                       ValDistanceType,
+  turnDirection                    CodeDirectionTurnType,
+  signalGap                        CodeYesNoType,
+  minimumEnrouteAltitude           ValDistanceVerticalType,
+  minimumCrossingAtEnd             ValDistanceVerticalType,
+  minimumCrossingAtEndReference    CodeVerticalReferenceType,
+  maximumCrossingAtEnd             ValDistanceVerticalType,
+  maximumCrossingAtEndReference    CodeVerticalReferenceType,
+  navigationType                   CodeRouteNavigationType,
+  requiredNavigationPerformance    CodeRNPType,
+  designatorSuffix                 CodeRouteDesignatorSuffixType,
+  uuidRoute                        id REFERENCES Route (uuid),
+  idCurve                          INTEGER NOT NULL REFERENCES Curve (id)  ON DELETE CASCADE ON UPDATE CASCADE,
+  idEnRouteSegmentPointStart       INTEGER REFERENCES EnRouteSegmentPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE,
+  idEnRouteSegmentPointEnd         INTEGER REFERENCES EnRouteSegmentPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace
+CREATE TABLE SignificantPointInAirspace
+(
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type               CodeAirspacePointRoleType,
+  relativeLocation   CodeAirspacePointPositionType,
+  uuidAirspace       id REFERENCES Airspace (uuid),
+  idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id)  ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RoutePortion
+CREATE TABLE RoutePortion
+(
+  id                             INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_route_portion'),
+  idSignificantPointStart        INTEGER NOT NULL REFERENCES SignificantPoint (id),
+  idSignificantPointIntermediate INTEGER NOT NULL REFERENCES SignificantPoint (id),
+  idSignificantPointEnd          INTEGER NOT NULL REFERENCES SignificantPoint (id)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_NavaidEquipment
@@ -2599,21 +2597,12 @@ CREATE OR REPLACE VIEW ARP AS
      FROM Unit
      WHERE Unit.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
-    (SELECT point.id
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.latitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.longitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT POINT.geom
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
-
-  FROM airportheliport
-  WHERE airportheliport.type IS NULL;
+     point.id,
+     point.latitude,
+     point.longitude,
+     point.geom
+  FROM airportheliport, point
+  WHERE airportheliport.type IS NULL AND point.id = airportheliport.idelevatedpoint;
 -- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
 
 CREATE OR REPLACE VIEW ALS AS
@@ -2662,21 +2651,12 @@ CREATE OR REPLACE VIEW ALS AS
      FROM Unit
      WHERE Unit.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
-    (SELECT point.id
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.latitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT point.longitude
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint),
-    (SELECT POINT.geom
-     FROM point, elevatedpoint
-     WHERE point.id = elevatedpoint.id AND elevatedpoint.id = airportheliport.idelevatedpoint)
-
-  FROM airportheliport
-  WHERE airportheliport.type IS NOT NULL;
+     point.id,
+     point.latitude,
+     point.longitude,
+     point.geom
+  FROM airportheliport, point
+  WHERE airportheliport.type IS NOT NULL AND point.id = airportheliport.idelevatedpoint;
 
 CREATE OR REPLACE FUNCTION arp_function()
   RETURNS TRIGGER
@@ -2853,35 +2833,19 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 
 CREATE VIEW CTA AS
   SELECT
-    uuid,
-    _transasID as trID,
-    designator  AS nm,
-    name        AS nl,
-    controlType AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    Airspace.uuid,
+    Airspace._transasID as trID,
+    Airspace.designator  AS nm,
+    Airspace.name        AS nl,
+    Airspace.controlType AS tp,
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
      WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
@@ -2912,14 +2876,12 @@ CREATE VIEW CTA AS
            AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+     AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'CTA';
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'CTA' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 CREATE OR REPLACE FUNCTION cta_function()
   RETURNS TRIGGER
@@ -2979,30 +2941,14 @@ CREATE VIEW CTR AS
     designator  AS nm,
     name        AS nl,
     controlType AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
      WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
@@ -3033,14 +2979,12 @@ CREATE VIEW CTR AS
            AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'CTR';
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'CTR'  AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 
 CREATE TRIGGER ctr_trigger
@@ -3055,30 +2999,14 @@ CREATE VIEW TMA AS
     designator  AS nm,
     name        AS nl,
     controlType AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
      WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
@@ -3109,14 +3037,12 @@ CREATE VIEW TMA AS
            AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+     AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'TMA';
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'TMA'  AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 
 CREATE TRIGGER tma_trigger
@@ -3131,38 +3057,20 @@ CREATE VIEW UAA AS
     designator  AS nm,
     name        AS nl,
     controlType AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
+    AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'ATZ';
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'ATZ' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 
 CREATE TRIGGER uaa_trigger
@@ -3176,30 +3084,14 @@ CREATE VIEW FIR AS
     _transasID as trID,
     designator AS nm,
     name       AS nl,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
      WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
@@ -3245,14 +3137,12 @@ CREATE VIEW FIR AS
            AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'FIR';
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'FIR' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 CREATE OR REPLACE FUNCTION fir_function()
   RETURNS TRIGGER
@@ -3322,30 +3212,14 @@ CREATE VIEW DRA AS
     designator AS nm,
     name       AS nl,
     type       AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT day AS day_of_the_week
      FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
      WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
@@ -3361,14 +3235,12 @@ CREATE VIEW DRA AS
      WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
            PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'D';
+  FROM Airspace,AirspaceVolume
+  WHERE Airspace.type = 'D' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 -- PRA
 CREATE VIEW PRA AS
@@ -3378,31 +3250,14 @@ CREATE VIEW PRA AS
     designator AS nm,
     name       AS nl,
     type       AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT day AS day_of_the_week
      FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
      WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
@@ -3418,14 +3273,12 @@ CREATE VIEW PRA AS
      WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
            PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'P';
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'P' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 -- RSA
 CREATE VIEW RSA AS
@@ -3435,31 +3288,14 @@ CREATE VIEW RSA AS
     designator AS nm,
     name       AS nl,
     type       AS tp,
-    (SELECT (upperLimit).value AS top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).unit AS top_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (upperLimit).nonNumeric AS UNL
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.upperLimitReference AS format_top
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).value AS bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).unit AS bottom_unit
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT (lowerLimit).nonNumeric AS GND
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-    (SELECT AirspaceVolume.lowerLimitReference AS format_bottom
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
-
+    (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT day AS day_of_the_week
      FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
      WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
@@ -3475,15 +3311,12 @@ CREATE VIEW RSA AS
      WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
            PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
      LIMIT 1),
-    (SELECT id
-     FROM AirspaceVolume
-     WHERE AirspaceVolume.uuidAirspace = Airspace.uuid),
+    AirspaceVolume.id,
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
-  FROM Airspace
-  WHERE Airspace.type = 'R';
-
+  FROM Airspace, AirspaceVolume
+  WHERE Airspace.type = 'R' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
 
 CREATE OR REPLACE FUNCTION dra_function()
   RETURNS TRIGGER
@@ -3527,7 +3360,6 @@ BEGIN
 END;
 $function$;
 
-
 CREATE TRIGGER dra_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   DRA FOR EACH ROW EXECUTE PROCEDURE dra_function();
@@ -3535,7 +3367,6 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 CREATE TRIGGER pra_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   PRA FOR EACH ROW EXECUTE PROCEDURE dra_function();
-
 
 CREATE TRIGGER rsa_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
@@ -3553,36 +3384,36 @@ CREATE VIEW MVL AS
     coalesce((widthLeft).value + (widthRight).value) as wd,
     case when (SELECT DesignatedPoint.designator
        FROM DesignatedPoint, SignificantPoint, SegmentPoint
-      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+      WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
              SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart) is not null then
       (SELECT DesignatedPoint.designator as PS
        FROM DesignatedPoint, SignificantPoint, SegmentPoint
-      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+      WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
              SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
       else
         (SELECT Navaid.designator as PS
        FROM Navaid, SignificantPoint, SegmentPoint
-      WHERE Navaid.idSignificantPoint = SignificantPoint.id AND
+      WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
              SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
         end,
     case when (SELECT DesignatedPoint.designator
        FROM DesignatedPoint, SignificantPoint, SegmentPoint
-      WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+      WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
              SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd) is not null then
 
       (SELECT DesignatedPoint.designator as PE
      FROM DesignatedPoint, SignificantPoint, SegmentPoint
-    WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
+    WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
            SignificantPoint.id = SegmentPoint.idSignificantPoint AND
            SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
       else
       (SELECT Navaid.designator as PE
      FROM Navaid, SignificantPoint, SegmentPoint
-    WHERE Navaid.idSignificantPoint = SignificantPoint.id AND
+    WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
            SignificantPoint.id = SegmentPoint.idSignificantPoint AND
            SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
         end,
@@ -3601,7 +3432,7 @@ CREATE VIEW MVL AS
      FROM Curve
      WHERE Curve.id = RouteSegment.idCurve )
 
-  FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.type = 'ATS';
+  FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.type = 'OTHER: MVL';
 
 CREATE OR REPLACE FUNCTION mvl_function()
   RETURNS TRIGGER
@@ -3635,11 +3466,11 @@ BEGIN
       WHERE Curve.id = OLD.id;
       UPDATE DesignatedPoint
       SET designator = NEW.PE
-      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint FROM SignificantPoint WHERE SignificantPoint.id =
           (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointEnd FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
       UPDATE DesignatedPoint
       SET designator = NEW.PS
-      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint FROM SignificantPoint WHERE SignificantPoint.id =
           (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointStart FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
@@ -3651,10 +3482,10 @@ BEGIN
       DELETE FROM Curve
       WHERE Curve.id = OLD.id;
       DELETE FROM DesignatedPoint
-      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint FROM SignificantPoint WHERE SignificantPoint.id =
           (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointEnd FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
       DELETE FROM DesignatedPoint
-      WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id =
+      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint FROM SignificantPoint WHERE SignificantPoint.id =
           (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointStart FROM RouteSegment WHERE RouteSegment.uuid = OLD.uuid)));
       RETURN NULL;
   END IF;
@@ -3666,7 +3497,70 @@ CREATE TRIGGER mvl_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   MVL FOR EACH ROW EXECUTE PROCEDURE mvl_function();
 
+CREATE VIEW TRA AS
+  SELECT
+    RouteSegment.uuid AS uuid,
+    RouteSegment._transasID as trID,
+    Route.locationDesignator as nm,
+    RouteSegment.magneticTrack AS mta,
+    RouteSegment.reverseMagneticTrack AS rmta,
+    (length).value as lb,
+    coalesce((widthLeft).value + (widthRight).value) as wd,
+    case when (SELECT DesignatedPoint.designator
+       FROM DesignatedPoint, SignificantPoint, SegmentPoint
+      WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart) is not null then
+      (SELECT DesignatedPoint.designator as PS
+       FROM DesignatedPoint, SignificantPoint, SegmentPoint
+      WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
+      else
+        (SELECT Navaid.designator as PS
+       FROM Navaid, SignificantPoint, SegmentPoint
+      WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
+        end,
+    case when (SELECT DesignatedPoint.designator
+       FROM DesignatedPoint, SignificantPoint, SegmentPoint
+      WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd) is not null then
 
+      (SELECT DesignatedPoint.designator as PE
+     FROM DesignatedPoint, SignificantPoint, SegmentPoint
+    WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
+      else
+      (SELECT Navaid.designator as PE
+     FROM Navaid, SignificantPoint, SegmentPoint
+    WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
+           SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+           SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
+        end,
+     (upperLimit).value AS top,
+    (upperLimit).unit AS top_unit,
+    (upperLimit).nonNumeric AS UNL,
+     upperLimitReference AS format_top,
+    (lowerLimit).value AS bottom,
+    (lowerLimit).unit AS bottom_unit,
+    (lowerLimit).nonNumeric AS GND,
+    lowerLimitReference AS format_bottom,
+    (SELECT Curve.id
+     FROM Curve
+     WHERE Curve.id = RouteSegment.idCurve ),
+    (SELECT Curve.geom AS geom
+     FROM Curve
+     WHERE Curve.id = RouteSegment.idCurve )
+
+  FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.type = 'ATS';
+
+CREATE TRIGGER tra_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  TRA FOR EACH ROW EXECUTE PROCEDURE mvl_function();
 
 -- Триггеры для координат
 
@@ -3765,35 +3659,24 @@ CREATE TRIGGER inserting_curve
 BEFORE INSERT OR UPDATE ON Curve FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_curve();
 
-
 -- TPM - ППМ МВЛ
 CREATE VIEW TPM AS
-  SELECT
-    uuid,
+SELECT
+    DesignatedPoint.uuid,
     DesignatedPoint._transasID as trID,
-    designator AS nm,
+    DesignatedPoint.designator AS nm,
     (SELECT SegmentPoint.reportingATC AS tp
      FROM SegmentPoint, SignificantPoint
-     WHERE DesignatedPoint.idSignificantPoint = SignificantPoint.id AND
-           SignificantPoint.id = SegmentPoint.idSignificantPoint),
-    (SELECT point.magneticVariation AS md
-     FROM point
-     WHERE point.id = DesignatedPoint.idPoint),
-    (SELECT point.id
-     FROM point
-     WHERE point.id = DesignatedPoint.idPoint),
-    (SELECT point.latitude
-     FROM point
-     WHERE point.id = DesignatedPoint.idPoint),
-    (SELECT point.longitude
-     FROM point
-     WHERE point.id = DesignatedPoint.idPoint),
-    (SELECT point.geom
-     FROM point
-     WHERE point.id = DesignatedPoint.idPoint)
-  FROM DesignatedPoint   ;
---  WHERE DesignatedPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.id=(SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id=
-  --            (SELECT idEnRouteSegmentPointStart FROM RouteSegment WHERE RouteSegment.uuidRoute = (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL'))));
+     WHERE SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+          SignificantPoint.uuidDesignatedPoint = DesignatedPoint.uuid),
+    point.magneticVariation as md,
+    point.id,
+    point.latitude,
+    point.longitude,
+    point.geom
+  FROM DesignatedPoint, point WHERE point.id = DesignatedPoint.idPoint and (SELECT count(SegmentPoint.idSignificantPoint)
+    FROM SegmentPoint WHERE SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL'))) > 0;
 
 CREATE OR REPLACE FUNCTION tpm_function()
   RETURNS TRIGGER
@@ -3839,14 +3722,37 @@ CREATE TRIGGER tpm_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   TPM FOR EACH ROW EXECUTE PROCEDURE tpm_function();
 
+-- TPT - ППМ трасс
+CREATE VIEW TPT AS
+SELECT
+    DesignatedPoint.uuid,
+    DesignatedPoint._transasID as trID,
+    DesignatedPoint.designator AS nm,
+    (SELECT SegmentPoint.reportingATC AS tp
+     FROM SegmentPoint, SignificantPoint
+     WHERE SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+          SignificantPoint.uuidDesignatedPoint = DesignatedPoint.uuid),
+    point.magneticVariation as md,
+    point.id,
+    point.latitude,
+    point.longitude,
+    point.geom
+  FROM DesignatedPoint, point WHERE point.id = DesignatedPoint.idPoint and (SELECT count(SegmentPoint.idSignificantPoint)
+    FROM SegmentPoint WHERE SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'ATS'))) > 0;
+
+CREATE TRIGGER tpt_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  TPT FOR EACH ROW EXECUTE PROCEDURE tpm_function();
+
 -- РНС
 CREATE VIEW NAV AS
   SELECT
-    uuid,
-    _transasID as trID,
-    designator AS nm,
-    name as nl,
-    type as tp,
+    Navaid.uuid,
+    Navaid._transasID as trID,
+    Navaid.designator AS nm,
+    Navaid.name as nl,
+    Navaid.type as tp,
     CASE WHEN Navaid.type = 'NDB' THEN  (SELECT (frequency).value AS tf
      FROM NDB
      WHERE NDB.uuid  = Navaid.uuid)
@@ -3860,33 +3766,14 @@ CREATE VIEW NAV AS
      FROM VOR
      WHERE VOR.uuid  = Navaid.uuid )
       END ,
-
-     (SELECT point.magneticVariation AS md
-     FROM point, ElevatedPoint
-     WHERE point.id = ElevatedPoint.id AND
-    ElevatedPoint.id = Navaid.idElevatedPoint),
-    (SELECT point.id
-     FROM point, ElevatedPoint
-     WHERE point.id = ElevatedPoint.id AND
-    ElevatedPoint.id = Navaid.idElevatedPoint),
-    (SELECT point.latitude
-     FROM point, ElevatedPoint
-     WHERE point.id = ElevatedPoint.id AND
-    ElevatedPoint.id = Navaid.idElevatedPoint),
-    (SELECT point.longitude
-     FROM point, ElevatedPoint
-     WHERE point.id = ElevatedPoint.id AND
-    ElevatedPoint.id = Navaid.idElevatedPoint),
-    (SELECT point.geom
-     FROM point, ElevatedPoint
-     WHERE point.id = ElevatedPoint.id AND
-    ElevatedPoint.id = Navaid.idElevatedPoint),
-    (SELECT (elevation).value AS height
-     FROM point, ElevatedPoint
-     WHERE point.id = ElevatedPoint.id AND
-    ElevatedPoint.id = Navaid.idElevatedPoint)
-FROM Navaid;
-
+     Point.magneticVariation AS md,
+     Point.id,
+     Point.latitude,
+     Point.longitude,
+     Point.geom,
+     (elevation).value AS height
+FROM Navaid, Point, ElevatedPoint
+WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
 
 CREATE OR REPLACE FUNCTION nav_function()
   RETURNS TRIGGER
