@@ -3431,7 +3431,6 @@ CREATE VIEW MVL AS
     (SELECT Curve.geom AS geom
      FROM Curve
      WHERE Curve.id = RouteSegment.idCurve )
-
   FROM RouteSegment LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid WHERE Route.type = 'OTHER: MVL';
 
 CREATE OR REPLACE FUNCTION mvl_function()
@@ -3661,22 +3660,21 @@ EXECUTE PROCEDURE trigger_insert_curve();
 
 -- TPM - ППМ МВЛ
 CREATE VIEW TPM AS
-SELECT
-    DesignatedPoint.uuid,
-    DesignatedPoint._transasID as trID,
-    DesignatedPoint.designator AS nm,
-    (SELECT SegmentPoint.reportingATC AS tp
-     FROM SegmentPoint, SignificantPoint
-     WHERE SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-          SignificantPoint.uuidDesignatedPoint = DesignatedPoint.uuid),
-    point.magneticVariation as md,
-    point.id,
-    point.latitude,
+  SELECT SegmentPoint.id,
+  (SELECT DesignatedPoint._transasID as trID FROM DesignatedPoint, significantpoint
+  WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND significantpoint.id = segmentpoint.idsignificantpoint),
+  (SELECT DesignatedPoint.designator AS nm FROM DesignatedPoint, significantpoint
+  WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND significantpoint.id = segmentpoint.idsignificantpoint),
+  segmentpoint.reportingatc as tp,
+  point.magneticVariation as md,
+  point.latitude,
     point.longitude,
     point.geom
-  FROM DesignatedPoint, point WHERE point.id = DesignatedPoint.idPoint and (SELECT count(SegmentPoint.idSignificantPoint)
-    FROM SegmentPoint WHERE SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
-    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL'))) > 0;
+    FROM SegmentPoint, significantpoint, point WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
+  AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL')) OR
+SegmentPoint.id IN (SELECT idenroutesegmentpointend FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL')));
 
 CREATE OR REPLACE FUNCTION tpm_function()
   RETURNS TRIGGER
@@ -3724,26 +3722,50 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 
 -- TPT - ППМ трасс
 CREATE VIEW TPT AS
-SELECT
-    DesignatedPoint.uuid,
-    DesignatedPoint._transasID as trID,
-    DesignatedPoint.designator AS nm,
-    (SELECT SegmentPoint.reportingATC AS tp
-     FROM SegmentPoint, SignificantPoint
-     WHERE SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-          SignificantPoint.uuidDesignatedPoint = DesignatedPoint.uuid),
-    point.magneticVariation as md,
-    point.id,
-    point.latitude,
+  SELECT SegmentPoint.id,
+  (SELECT DesignatedPoint._transasID as trID FROM DesignatedPoint, significantpoint
+  WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND significantpoint.id = segmentpoint.idsignificantpoint),
+  (SELECT DesignatedPoint.designator AS nm FROM DesignatedPoint, significantpoint
+  WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND significantpoint.id = segmentpoint.idsignificantpoint),
+  segmentpoint.reportingatc as tp,
+  point.magneticVariation as md,
+  point.latitude,
     point.longitude,
     point.geom
-  FROM DesignatedPoint, point WHERE point.id = DesignatedPoint.idPoint and (SELECT count(SegmentPoint.idSignificantPoint)
-    FROM SegmentPoint WHERE SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
-    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'ATS'))) > 0;
+    FROM SegmentPoint, significantpoint, point WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
+  AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'ATS')) OR
+SegmentPoint.id IN (SELECT idenroutesegmentpointend FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'ATS')));
+
 
 CREATE TRIGGER tpt_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   TPT FOR EACH ROW EXECUTE PROCEDURE tpm_function();
+
+
+-- географические точки
+CREATE VIEW GP AS
+  SELECT SegmentPoint.id,
+  (SELECT DesignatedPoint._transasID as trID FROM DesignatedPoint, significantpoint
+  WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND significantpoint.id = segmentpoint.idsignificantpoint),
+  (SELECT DesignatedPoint.designator AS nm FROM DesignatedPoint, significantpoint
+  WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND significantpoint.id = segmentpoint.idsignificantpoint),
+  segmentpoint.reportingatc as tp,
+  point.magneticVariation as md,
+  point.latitude,
+    point.longitude,
+    point.geom
+    FROM SegmentPoint, significantpoint, point WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
+  AND  (SELECT count(SegmentPoint.id) FROM SegmentPoint WHERE SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'ATS' OR Route.type = 'OTHER: MVL')) OR
+SegmentPoint.id IN (SELECT idenroutesegmentpointend FROM RouteSegment
+    WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'ATS' OR Route.type = 'OTHER: MVL'))) is NULL;
+
+
+CREATE TRIGGER GP_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  GP FOR EACH ROW EXECUTE PROCEDURE tpm_function();
 
 -- РНС
 CREATE VIEW NAV AS
@@ -3753,16 +3775,16 @@ CREATE VIEW NAV AS
     Navaid.designator AS nm,
     Navaid.name as nl,
     Navaid.type as tp,
-    CASE WHEN Navaid.type = 'NDB' THEN  (SELECT (frequency).value AS tf
+    CASE WHEN Navaid.type = 'NDB' THEN  (SELECT (frequency).value || ' ' || (frequency).unit AS tf
      FROM NDB
      WHERE NDB.uuid  = Navaid.uuid)
-      WHEN Navaid.type = 'DME' THEN  (SELECT (ghostFrequency).value AS tf
+      WHEN Navaid.type = 'DME' THEN  (SELECT (ghostFrequency).value || ' ' || (ghostFrequency).unit AS tf
      FROM DME
      WHERE DME.uuid = Navaid.uuid)
-      WHEN Navaid.type = 'ILS_DME' THEN   (SELECT (frequency).value AS tf
+      WHEN Navaid.type = 'ILS_DME' THEN   (SELECT (frequency).value || ' ' || (frequency).unit AS tf
      FROM Localizer
      WHERE Localizer.uuid = Navaid.uuid )
-      ELSE  (SELECT (frequency).value AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
+      ELSE  (SELECT (frequency).value || ' ' || (frequency).unit AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
      FROM VOR
      WHERE VOR.uuid  = Navaid.uuid )
       END ,
