@@ -2021,7 +2021,7 @@ CREATE TABLE Service
 
 CREATE TABLE CallsignDetail
 (
-  id          INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_callsign'),
+  id          INTEGER PRIMARY KEY DEFAULT nextval('auto_id_callsign'),
   callSign    TextNameType,
   language    CodeLanguageType,
   uuidService id REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
@@ -2234,7 +2234,7 @@ CREATE TABLE Airspace
 
 CREATE TABLE CartographyLabel_CTA_CTR_TMA_UAA
 (
-  id                  INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label') ,
+  id                  INTEGER PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label') ,
   xlbl                longitude,
   ylbl                latitude,
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
@@ -2326,7 +2326,7 @@ CREATE TABLE Navaid
   signalPerformance  CodeSignalPerformanceILSType,
   courseQuality      CodeCourseQualityILSType,
   integrityLevel     CodeIntegrityLevelILSType,
-  idElevatedPoint    INTEGER NOT NULL REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
+  idElevatedPoint    INTEGER REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE AirportHeliport_Navaid
@@ -2341,7 +2341,7 @@ CREATE TABLE AirportHeliport_Navaid
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPoint
 CREATE TABLE SignificantPoint
 (
-  id      INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_significant_point'),
+  id      INTEGER PRIMARY KEY  DEFAULT nextval('auto_id_significant_point'),
   idPoint INTEGER REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidDesignatedPoint id REFERENCES DesignatedPoint (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidNavaid id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2576,7 +2576,7 @@ CREATE OR REPLACE VIEW ARP AS
      WHERE
        runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
        AND surfacecharacteristics.composition IN
-           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H')),
     (SELECT RunwayDirection.trueBearing AS ugol
      FROM RunwayDirection, Runway
      WHERE RunwayDirection.uuidRunway = Runway.uuid AND Runway.uuidAirportHeliport = AirportHeliport.uuid),
@@ -2610,7 +2610,8 @@ CREATE OR REPLACE VIEW ARP AS
      CartographyLabel.ylbl,
      point.geom,
      Point.longitude,
-     point.latitude
+     point.latitude,
+     Point.srid
   FROM airportheliport, point, CartographyLabel
   WHERE airportheliport.type IS NULL AND point.id = airportheliport.idelevatedpoint AND CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
 -- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
@@ -2631,7 +2632,7 @@ CREATE OR REPLACE VIEW ALS AS
      WHERE
        runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
        AND surfacecharacteristics.composition IN
-           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX')),
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H')),
     (SELECT RunwayDirection.trueBearing AS ugol
      FROM RunwayDirection, Runway
      WHERE RunwayDirection.uuidRunway = Runway.uuid AND Runway.uuidAirportHeliport = AirportHeliport.uuid),
@@ -2663,7 +2664,10 @@ CREATE OR REPLACE VIEW ALS AS
      LIMIT 1),
      CartographyLabel.xlbl,
      CartographyLabel.ylbl,
-     point.geom
+     point.geom,
+     Point.longitude,
+     point.latitude,
+     Point.srid
   FROM airportheliport, point, CartographyLabel
   WHERE airportheliport.type IS NOT NULL AND point.id = airportheliport.idelevatedpoint AND CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
 
@@ -2674,15 +2678,74 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    with inserted as ( insert into  Point(geom, latitude, longitude)   values(NEW.geom, NEW.latitude, NEW.longitude) returning id)
-    insert into ElevatedPoint(id)  select inserted.id from inserted;
-    INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
-    VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW(NEW.ha,NULL,'M'), NEW.closed,
-            (SELECT Point.id FROM Point WHERE geom = NEW.geom ) );
-    INSERT INTO Runway (nominalLength) VALUES (ROW(NEW.length,'M'));
-    INSERT INTO RunwayDirection (trueBearing) VALUES (NEW.ugol);
-    INSERT INTO CallsignDetail (callSign) VALUES (NEW.cs);
-    INSERT INTO RadioCommunicationChannel (frequencyTransmission,frequencyReception) VALUES (ROW(NEW.tf,NULL), ROW(NEW.tr,NULL));
+    with inserted as ( insert into  Point(geom, latitude, longitude, srid)   values(NEW.geom, NEW.latitude, NEW.longitude, NEW.srid) returning id)
+    insert into ElevatedPoint(id, elevation) VALUES ((select inserted.id from inserted), ROW(NEW.ha,NULL,'M'));
+    IF NEW.geom IS NOT NULL THEN
+      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
+      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW(NEW.ha,NULL,'M'), NEW.closed,
+            (SELECT Point.id FROM Point WHERE geom = NEW.geom ));
+      if NEW.cover = 1 THEN
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H') returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), (SELECT inserted_composition.id FROM inserted_composition) );
+      ELSE
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), NULL) returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), (SELECT inserted_composition.id FROM inserted_composition) );
+      END IF;
+      INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ));
+      if NEW.lightsystem = 1 THEN
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
+          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ) ));
+      END IF;
+      INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), NEW.unit_type);
+      INSERT INTO Service (uuidUnit) VALUES ((SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom))));
+      INSERT INTO CallsignDetail (callSign, uuidService) VALUES (NEW.cs, (SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom)) )));
+      with inserted2 as ( INSERT INTO RadioCommunicationChannel (frequencyTransmission,frequencyReception) VALUES (ROW(NEW.tf,NULL), ROW(NEW.tr,NULL)) returning RadioCommunicationChannel.uuid)
+      INSERT INTO Service_RadioCommunicationChannel (uuidService,uuidRadioCommunicationChannel) VALUES ((SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
+        (SELECT Point.id FROM Point WHERE geom = NEW.geom)) )),(SELECT inserted2.uuid FROM inserted2)) ;
+    ELSE
+      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
+      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW(NEW.ha,NULL,'M'), NEW.closed,
+            (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude));
+      if NEW.cover = 1 THEN
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H') returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ),
+                (SELECT inserted_composition.id FROM inserted_composition) );
+      ELSE
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), NULL) returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ),
+                (SELECT inserted_composition.id FROM inserted_composition) );
+      END IF;
+      INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ));
+      if NEW.lightsystem = 1 THEN
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
+          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ) ));
+      END IF;
+      INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
+        (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ), NEW.unit_type);
+      INSERT INTO Service (uuidUnit) VALUES ((SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude))));
+      INSERT INTO CallsignDetail (callSign, uuidService) VALUES (NEW.cs, (SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)) )));
+      with inserted2 as ( INSERT INTO RadioCommunicationChannel (frequencyTransmission,frequencyReception) VALUES (ROW(NEW.tf,NULL), ROW(NEW.tr,NULL)) returning RadioCommunicationChannel.uuid)
+      INSERT INTO Service_RadioCommunicationChannel (uuidService,uuidRadioCommunicationChannel) VALUES ((SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
+        (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)) )),(SELECT inserted2.uuid FROM inserted2)) ;
+   END IF;
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
@@ -2768,12 +2831,74 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO AirportHeliport VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl, NEW.type, NEW.ha, NEW.closed);
-    INSERT INTO Runway VALUES (NEW.length);
-    INSERT INTO RunwayDirection VALUES (NEW.ugol);
-    INSERT INTO CallsignDetail VALUES (NEW.cs);
-    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
-    INSERT INTO Point VALUES (NEW.latitude, NEW.longitude, NEW.geom);
+    with inserted as ( insert into  Point(geom, latitude, longitude, srid)   values(NEW.geom, NEW.latitude, NEW.longitude, NEW.srid) returning id)
+    insert into ElevatedPoint(id, elevation) VALUES ((select inserted.id from inserted), ROW(NEW.ha,NULL,'M'));
+    IF NEW.geom IS NOT NULL THEN
+      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, type, fieldElevation, abandoned, idElevatedPoint)
+      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.type, ROW(NEW.ha,NULL,'M'), NEW.closed,
+            (SELECT Point.id FROM Point WHERE geom = NEW.geom ));
+      if NEW.cover = 1 THEN
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H') returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), (SELECT inserted_composition.id FROM inserted_composition) );
+      ELSE
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), NULL) returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), (SELECT inserted_composition.id FROM inserted_composition) );
+      END IF;
+      INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ));
+      if NEW.lightsystem = 1 THEN
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
+          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ) ));
+      END IF;
+      INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), NEW.unit_type);
+      INSERT INTO Service (uuidUnit) VALUES ((SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom))));
+      INSERT INTO CallsignDetail (callSign, uuidService) VALUES (NEW.cs, (SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom)) )));
+      with inserted2 as ( INSERT INTO RadioCommunicationChannel (frequencyTransmission,frequencyReception) VALUES (ROW(NEW.tf,NULL), ROW(NEW.tr,NULL)) returning RadioCommunicationChannel.uuid)
+      INSERT INTO Service_RadioCommunicationChannel (uuidService,uuidRadioCommunicationChannel) VALUES ((SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
+        (SELECT Point.id FROM Point WHERE geom = NEW.geom)) )),(SELECT inserted2.uuid FROM inserted2)) ;
+    ELSE
+      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
+      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW(NEW.ha,NULL,'M'), NEW.closed,
+            (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude));
+      if NEW.cover = 1 THEN
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H') returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ),
+                (SELECT inserted_composition.id FROM inserted_composition) );
+      ELSE
+        with inserted_composition as (
+        INSERT INTO surfacecharacteristics (id, composition)  VALUES (nextval('auto_id_surface_characteristics'), NULL) returning id)
+        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+        VALUES (ROW(NEW.length,'M'),(SELECT AirportHeliport.uuid FROM AirportHeliport WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ),
+                (SELECT inserted_composition.id FROM inserted_composition) );
+      END IF;
+      INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ));
+      if NEW.lightsystem = 1 THEN
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
+          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ) ));
+      END IF;
+      INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
+        (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ), NEW.unit_type);
+      INSERT INTO Service (uuidUnit) VALUES ((SELECT Unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport =
+      (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude))));
+      INSERT INTO CallsignDetail (callSign, uuidService) VALUES (NEW.cs, (SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)) )));
+      with inserted2 as ( INSERT INTO RadioCommunicationChannel (frequencyTransmission,frequencyReception) VALUES (ROW(NEW.tf,NULL), ROW(NEW.tr,NULL)) returning RadioCommunicationChannel.uuid)
+      INSERT INTO Service_RadioCommunicationChannel (uuidService,uuidRadioCommunicationChannel) VALUES ((SELECT Service.uuid FROM Service WHERE Service.uuidUnit =
+        (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
+        (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)) )),(SELECT inserted2.uuid FROM inserted2)) ;
+   END IF;
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
@@ -3654,6 +3779,7 @@ BEGIN
     ELSE
       IF NEW.srid = 4326 OR NEW.srid is NULL THEN
         NEW.geom = ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326);
+        NEW.srid = 4326;
       ELSE
         NEW.geom = ST_Transform(ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), NEW.srid), 4326);
       END IF;
