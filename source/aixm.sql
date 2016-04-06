@@ -45,6 +45,7 @@ ValDistanceVerticalType, valdistanceverticalbasetype, ValTemperatureType, ValFLT
 ValSlopeType, ValWeightType, ValPCNType, textdesignatortype, valpressuretype, textphonetype, codernptype, codelanguagetype, valfrequencybasetype,
 valfrequencytype, codecommunicationchanneltype, ValDurationType CASCADE;
 
+DROP FUNCTION IF EXISTS trigger_insert_service();
 DROP FUNCTION IF EXISTS trigger_insert_Point();
 DROP FUNCTION IF EXISTS trigger_update_cartographylabel();
 DROP FUNCTION IF EXISTS trigger_insert_polygon();
@@ -1592,7 +1593,7 @@ CREATE DOMAIN CodeNorthReferenceType AS VARCHAR(40)
 CHECK (VALUE ~ 'TRUE|MAG|GRID|OTHER: [A-Z]{0,30}');
 
 DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
-auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label,
+auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label, auto_id_cartography_label_CTA, auto_id_cartography_label_FIR,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
 auto_id_segment_point, auto_id_route_portion, auto_id_airspace_layer_class, auto_id_airspace_layer,
 auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability, auto_id_properties_with_schedule CASCADE;
@@ -1609,6 +1610,8 @@ CREATE SEQUENCE auto_id_surface_contamination;
 CREATE SEQUENCE auto_id_surface_arp_availability;
 CREATE SEQUENCE auto_id_surface_characteristics;
 CREATE SEQUENCE auto_id_cartography_label;
+CREATE SEQUENCE auto_id_cartography_label_CTA;
+CREATE SEQUENCE auto_id_cartography_label_FIR;
 CREATE SEQUENCE auto_id_unit_dependency;
 CREATE SEQUENCE auto_id_callsign;
 CREATE SEQUENCE auto_id_contact_information;
@@ -2234,7 +2237,17 @@ CREATE TABLE Airspace
 
 CREATE TABLE CartographyLabel_CTA_CTR_TMA_UAA
 (
-  id                  INTEGER PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label') ,
+  id                  INTEGER PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_CTA') ,
+  xlbl                longitude,
+  ylbl                latitude,
+  srid                INTEGER REFERENCES spatial_ref_sys (srid),
+  uuidairspace        id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  geom                GEOMETRY(POINT, 4326)
+);
+
+CREATE TABLE CartographyLabel_FIR
+(
+  id                  INTEGER PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_FIR') ,
   xlbl                longitude,
   ylbl                latitude,
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
@@ -2698,8 +2711,9 @@ BEGIN
       INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ));
       if NEW.lightsystem = 1 THEN
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
-          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+        with inserted_lightsystem as (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL) returning uuid)
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem),
+          (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =(SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ) ));
       END IF;
       INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), NEW.unit_type);
@@ -2731,8 +2745,9 @@ BEGIN
       INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ));
       if NEW.lightsystem = 1 THEN
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
-          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+        with inserted_lightsystem as (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL) returning uuid)
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem),
+          (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =(SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ) ));
       END IF;
       INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
@@ -2784,6 +2799,23 @@ BEGIN
       UPDATE CartographyLabel
       SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
       WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
+      if NEW.lightsystem = 1 THEN
+        with inserted_lightsystem as (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL) returning uuid)
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem),
+          (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =(SELECT runway.uuid FROM runway WHERE uuidAirportHeliport = OLD.uuid)));
+      ELSEIF NEW.lightsystem = 0 THEN
+        DELETE FROM RunwayDirectionLightSystem WHERE uuidRunwayDirection  = (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
+        (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport = OLD.uuid));
+      END IF;
+      if NEW.cover = 1 THEN
+        UPDATE surfacecharacteristics
+        SET composition ='OTHER: H'
+        WHERE SurfaceCharacteristics.id = (SELECT Runway.idSurfaceCharacteristics FROM Runway WHERE Runway.uuidAirportHeliport = OLD.uuid) ;
+      ELSEIF  NEW.cover = 0 THEN
+        UPDATE surfacecharacteristics
+        SET composition ='OTHER: SOFT'
+        WHERE SurfaceCharacteristics.id = (SELECT Runway.idSurfaceCharacteristics FROM Runway WHERE Runway.uuidAirportHeliport = OLD.uuid) ;
+      END IF;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
@@ -2814,6 +2846,11 @@ BEGIN
       WHERE Point.id = (SELECT airportheliport.idelevatedpoint FROM AirportHeliport WHERE   AirportHeliport.uuid = OLD.uuid);
       DELETE FROM CartographyLabel
       WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
+      DELETE FROM surfacecharacteristics
+      WHERE surfacecharacteristics.id = (SELECT runway.idsurfacecharacteristics FROM runway WHERE runway.uuidairportheliport = OLD.uuid);
+      DELETE FROM RunwayDirectionLightSystem
+        WHERE RunwayDirectionLightSystem.uuidRunwayDirection = (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE RunwayDirection.uuidRunway = (SELECT uuid
+                                          FROM Runway WHERE runway.uuidairportheliport = OLD.uuid));
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -2851,8 +2888,9 @@ BEGIN
       INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ));
       if NEW.lightsystem = 1 THEN
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
-          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+         with inserted_lightsystem as (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL) returning uuid)
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem),
+          (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =(SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ) ) ));
       END IF;
       INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom) ), NEW.unit_type);
@@ -2865,8 +2903,8 @@ BEGIN
         (SELECT unit.uuid FROM Unit WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
         (SELECT Point.id FROM Point WHERE geom = NEW.geom)) )),(SELECT inserted2.uuid FROM inserted2)) ;
     ELSE
-      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
-      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW(NEW.ha,NULL,'M'), NEW.closed,
+      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, type, fieldElevation, abandoned, idElevatedPoint)
+      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.type, ROW(NEW.ha,NULL,'M'), NEW.closed,
             (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude));
       if NEW.cover = 1 THEN
         with inserted_composition as (
@@ -2884,8 +2922,9 @@ BEGIN
       INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ));
       if NEW.lightsystem = 1 THEN
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES (uuid_generate_v4(),(SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
-          (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
+        with inserted_lightsystem as (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL) returning uuid)
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem),
+          (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =(SELECT runway.uuid FROM runway WHERE uuidAirportHeliport =
       (SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude) ) ) ));
       END IF;
       INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid FROM AirportHeliport WHERE  idElevatedPoint =
@@ -2906,9 +2945,7 @@ BEGIN
       SET uuid    = NEW.uuid, designator = NEW.nm, name = NEW.nl, type = NEW.type, fieldElevation.value = NEW.ha,
         abandoned = NEW.closed
       WHERE AirportHeliport.uuid = OLD.uuid;
-      UPDATE Runway
-      SET nominalLength.value = NEW.length
-      WHERE runway.uuidairportheliport = OLD.uuid;
+
       UPDATE RunwayDirection
       SET trueBearing = NEW.ugol
       WHERE RunwayDirection.uuidRunway = (SELECT uuid
@@ -2937,7 +2974,27 @@ BEGIN
       UPDATE CartographyLabel
       SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
       WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
-      RETURN NEW;
+      if NEW.lightsystem = 1 THEN
+        with inserted_lightsystem as (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL) returning uuid)
+        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem),
+          (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =(SELECT runway.uuid FROM runway WHERE uuidAirportHeliport = OLD.uuid)));
+      ELSEIF NEW.lightsystem = 0 THEN
+        DELETE FROM RunwayDirectionLightSystem WHERE uuidRunwayDirection  = (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE uuidRunway =
+        (SELECT runway.uuid FROM runway WHERE uuidAirportHeliport = OLD.uuid));
+      END IF;
+      UPDATE Runway
+      SET nominalLength.value = NEW.length
+      WHERE runway.uuidairportheliport = OLD.uuid;
+      if NEW.cover = 1 THEN
+        UPDATE surfacecharacteristics
+        SET composition ='OTHER: H'
+        WHERE SurfaceCharacteristics.id = (SELECT Runway.idSurfaceCharacteristics FROM Runway WHERE Runway.uuidAirportHeliport = OLD.uuid) ;
+      ELSEIF  NEW.cover = 0 THEN
+        UPDATE surfacecharacteristics
+        SET composition ='OTHER: SOFT'
+        WHERE SurfaceCharacteristics.id = (SELECT Runway.idSurfaceCharacteristics FROM Runway WHERE Runway.uuidAirportHeliport = OLD.uuid) ;
+      END IF;
+             RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
       DELETE FROM AirportHeliport
@@ -2967,6 +3024,11 @@ BEGIN
       WHERE Point.id = (SELECT airportheliport.idelevatedpoint FROM AirportHeliport WHERE   AirportHeliport.uuid = OLD.uuid);
       DELETE FROM CartographyLabel
       WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
+      DELETE FROM surfacecharacteristics
+      WHERE surfacecharacteristics.id = (SELECT runway.idsurfacecharacteristics FROM runway WHERE runway.uuidairportheliport = OLD.uuid);
+      DELETE FROM RunwayDirectionLightSystem
+        WHERE RunwayDirectionLightSystem.uuidRunwayDirection = (SELECT RunwayDirection.uuid FROM RunwayDirection WHERE RunwayDirection.uuidRunway = (SELECT uuid
+                                          FROM Runway WHERE runway.uuidairportheliport = OLD.uuid));
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -2985,6 +3047,7 @@ CREATE VIEW CTA AS
     Airspace.designator  AS nm,
     Airspace.name        AS nl,
     Airspace.controlType AS tp,
+    Airspace.type AS airspace,
     (upperLimit).value AS top,
     (upperLimit).unit AS top_unit,
     (upperLimit).nonNumeric AS UNL,
@@ -3017,6 +3080,9 @@ CREATE VIEW CTA AS
     WHERE cartographylabel_cta_ctr_tma_uaa.uuidairspace = airspace.uuid),
      (SELECT Surface.geom
      FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.srid
+     FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
   FROM Airspace, AirspaceVolume
   WHERE Airspace.type = 'CTA' AND AirspaceVolume.uuidAirspace = Airspace.uuid;
@@ -3028,13 +3094,28 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Airspace (uuid, _transasID, designator, name, controlType) VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.tp);
-    INSERT INTO AirspaceVolume (id, upperLimit,upperLimitReference,lowerLimit, lowerLimitReference) VALUES
-      (nextval('auto_id_airspace_volume'), ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom);
-    INSERT INTO CallsignDetail (id, callSign) VALUES (nextval('auto_id_callsign'), NEW.cs);
-    INSERT INTO RadioCommunicationChannel (uuid, frequencyTransmission, frequencyReception) VALUES (uuid_generate_v4(), ROW(NEW.tf, NULL), ROW(NEW.tr, NULL));
-    INSERT INTO Surface (id, geom) VALUES (nextval('auto_id_surface'), NEW.geom);
-    INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (id, xlbl, ylbl) VALUES (nextval('auto_id_cartography_label'), NEW.xlbl,NEW.ylbl) ;
+    INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, NEW.srid);
+    with inserted_airspace as (INSERT INTO Airspace (uuid, _transasID, designator, name, controlType, type)
+    VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.tp, NEW.airspace) RETURNING uuid)
+    INSERT INTO AirspaceVolume (upperLimit,upperLimitReference,lowerLimit, lowerLimitReference,idSurface,uuidAirspace) VALUES
+      (ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+      (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom), (SELECT inserted_airspace.uuid FROM inserted_airspace));
+
+    with insert_Unit as (INSERT INTO Unit (uuid, type) VALUES (uuid_generate_v4(), NEW.unit_type) RETURNING uuid),
+        insert_service as (INSERT INTO Service (uuid, uuidUnit) VALUES (uuid_generate_v4(), (SELECT insert_Unit.uuid FROM insert_Unit)) RETURNING uuid),
+      insert_AirTrafficManagementService as (INSERT INTO AirTrafficManagementService (uuid) VALUES ((SELECT insert_service.uuid FROM insert_service)) RETURNING uuid),
+      insert_Airspace_AirTrafficManagementService as (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService) VALUES
+      ((SELECT AirspaceVolume.uuidAirspace FROM AirspaceVolume WHERE AirspaceVolume.idSurface =
+      (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom)), (SELECT insert_AirTrafficManagementService.uuid FROM insert_AirTrafficManagementService)) RETURNING uuidAirTrafficManagementService)
+    INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
+    (SELECT insert_Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM insert_Airspace_AirTrafficManagementService));
+
+    with inserted_radioChannel as (INSERT INTO RadioCommunicationChannel (uuid, frequencyTransmission, frequencyReception) VALUES (uuid_generate_v4(), ROW(NEW.tf, NULL), ROW(NEW.tr, NULL)) RETURNING uuid)
+    INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
+      (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace =
+      (SELECT AirspaceVolume.uuidAirspace FROM AirspaceVolume WHERE AirspaceVolume.idSurface = (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom))),
+      (SELECT inserted_radioChannel.uuid FROM inserted_radioChannel));
+    INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (id, xlbl, ylbl, uuidairspace) VALUES (nextval('auto_id_cartography_label'), NEW.xlbl,NEW.ylbl, NEW.uuid ) ;
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
@@ -3049,7 +3130,7 @@ BEGIN
         lowerLimitReference = NEW.format_bottom
       WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
       UPDATE Surface
-      SET geom = NEW.geom
+      SET geom = NEW.geom, srid = NEW.srid
       WHERE Surface.id = (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
       UPDATE CartographyLabel_CTA_CTR_TMA_UAA
       SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
@@ -3061,8 +3142,12 @@ BEGIN
       UPDATE RadioCommunicationChannel
       SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
       WHERE RadioCommunicationChannel.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel WHERE
-           Service_RadioCommunicationChannel.uuidService = (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
+           Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
              Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+      UPDATE Unit
+        SET type = NEW.unit_type
+        WHERE Unit.uuid IN (SELECT Service.uuidUnit FROM Service WHERE Service.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
+             Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid) );
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
@@ -3081,6 +3166,9 @@ BEGIN
       WHERE RadioCommunicationChannel.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel WHERE
            Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
              Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+      DELETE FROM Unit
+        WHERE Unit.uuid IN (SELECT Service.uuidUnit FROM Service WHERE Service.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
+             Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid) );
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -3100,6 +3188,7 @@ CREATE VIEW CTR AS
     designator  AS nm,
     name        AS nl,
     controlType AS tp,
+    Airspace.type AS airspace,
     (upperLimit).value AS top,
     (upperLimit).unit AS top_unit,
     (upperLimit).nonNumeric AS UNL,
@@ -3132,6 +3221,9 @@ CREATE VIEW CTR AS
     WHERE cartographylabel_cta_ctr_tma_uaa.uuidairspace = airspace.uuid),
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.srid
+     FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
   FROM Airspace, AirspaceVolume
   WHERE Airspace.type = 'CTR'  AND AirspaceVolume.uuidAirspace = Airspace.uuid;
@@ -3141,29 +3233,6 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
   CTR FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
 
-CREATE OR REPLACE FUNCTION trigger_update_CartographyLabel_CTA()
-  RETURNS TRIGGER AS $update_lbl$
-BEGIN
-  INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA ( srid, uuidairspace) VALUES
-    (
-      /*(SELECT ST_X(ST_Centroid(ST_MakeValid(geom)))
-      FROM Surface,airspacevolume
-      WHERE Surface.id = (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = NEW.uuid) ),
-     (SELECT ST_Y(ST_Centroid(ST_MakeValid(geom)))
-      FROM Surface,airspacevolume
-      WHERE Surface.id = (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = NEW.uuid) ),*/
-     (SELECT srid
-      FROM Surface,airspacevolume
-      WHERE Surface.id = (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = NEW.uuid)),
-     NEW.uuid
-    );
-  RETURN NEW;
-END;
-$update_lbl$ LANGUAGE plpgsql;
-
-CREATE TRIGGER CartographyLabel_CTA
-AFTER INSERT ON Airspace FOR EACH ROW EXECUTE PROCEDURE trigger_update_CartographyLabel_CTA();
-
 -- TMA
 CREATE VIEW TMA AS
   SELECT
@@ -3172,6 +3241,7 @@ CREATE VIEW TMA AS
     designator  AS nm,
     name        AS nl,
     controlType AS tp,
+    Airspace.type AS airspace,
     (upperLimit).value AS top,
     (upperLimit).unit AS top_unit,
     (upperLimit).nonNumeric AS UNL,
@@ -3204,6 +3274,9 @@ CREATE VIEW TMA AS
     WHERE cartographylabel_cta_ctr_tma_uaa.uuidairspace = airspace.uuid),
     (SELECT Surface.geom
      FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.srid
+     FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
   FROM Airspace, AirspaceVolume
   WHERE Airspace.type = 'TMA'  AND AirspaceVolume.uuidAirspace = Airspace.uuid;
@@ -3220,6 +3293,7 @@ CREATE VIEW UAA AS
     designator  AS nm,
     name        AS nl,
     controlType AS tp,
+    Airspace.type AS airspace,
     (upperLimit).value AS top,
     (upperLimit).unit AS top_unit,
     (upperLimit).nonNumeric AS UNL,
@@ -3228,11 +3302,32 @@ CREATE VIEW UAA AS
     (lowerLimit).unit AS bottom_unit,
     (lowerLimit).nonNumeric AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    (SELECT Unit.type AS unit_type
+     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
     ( SELECT CartographyLabel_CTA_CTR_TMA_UAA.xlbl FROM cartographylabel_cta_ctr_tma_uaa
     WHERE cartographylabel_cta_ctr_tma_uaa.uuidairspace = airspace.uuid),
     ( SELECT CartographyLabel_CTA_CTR_TMA_UAA.ylbl FROM cartographylabel_cta_ctr_tma_uaa
     WHERE cartographylabel_cta_ctr_tma_uaa.uuidairspace = airspace.uuid),
     (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.srid
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
   FROM Airspace, AirspaceVolume
@@ -3752,9 +3847,22 @@ $update_lbl$ LANGUAGE plpgsql;
 CREATE TRIGGER CartographyLabel
 AFTER INSERT ON AirportHeliport FOR EACH ROW EXECUTE PROCEDURE trigger_update_CartographyLabel();
 
+CREATE OR REPLACE FUNCTION trigger_update_CartographyLabel_CTA()
+  RETURNS TRIGGER AS $update_lbl$
+BEGIN
+  INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (uuidairspace) VALUES
+    (
+    -- (SELECT srid
+     -- FROM Surface, airspacevolume, airspace
+     -- WHERE Surface.id IN (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = (SELECT Airspace.uuid FROM Airspace WHERE Airspace.uuid = NEW.uuid))),
+     NEW.uuid
+    );
+  RETURN NEW;
+END;
+$update_lbl$ LANGUAGE plpgsql;
 
-
-
+CREATE TRIGGER CartographyLabel_CTA
+AFTER INSERT ON Airspace FOR EACH ROW EXECUTE PROCEDURE trigger_update_CartographyLabel_CTA();
 
 -- Отслеживание изменений координат и SRID
 --
@@ -3793,6 +3901,7 @@ CREATE TRIGGER inserting_Point
 BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_Point();
 
+
 --CREATE TRIGGER inserting_Point_CartographyLabel_CTA_CTR_TMA_UAA
 --BEFORE INSERT OR UPDATE ON CartographyLabel_CTA_CTR_TMA_UAA FOR EACH ROW
 --EXECUTE PROCEDURE trigger_insert_Point();
@@ -3801,15 +3910,20 @@ EXECUTE PROCEDURE trigger_insert_Point();
 CREATE OR REPLACE FUNCTION trigger_insert_polygon()
   RETURNS TRIGGER AS $$
 BEGIN
-  IF (TG_OP = 'INSERT' OR
-      (TG_OP = 'UPDATE' AND (NEW.coord <> OLD.coord)))
-  THEN
-    IF (NEW.srid = 4326)
-    THEN
-      NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)) ;
-    ELSE
-      NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)), 4326));
-    END IF;
+  IF TG_OP = 'INSERT' OR  (TG_OP = 'UPDATE' AND (NEW.coord <> OLD.coord OR NEW.srid <> OLD.srid)) THEN
+        IF NEW.coord IS NULL THEN
+              IF NEW.srid = 4326 or NEW.srid IS NULL THEN
+              NEW.geom = ST_SetSRID(NEW.geom,4326) ;
+              ELSE
+              NEW.geom = ST_Transform(ST_SetSRID(NEW.geom,NEW.srid), 4326);
+              END IF;
+        ELSE
+              IF NEW.srid = 4326 or NEW.srid IS NULL THEN
+              NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), 4326)) ;
+              ELSE
+              NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)), 4326));
+              END IF;
+        END IF;
   END IF;
   RETURN NEW;
 END;
