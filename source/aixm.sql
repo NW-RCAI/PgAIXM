@@ -2264,7 +2264,7 @@ CREATE TABLE Airspace_AirTrafficManagementService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceActivation
 CREATE TABLE AirspaceActivation
 (
-  id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id)  ON DELETE CASCADE ON UPDATE CASCADE,
+  id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id) ON DELETE CASCADE ON UPDATE CASCADE,
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
   uuidAirspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
@@ -3100,7 +3100,6 @@ BEGIN
     INSERT INTO AirspaceVolume (upperLimit,upperLimitReference,lowerLimit, lowerLimitReference,idSurface,uuidAirspace) VALUES
       (ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
       (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom), (SELECT inserted_airspace.uuid FROM inserted_airspace));
-
     with insert_Unit as (INSERT INTO Unit (uuid, type) VALUES (uuid_generate_v4(), NEW.unit_type) RETURNING uuid),
         insert_service as (INSERT INTO Service (uuid, uuidUnit) VALUES (uuid_generate_v4(), (SELECT insert_Unit.uuid FROM insert_Unit)) RETURNING uuid),
       insert_AirTrafficManagementService as (INSERT INTO AirTrafficManagementService (uuid) VALUES ((SELECT insert_service.uuid FROM insert_service)) RETURNING uuid),
@@ -3109,7 +3108,6 @@ BEGIN
       (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom)), (SELECT insert_AirTrafficManagementService.uuid FROM insert_AirTrafficManagementService)) RETURNING uuidAirTrafficManagementService)
     INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
     (SELECT insert_Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM insert_Airspace_AirTrafficManagementService));
-
     with inserted_radioChannel as (INSERT INTO RadioCommunicationChannel (uuid, frequencyTransmission, frequencyReception) VALUES (uuid_generate_v4(), ROW(NEW.tf, NULL), ROW(NEW.tr, NULL)) RETURNING uuid)
     INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
       (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace =
@@ -3353,52 +3351,40 @@ CREATE VIEW FIR AS
     (lowerLimit).nonNumeric AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
+     FROM CallsignDetail, Airspace_AirTrafficManagementService
+     WHERE CallsignDetail.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
     (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Airspace_AirTrafficManagementService
      WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
     (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, AirTrafficManagementService,
-       Airspace_AirTrafficManagementService
+     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Airspace_AirTrafficManagementService
      WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND
-           Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
     (SELECT day AS day_of_the_week
-     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
-           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
+     FROM Timesheet, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid LIMIT 1),
     (SELECT startTime
-     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
-           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
+     FROM Timesheet, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid LIMIT 1),
     (SELECT endTime
-     FROM Timesheet, PropertiesWithSchedule, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = PropertiesWithSchedule.id AND
-           PropertiesWithSchedule.id = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
+     FROM Timesheet, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid LIMIT 1),
     (SELECT Unit.type AS unit_type
-     FROM Unit, Service, AirTrafficManagementService, Airspace_AirTrafficManagementService
-     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = AirTrafficManagementService.uuid AND
-           AirTrafficManagementService.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    AirspaceVolume.id,
+     FROM Unit, Service, Airspace_AirTrafficManagementService
+     WHERE Unit.uuid = Service.uuidUnit AND Service.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid LIMIT 1),
+    ( SELECT CartographyLabel_FIR.xlbl FROM CartographyLabel_FIR
+    WHERE CartographyLabel_FIR.uuidairspace = airspace.uuid),
+    ( SELECT CartographyLabel_FIR.ylbl FROM CartographyLabel_FIR
+    WHERE CartographyLabel_FIR.uuidairspace = airspace.uuid),
     (SELECT Surface.geom
+     FROM Surface, AirspaceVolume
+     WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid),
+    (SELECT Surface.srid
      FROM Surface, AirspaceVolume
      WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidAirspace = Airspace.uuid)
   FROM Airspace, AirspaceVolume
@@ -3411,15 +3397,31 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl);
-    INSERT INTO AirspaceVolume VALUES
-      (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
-       NEW.geom);
-    INSERT INTO CallsignDetail VALUES (NEW.cs);
-    INSERT INTO RadioCommunicationChannel VALUES (NEW.tf, NEW.tr);
-    INSERT INTO Timesheet VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime);
-    INSERT INTO Unit VALUES (NEW.unit_type);
-
+    INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, NEW.srid);
+    with inserted_airspace as (INSERT INTO Airspace (uuid, _transasID, designator, name)
+    VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl) RETURNING uuid)
+    INSERT INTO AirspaceVolume (upperLimit,upperLimitReference,lowerLimit, lowerLimitReference,idSurface,uuidAirspace) VALUES
+      (ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+      (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom), (SELECT inserted_airspace.uuid FROM inserted_airspace));
+    with insert_Unit as (INSERT INTO Unit (uuid, type) VALUES (uuid_generate_v4(), NEW.unit_type) RETURNING uuid),
+        insert_service as (INSERT INTO Service (uuid, uuidUnit) VALUES (uuid_generate_v4(), (SELECT insert_Unit.uuid FROM insert_Unit)) RETURNING uuid),
+      insert_AirTrafficManagementService as (INSERT INTO AirTrafficManagementService (uuid) VALUES ((SELECT insert_service.uuid FROM insert_service)) RETURNING uuid),
+      insert_Airspace_AirTrafficManagementService as (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService) VALUES
+      ((SELECT AirspaceVolume.uuidAirspace FROM AirspaceVolume WHERE AirspaceVolume.idSurface =
+      (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom)), (SELECT insert_AirTrafficManagementService.uuid FROM insert_AirTrafficManagementService)) RETURNING uuidAirTrafficManagementService)
+    INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
+    (SELECT insert_Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM insert_Airspace_AirTrafficManagementService));
+    with inserted_radioChannel as (INSERT INTO RadioCommunicationChannel (uuid, frequencyTransmission, frequencyReception) VALUES (uuid_generate_v4(), ROW(NEW.tf, NULL), ROW(NEW.tr, NULL)) RETURNING uuid)
+    INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
+      (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace =
+      (SELECT AirspaceVolume.uuidAirspace FROM AirspaceVolume WHERE AirspaceVolume.idSurface = (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom))),
+      (SELECT inserted_radioChannel.uuid FROM inserted_radioChannel));
+    INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (id, xlbl, ylbl, uuidairspace) VALUES (nextval('auto_id_cartography_label'), NEW.xlbl,NEW.ylbl, NEW.uuid ) ;
+    with inserted_PropertiesWithSchedule as (INSERT INTO PropertiesWithSchedule (id) VALUES (nextval('auto_id_properties_with_schedule')) RETURNING id),
+     inserted_AirspaceActivation as (INSERT INTO AirspaceActivation (id,uuidAirspace) VALUES
+        ((SELECT inserted_PropertiesWithSchedule.id FROM inserted_PropertiesWithSchedule),(SELECT AirspaceVolume.uuidAirspace FROM AirspaceVolume WHERE AirspaceVolume.idSurface =
+      (SELECT Surface.id FROM Surface WHERE Surface.geom = NEW.geom))))
+    INSERT INTO Timesheet (day, startTime, endTime, idPropertiesWithSchedule)  VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime, (SELECT inserted_PropertiesWithSchedule.id FROM inserted_PropertiesWithSchedule));
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
@@ -3432,11 +3434,26 @@ BEGIN
         upperLimitReference = NEW.format_top,
         lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
         lowerLimitReference = NEW.format_bottom
-      WHERE AirspaceVolume.id = OLD.id;
+      WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+      UPDATE Surface
+      SET geom = NEW.geom, srid = NEW.srid
+      WHERE Surface.id = (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
+      UPDATE CartographyLabel_FIR
+      SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
+      WHERE CartographyLabel_FIR.uuidairspace  = OLD.uuid;
       UPDATE CallsignDetail
-      SET callSign = NEW.cs;
+      SET callSign = NEW.cs
+      WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM Airspace_AirTrafficManagementService WHERE
+           Airspace_AirTrafficManagementService.uuidAirspace =  OLD.uuid);
       UPDATE RadioCommunicationChannel
-      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr;
+      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
+      WHERE RadioCommunicationChannel.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel FROM Service_RadioCommunicationChannel WHERE
+           Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
+             Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+      UPDATE Unit
+        SET type = NEW.unit_type
+        WHERE Unit.uuid IN (SELECT Service.uuidUnit FROM Service WHERE Service.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService FROM
+             Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid) );
       UPDATE Timesheet
       SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
       UPDATE Unit
