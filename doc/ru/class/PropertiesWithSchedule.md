@@ -11,32 +11,32 @@ PropertiesWithSchedule
 #### Родительский класс для:
 
 - O AirportHeliportAvailability
-- O AirportHeliportResponsibilityOrganisation
-- O AirspaceActivation,
+- O ~~AirportHeliportResponsibilityOrganisation~~
+- O AirspaceActivation
 - O AirspaceLayerClass
-- O AltimeterSourceStatus
-- O ApronAreaAvailability
-- O CirclingRestriction
-- O ConditionCombination
-- O FlightConditionCombination
+- O ~~AltimeterSourceStatus~~
+- O ~~ApronAreaAvailability~~
+- O ~~CirclingRestriction~~
+- O ~~ConditionCombination~~
+- O ~~FlightConditionCombination~~
 - O GroundLightingAvailability
-- O LightElementStatus
-- O ManoeuvringAreaAvailability
-- O NavaidEquipmentMonitoring
-- O NavaidOperationalStatus
-- O OnlineContact
-- O PostalAddress
-- O ProcedureAvailability
-- O RadioCommunicationOperationalStatus
-- O RouteAvailability
-- O RunwayDeclaredDistanceValue
-- O ServiceOperationalStatus
-- O SpecialNavigationStationStatus
-- O TelephoneContact
-- O UnitAvailability
-- O VerticalStructureLightingStatus
+- O ~~LightElementStatus~~
+- O ~~ManoeuvringAreaAvailability~~
+- O ~~NavaidEquipmentMonitoring~~
+- O ~~NavaidOperationalStatus~~
+- O ~~OnlineContact~~
+- O ~~PostalAddress~~
+- O ~~ProcedureAvailability~~
+- O ~~RadioCommunicationOperationalStatus~~
+- O ~~RouteAvailability~~
+- O ~~RunwayDeclaredDistanceValue~~
+- O ~~ServiceOperationalStatus~~
+- O ~~SpecialNavigationStationStatus~~
+- O ~~TelephoneContact~~
+- O ~~UnitAvailability~~
+- O ~~VerticalStructureLightingStatus~~
 - O VerticalStructurePart
-- O WorkareaActivity
+- O ~~WorkareaActivity~~
 
 ## Атрибуты
 

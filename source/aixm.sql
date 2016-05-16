@@ -15,7 +15,9 @@ trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontro
 GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
 PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint, airportheliportinformationservice,
 airportheliportairportgroundservice, NavaidEquipment, Azimuth, DME, DirectionFinder, Localizer, Elevation, Glidepath, MarkerBeacon, NDB,
-TACAN, SDF, VOR,Navaid_NavaidEquipment CASCADE;
+TACAN, SDF, VOR,Navaid_NavaidEquipment, ObstacleArea,VerticalStructure, ObstacleArea_VerticalStructure, GroundLightSystem_VerticalStructure,
+NavaidEquipment_VerticalStructure, OrganisationAuthority_VerticalStructure, Unit_VerticalStructure, Service_VerticalStructure,
+VerticalStructurePart, VerticalStructurePartGeometry, CartographyLabel_OBS, cartographylabel_fir, elevatedcurve CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -38,7 +40,8 @@ CodeCommunicationModeType, CodeRadioEmissionType, CodeCommunicationDirectionType
 CodeNavaidPurposeType, CodeSignalPerformanceILSType, CodeCourseQualityILSType, CodeIntegrityLevelILSType, CodeDesignatedPointDesignatorType,
 CodeDesignatedPointType, CodeMLSAzimuthType, CodeMLSChannelBaseType, CodeDMEType, CodeDMEChannelType, CodeILSBackCourseType,
 CodeMarkerBeaconSignalType, CodeAuralMorseType, CodeNDBUsageType, CodeEmissionBandType, CodeTACANChannelType,
-CodeVORType, CodeNorthReferenceType, codemlschanneltype CASCADE;
+CodeVORType, CodeNorthReferenceType, codemlschanneltype, CodeObstacleAreaType, CodeObstacleAssessmentSurfaceType,
+CodeVerticalStructureType, CodeStatusConstructionType, CodeVerticalStructureMarkingType, CodeVerticalStructureMaterialType CASCADE;
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, valflbasetype, valdistancebasetype,
 ValDistanceVerticalType, valdistanceverticalbasetype, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
@@ -1592,6 +1595,150 @@ https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_CodeNorthRefe
 CREATE DOMAIN CodeNorthReferenceType AS VARCHAR(40)
 CHECK (VALUE ~ 'TRUE|MAG|GRID|OTHER: [A-Z]{0,30}');
 
+/*
+Тип пространства, покрываемого препятствием:
+AREA1 - ICAO Area 1: вся территория области (штата)
+AREA2 - ICAO Area 2: терминальная зона управления
+AREA3 - ICAO Area 3: зона аэродрома/вертодрома
+AREA4 - ICAO Area 4: зона операций категории II и III
+OLS - ICAO Annex 14 поверхность ограничения препятствия
+FAR77 - FAA Regulations Part 77 Obstacle Limitation Surfaces
+MANAGED - A 'virtual' area containing the VerticalStructures included in the data collection exercise, which do not qualify yet as Obstacles in any specific Area
+ */
+CREATE DOMAIN CodeObstacleAreaType AS VARCHAR(40)
+CHECK (VALUE ~ 'AREA1|AREA2|AREA3|AREA4|OLS|FAR77|MANAGED|OTHER: [A-Z]{0,30}');
+
+/*
+40_TO_1	- 40 to 1 sloped surface.
+72_TO_1	-	72 to 1 sloped surface.
+MA	-	Missed approach area.
+FINAL	-	Final approach area.
+PT_ENTRY_AREA	-	Procedure turn entry area.
+PRIMARY	-	Primary area.
+SECONDARY	-	Secondary Area.
+ZONE1
+ZONE2
+ZONE3
+AREA1
+AREA2
+AREA3
+TURN_INITIATION
+TURN
+DER	-	Departure End of Runway Area
+ */
+CREATE DOMAIN CodeObstacleAssessmentSurfaceType AS VARCHAR(40)
+CHECK (VALUE ~ '40_TO_1|72_TO_1|MA|PT_ENTRY_AREA|PRIMARY|SECONDARY|ZONE1|ZONE2|ZONE3|AREA1|AREA2|AREA3|TURN_INITIATION|TURN|DER|OTHER: [A-Z]{0,30}');
+
+/*
+AG_EQUIP - сельскохозяйственное оборудование
+ANTENNA
+ARCH - арка
+BRIDGE - мост
+BUILDING - строение
+CABLE_CAR - вагон канатной дороги, фуникулёра
+CATENARY - цепная линия (электрический провод)
+COMPRESSED_AIR_SYSTEM - компонент системы воздуховода для сжатого воздуха
+CONTROL_MONITORING_SYSTEM
+CONTROL_TOWER - диспетчерская вышка
+COOLING_TOWER - охлаждающая башня
+CRANE - (грузо)подъёмный кран
+DAM - дамба
+DOME - купол
+ELECTRICAL_EXIT_LIGHT - компоненты внешней электрической системы освещения, включая кабели, переключатели, приборы, трансформаторы и т.д. Не включают РНС
+ELECTRICAL_SYSTEM - компоненты распределенной электрической системы, включая кабели, переключатели, приборы, двигатели, трансформаторы
+ELEVATOR - лифт
+FENCE - ограждение, забор
+FUEL_SYSTEM - составляющие топливной распределительной системы, состоящие из трубопроводов, арматуры, насосов, цистерн и т.д.
+GATE - проход - часть ограждения, которая может быть открыта для прохода через ограждение или наоброт закрыта.
+GENERAL_UTILITY - компоненты энергосистемы общего пользования, являющиеся универсальными в использовании и в назначении и не принадлежат какой-то особой энергосистеме.
+GRAIN_ELEVATOR - зерновой элеватор
+HEAT_COOL_SYSTEM - составляющие распределенной системы охлождения и отопления, состоящие из труб, фурнитуры, арматуры и т.д.
+INDUSTRIAL_SYSTEM - составляющие системы сбора отходов, состоящие из труб, фурнитуры, арматуры, резервуары и т.д.
+LIGHTHOUSE - маяк
+MONUMENT
+NATURAL_GAS_SYSTEM - составляющие газораспределительной системы
+NATURAL_HIGHPOINT - естественная командная высота
+NAVAID - РНС
+NUCLEAR_REACTOR - ядерный реактор
+POLE - столб, шест, жердь
+POWER_PLANT - электростанция
+REFINERY - нефтеперегонный завод
+RIG - нефтяная вышка
+SALTWATER_SYSTEM - составляющие системы сбора соленой воды
+SIGN - вывеска
+SPIRE - шпиль
+STACK - дымовая труба
+STADIUM - стадион
+STORM_SYSTEM - состсавляющие дренажной штормовой системы сбора
+TANK - резервуар
+TETHERED_BALLOON - привязной аэростат
+TOWER - башня
+TRAMWAY - трамвайная линия
+TRANSMISSION_LINE - линия передачи
+TREE - дерево
+URBAN - городская зона
+VEGETATION - растительность
+WALL - стена
+WASTEWATER_SYSTEM - составляющие системы сбора сточной воды
+WATER_SYSTEM - составляющие системы водоснабжения
+WATER_TOWER - водонапорная башня
+WINDMILL - ветряк, ветродвигатель
+WINDMILL_FARMS - ветроэнергоцентр
+ */
+CREATE DOMAIN CodeVerticalStructureType AS VARCHAR(40)
+CHECK (VALUE ~ 'AG_EQUIP|ANTENNA|ARCH|BRIDGE|BUILDING|CABLE_CAR|CATENARY|COMPRESSED_AIR_SYSTEM|CONTROL_MONITORING_SYSTEM|
+CONTROL_TOWER|COOLING_TOWER|CRANE|DAM|DOME|ELECTRICAL_EXIT_LIGHT|ELECTRICAL_SYSTEM|ELEVATOR|FENCE|FUEL_SYSTEM|GATE|
+GENERAL_UTILITY|GRAIN_ELEVATOR|HEAT_COOL_SYSTEM|INDUSTRIAL_SYSTEM|LIGHTHOUSE|MONUMENT|NATURAL_GAS_SYSTEM|NATURAL_HIGHPOINT|
+NAVAID|NUCLEAR_REACTOR|POLE|POWER_PLANT|REFINERY|RIG|SALTWATER_SYSTEM|SIGN|SPIRE|STACK|STADIUM|STORM_SYSTEM|TANK|
+TETHERED_BALLOON|TOWER|TRAMWAY|TRANSMISSION_LINE|TREE|URBAN|VEGETATION|WALL|WASTEWATER_SYSTEM|WATER_SYSTEM|WATER_TOWER|
+WINDMILL|WINDMILL_FARMS|OTHER: [A-Z]{0,40}');
+
+/*
+Статус постройки:
+IN_CONSTRUCTION - в строительстве
+COMPLETED - строительство завершено
+DEMOLITION_PLANNED - планируется снов
+IN_DEMOLITION - в состоянии ликвидации (сноса)
+ */
+CREATE DOMAIN CodeStatusConstructionType AS VARCHAR(40)
+CHECK (VALUE ~ 'IN_CONSTRUCTION|COMPLETED|DEMOLITION_PLANNED|IN_DEMOLITION|OTHER: [A-Z]{0,30}');
+
+/*
+Тип и структура разметки (маркировки) вертикальной структуры:
+MONOCOLOUR - одноцветная
+CHEQUERED - клетчатая текстура
+HBANDS - горизонтальное обрамление (полосы)
+VBANDS - вертикальное обрамление (полосы)
+FLAG - клетчатый флаг
+MARKERS - маркировочный знаки, прикрепленные к кабелям или электрическим проводам
+ */
+CREATE DOMAIN CodeVerticalStructureMarkingType AS VARCHAR(40)
+CHECK (VALUE ~ 'MONOCOLOUR|CHEQUERED|HBANDS|VBANDS|FLAG|MARKERS|OTHER: [A-Z]{0,30}');
+
+/*
+ADOBE_BRICK - кирпич из глины и соломы, высушенный на солнце, а не в огненной печи (как обычные кирпичи).
+ALUMINIUM
+BRICK
+CONCRETE
+FIBREGLASS - стекловолокно
+GLASS
+IRON - железо
+MASONRY - каменная кладка
+METAL
+MUD
+PLANT
+PRESTRESSED_CONCRETE
+REINFORCED_CONCRETE
+SOD - дёрн, земля
+STEEL
+STONE
+TREATED_TIMBER - пропитанная древесина
+WOOD
+ */
+CREATE DOMAIN CodeVerticalStructureMaterialType AS VARCHAR(40)
+CHECK (VALUE ~ 'ADOBE_BRICK|ALUMINIUM|BRICK|CONCRETE|FIBREGLASS|GLASS|IRON|MASONRY|METAL|MUD|PLANT|PRESTRESSED_CONCRETE|
+REINFORCED_CONCRETE|SOD|STEEL|STONE|TREATED_TIMBER|WOOD|OTHER: [A-Z]{0,30}');
+
 DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_significant_point, auto_id_curve, auto_id_surface, auto_id_altimeter_source_status,
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label, auto_id_cartography_label_CTA, auto_id_cartography_label_FIR,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
@@ -1709,8 +1856,16 @@ CREATE TABLE Curve
 
 );
 
---
---
+--  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedCurve
+CREATE TABLE ElevatedCurve
+(
+  id               INTEGER PRIMARY KEY REFERENCES Curve (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  elevation        ValDistanceVerticalType,
+  geoidUndulation  ValDistanceSignedType,
+  verticalDatum    CodeVerticalDatumType,
+  verticalAccuracy ValDistanceType
+);
+
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Surface
 CREATE TABLE Surface
 (
@@ -2526,15 +2681,6 @@ CREATE TABLE Localizer
   backCourseUsable	CodeILSBackCourseType
 );
 
--- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_MarkerBeacon
-CREATE TABLE MarkerBeacon
-(
-  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
-  class 		CodeMarkerBeaconSignalType,
-  frequency	ValFrequencyType,
-  axisBearing	ValBearingType,
-  auralMorseCode	CodeAuralMorseType
-);
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_NDB
 CREATE TABLE NDB
@@ -2572,6 +2718,189 @@ CREATE TABLE VOR
   declination	ValMagneticVariationType
 );
 
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ObstacleArea
+CREATE TABLE ObstacleArea
+(
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  type	CodeObstacleAreaType,
+  obstructionIdSurfaceCondition	CodeObstacleAssessmentSurfaceType
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_VerticalStructure
+CREATE TABLE VerticalStructure
+(
+  uuid               id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name	TextNameType,
+  type	CodeVerticalStructureType,
+  lighted	CodeYesNoType,
+  markingICAOStandard	CodeYesNoType,
+  "group"	CodeYesNoType,
+  length	ValDistanceType,
+  width	ValDistanceType,
+  radius	ValDistanceType,
+  lightingICAOStandard	CodeYesNoType,
+  synchronisedLighting	CodeYesNoType
+);
+
+CREATE TABLE ObstacleArea_VerticalStructure
+(
+  uuidObstacleArea id PRIMARY KEY REFERENCES ObstacleArea,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+CREATE TABLE GroundLightSystem_VerticalStructure
+(
+  uuidGroundLightSystem id PRIMARY KEY REFERENCES GroundLightSystem,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+CREATE TABLE NavaidEquipment_VerticalStructure
+(
+  uuidNavaidEquipment id PRIMARY KEY REFERENCES NavaidEquipment,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+CREATE TABLE OrganisationAuthority_VerticalStructure
+(
+  uuidOrganisationAuthority id PRIMARY KEY REFERENCES OrganisationAuthority,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+CREATE TABLE 	Unit_VerticalStructure
+(
+  uuidUnit id PRIMARY KEY REFERENCES Unit,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+CREATE TABLE 	Service_VerticalStructure
+(
+  uuidService id PRIMARY KEY REFERENCES Service,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_MarkerBeacon
+CREATE TABLE MarkerBeacon
+(
+  uuid id PRIMARY KEY REFERENCES NavaidEquipment ON DELETE CASCADE ON UPDATE CASCADE,
+  class 		CodeMarkerBeaconSignalType,
+  frequency	ValFrequencyType,
+  axisBearing	ValBearingType,
+  auralMorseCode	CodeAuralMorseType,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_VerticalStructurePart
+CREATE TABLE 	VerticalStructurePart
+(
+  id INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  _transasID  varchar(20),
+  verticalExtent	ValDistanceType	,
+  verticalExtentAccuracy	ValDistanceType	,
+  type	CodeVerticalStructureType,
+  constructionStatus	CodeStatusConstructionType,
+  markingPattern	CodeVerticalStructureMarkingType,
+  markingFirstColour	CodeColourType,
+  markingSecondColour	CodeColourType,
+  mobile	CodeYesNoType	,
+  frangible	CodeYesNoType,
+  visibleMaterial	CodeVerticalStructureMaterialType	,
+  designator	TextDesignatorType,
+  uuidVerticalStructure id REFERENCES VerticalStructure
+);
+
+-- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_VerticalStructurePartGeometry
+CREATE TABLE VerticalStructurePartGeometry
+(
+  idVerticalStructurePart INTEGER PRIMARY KEY REFERENCES VerticalStructurePart ON DELETE CASCADE ON UPDATE CASCADE,
+  idElevatedPoint INTEGER REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  idElevatedCurve INTEGER REFERENCES ElevatedCurve (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  idElevatedSurface INTEGER REFERENCES ElevatedSurface (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE CartographyLabel_OBS
+(
+  id                  INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label') ,
+  xlbl                longitude,
+  ylbl                latitude,
+  srid                INTEGER REFERENCES spatial_ref_sys (srid),
+  visibility INTEGER,
+  idVerticalStructurePart INTEGER REFERENCES VerticalStructurePart ON DELETE CASCADE ON UPDATE CASCADE,
+  geom                GEOMETRY(POINT, 4326)
+);
+
+CREATE VIEW OBS AS
+  SELECT
+    VerticalStructurePart.id,
+    VerticalStructurePart._transasID as trID,
+    VerticalStructurePart.type,
+    VerticalStructure.name as nm,
+    (ElevatedPoint.elevation).value as ab,
+    (verticalExtent).value as ta,
+    VerticalStructure.lighted as le,
+    (SELECT CartographyLabel_OBS.xlbl
+    FROM CartographyLabel_OBS
+    WHERE CartographyLabel_OBS.idVerticalStructurePart = VerticalStructurePart.id),
+     (SELECT CartographyLabel_OBS.ylbl
+    FROM CartographyLabel_OBS
+    WHERE CartographyLabel_OBS.idVerticalStructurePart = VerticalStructurePart.id),
+    (SELECT CartographyLabel_OBS.visibility as v
+    FROM CartographyLabel_OBS
+    WHERE CartographyLabel_OBS.idVerticalStructurePart = VerticalStructurePart.id),
+     point.geom,
+     Point.longitude,
+     point.latitude,
+     Point.srid
+  FROM VerticalStructure, VerticalStructurePart, VerticalStructurePartGeometry, ElevatedPoint, Point WHERE VerticalStructurePart.uuidVerticalStructure = VerticalStructure.uuid AND
+  VerticalStructurePartGeometry.idVerticalStructurePart = VerticalStructurePart.id AND ElevatedPoint.id = VerticalStructurePartGeometry.idElevatedPoint AND ElevatedPoint.id = Point.id;
+
+CREATE OR REPLACE FUNCTION obs_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    with inserted_Point as ( insert into  Point(geom, latitude, longitude, srid)   values(NEW.geom, NEW.latitude, NEW.longitude, NEW.srid) returning id),
+     inserted_ElevatedPoint as (insert into ElevatedPoint(id, elevation) VALUES ((select inserted_Point.id from inserted_Point), ROW(NEW.ab,NULL,'M'))),
+     inserted_VerticalStructure as ( insert into  VerticalStructure(uuid, name, lighted) values(uuid_generate_v4(), NEW.nm, NEW.le) returning uuid),
+    inserted_VerticalStructurePart as (INSERT INTO VerticalStructurePart(id, _transasID, type, verticalExtent, uuidVerticalStructure)  VALUES (NEW.id, NEW.trID, NEW.type, ROW(NEW.ta,'M'), (SELECT inserted_VerticalStructure.uuid FROM inserted_VerticalStructure)) returning id),
+    inserted_CartographyLabel_OBS as (INSERT INTO CartographyLabel_OBS(xlbl, ylbl, visibility, idVerticalStructurePart) VALUES (NEW.xlbl,NEW.ylbl, NEW.v, (SELECT inserted_VerticalStructurePart.id FROM inserted_VerticalStructurePart)))
+    INSERT INTO VerticalStructurePartGeometry(idVerticalStructurePart, idElevatedPoint) VALUES ((SELECT inserted_VerticalStructurePart.id FROM inserted_VerticalStructurePart),(select inserted_Point.id from inserted_Point));
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE VerticalStructurePart
+      SET  _transasID = NEW.trID, type = NEW.type, verticalExtent.value = NEW.ta
+      WHERE VerticalStructurePart.id = OLD.id;
+      UPDATE VerticalStructure
+      SET name = NEW.nm, lighted = NEW.le
+      WHERE VerticalStructure.uuid = (SELECT VerticalStructurePart.uuidVerticalStructure FROM VerticalStructurePart WHERE VerticalStructurePart.id = OLD.id);
+      UPDATE Point
+      SET geom = NEW.geom, latitude = NEW.latitude, longitude = NEW.longitude, srid = NEW.srid
+      WHERE Point.id = (SELECT VerticalStructurePartGeometry.idElevatedPoint FROM VerticalStructurePartGeometry WHERE VerticalStructurePartGeometry.idVerticalStructurePart = OLD.id);
+      UPDATE ElevatedPoint
+      SET elevation.value = NEW.ab
+      WHERE ElevatedPoint.id = (SELECT VerticalStructurePartGeometry.idElevatedPoint FROM VerticalStructurePartGeometry WHERE VerticalStructurePartGeometry.idVerticalStructurePart = OLD.id);
+      UPDATE CartographyLabel_OBS
+      SET CartographyLabel_OBS.xlbl = NEW.xlbl, CartographyLabel_OBS.ylbl = NEW.ylbl, CartographyLabel_OBS.visibility = NEW.v
+      WHERE CartographyLabel_OBS.idVerticalStructurePart  = OLD.id;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      DELETE FROM VerticalStructurePart
+      WHERE VerticalStructurePart.id = OLD.id;
+      DELETE FROM VerticalStructure
+      WHERE VerticalStructure.uuid = (SELECT VerticalStructurePart.uuidVerticalStructure FROM VerticalStructurePart WHERE VerticalStructurePart.id = OLD.id);
+      DELETE FROM Point
+      WHERE Point.id = (SELECT VerticalStructurePartGeometry.idElevatedPoint FROM VerticalStructurePartGeometry WHERE VerticalStructurePartGeometry.idVerticalStructurePart = OLD.id);
+      DELETE FROM ElevatedPoint
+      WHERE ElevatedPoint.id = (SELECT VerticalStructurePartGeometry.idElevatedPoint FROM VerticalStructurePartGeometry WHERE VerticalStructurePartGeometry.idVerticalStructurePart = OLD.id);
+      DELETE FROM CartographyLabel_OBS
+      WHERE CartographyLabel_OBS.idVerticalStructurePart  = OLD.id;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER obs_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  OBS FOR EACH ROW EXECUTE PROCEDURE obs_function();
 
 CREATE OR REPLACE VIEW ARP AS
   SELECT

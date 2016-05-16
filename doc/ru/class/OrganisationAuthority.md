@@ -65,7 +65,7 @@ OrganisationAuthority
 - F ~~RadarSystem~~
 - O ~~PropertiesWithSchedule~~
 - F ~~NavaidEquipment~~
-- F ~~VerticalStructure~~
+- F VerticalStructure
 - F ~~AerialRefuelling~~
 
 ### Многие к одному:
