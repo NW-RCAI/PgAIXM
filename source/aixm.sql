@@ -4314,8 +4314,9 @@ CREATE VIEW TPM AS
   segmentpoint.reportingatc as tp,
   point.magneticVariation as md,
   point.latitude,
-    point.longitude,
-    point.geom
+  point.longitude,
+  point.geom,
+  point.srid
     FROM SegmentPoint, significantpoint, point WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
   AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM RouteSegment
     WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid FROM Route WHERE Route.type = 'OTHER: MVL')) OR
@@ -4329,31 +4330,34 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO DesignatedPoint VALUES (NEW.uuid, NEW.trID, NEW.nm);
-    INSERT INTO SegmentPoint VALUES (NEW.tp);
-    INSERT INTO Point VALUES (NEW.md, NEW.id, NEW.latitude, NEW.longitude, NEW.geom);
+    with inserted_point as ( insert into  Point(latitude, longitude, srid, magneticVariation, geom) values(NEW.latitude, NEW.longitude, NEW.srid, NEW.md, NEW.geom) returning id),
+    inserted_significantpoint as (insert into significantpoint (idpoint) VALUES ((select inserted_point.id from inserted_point)) returning id),
+    inserted_SegmentPoint as (insert into SegmentPoint (id, reportingatc, idSignificantPoint) VALUES (nextval('auto_id_segment_point'),NEW.tp, (select inserted_point.id from inserted_point)))
+    insert into DesignatedPoint (_transasID, designator, idPoint)  VALUES (NEW.trID, NEW.nm, (select inserted_point.id from inserted_point));
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
-      UPDATE DesignatedPoint
-      SET uuid = NEW.uuid, _transasID = NEW.trID, designator = NEW.nm
-      WHERE DesignatedPoint.uuid = OLD.uuid;
       UPDATE Point
       SET
         magneticVariation = NEW.md,
         latitude = NEW.latitude,
         longitude = NEW.longitude,
-        geom = NEW.geom
-      WHERE Point.id = OLD.id;
+        geom = NEW.geom,
+        srid = NEW.srid
+      WHERE Point.id = (SELECT significantpoint.idpoint FROM SignificantPoint WHERE SignificantPoint.id = (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = OLD.id));
+      UPDATE DesignatedPoint
+      SET _transasID = NEW.trID, designator = NEW.nm
+      WHERE DesignatedPoint.uuid = (SELECT significantpoint.uuiddesignatedpoint FROM SignificantPoint WHERE SignificantPoint.id = (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = OLD.id));
       UPDATE SegmentPoint
-      SET reportingATC = NEW.tp;
+      SET reportingATC = NEW.tp
+      WHERE SegmentPoint.id = NEW.id;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
       DELETE FROM DesignatedPoint
-      WHERE DesignatedPoint.uuid = OLD.uuid;
+      WHERE DesignatedPoint.uuid = (SELECT significantpoint.uuiddesignatedpoint FROM SignificantPoint WHERE SignificantPoint.id = (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = OLD.id));
       DELETE FROM Point
-      WHERE Point.id = OLD.id;
+      WHERE Point.id = (SELECT significantpoint.idpoint FROM SignificantPoint WHERE SignificantPoint.id = (SELECT SegmentPoint.idSignificantPoint FROM SegmentPoint WHERE SegmentPoint.id = OLD.id));
       DELETE FROM SegmentPoint
       WHERE SegmentPoint.id = OLD.id;
       RETURN NULL;
@@ -4413,7 +4417,7 @@ CREATE TRIGGER GP_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   GP FOR EACH ROW EXECUTE PROCEDURE tpm_function();
 
--- РНС
+-- РНС (fieldElevation).value AS ha,
 CREATE VIEW NAV AS
   SELECT
     Navaid.uuid,
@@ -4421,16 +4425,16 @@ CREATE VIEW NAV AS
     Navaid.designator AS nm,
     Navaid.name as nl,
     Navaid.type as tp,
-    CASE WHEN Navaid.type = 'NDB' THEN  (SELECT (frequency).value || ' ' || (frequency).unit AS tf
+    CASE WHEN Navaid.type = 'NDB' THEN  (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
      FROM NDB
      WHERE NDB.uuid  = Navaid.uuid)
-      WHEN Navaid.type = 'DME' THEN  (SELECT (ghostFrequency).value || ' ' || (ghostFrequency).unit AS tf
+      WHEN Navaid.type = 'DME' THEN  (SELECT ((ghostFrequency).value || ',' || (ghostFrequency).unit) AS tf
      FROM DME
      WHERE DME.uuid = Navaid.uuid)
-      WHEN Navaid.type = 'ILS_DME' THEN   (SELECT (frequency).value || ' ' || (frequency).unit AS tf
+      WHEN Navaid.type = 'ILS_DME' THEN   (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
      FROM Localizer
      WHERE Localizer.uuid = Navaid.uuid )
-      ELSE  (SELECT (frequency).value || ' ' || (frequency).unit AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
+      ELSE  (SELECT ((frequency).value || ',' || (frequency).unit) AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
      FROM VOR
      WHERE VOR.uuid  = Navaid.uuid )
       END ,
@@ -4443,6 +4447,7 @@ CREATE VIEW NAV AS
 FROM Navaid, Point, ElevatedPoint
 WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
 
+-- ROW(NEW.ha,NULL,'M')
 CREATE OR REPLACE FUNCTION nav_function()
   RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -4450,17 +4455,23 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Navaid (_transasID, designator, name, type) VALUES (NEW.trID, NEW.nm, NEW.nl, NEW.tp);
-    INSERT INTO NDB (frequency) VALUES (NEW.tf);
-    INSERT INTO DME (ghostFrequency) VALUES (NEW.tf);
-    INSERT INTO Localizer (frequency) VALUES (NEW.tf);
-    INSERT INTO VOR (frequency) VALUES (NEW.tf);
-    INSERT INTO Point (id, latitude, longitude, magneticVariation, geom)  VALUES ( NEW.id, NEW.latitude, NEW.longitude, NEW.md, NEW.geom);
+     with inserted_Point as ( INSERT INTO Point (id, latitude, longitude, magneticVariation, geom)  VALUES ( NEW.id, NEW.latitude, NEW.longitude, NEW.md, NEW.geom) RETURNING id)
+    INSERT INTO Navaid (uuid, _transasID, designator, name, type, idElevatedPoint) VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.tp, (SELECT inserted_Point.id FROM inserted_Point ) );
+      if NEW.tp = 'NDB' THEN
+        INSERT INTO NDB (uuid, frequency) VALUES (NEW.uuid, NEW.tf);
+      ELSEIF  NEW.tp = 'DME' THEN
+        INSERT INTO DME (uuid, ghostFrequency) VALUES (NEW.uuid, NEW.tf);
+      ELSEIF  NEW.tp = 'ILS_DME' THEN
+        INSERT INTO Localizer (uuid, frequency) VALUES (NEW.uuid, NEW.tf) ;
+      ELSE
+        INSERT INTO VOR (uuid, frequency) VALUES (NEW.uuid, NEW.tf);
+      END IF ;
+
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
       UPDATE Navaid
-      SET uuid = NEW.uuid, _transasID = NEW.trID, designator = NEW.nm, name = NEW.nl, type = NEW.tp
+      SET _transasID = NEW.trID, designator = NEW.nm, name = NEW.nl, type = NEW.tp
       WHERE Navaid.uuid = OLD.uuid;
       UPDATE Point
       SET
@@ -4470,24 +4481,29 @@ BEGIN
         geom = NEW.geom
       WHERE Point.id = OLD.id;
       UPDATE NDB
-      SET frequency.value = NEW.tf;
+      SET frequency = NEW.tf
+      WHERE NDB.uuid = OLD.uuid OR NDB.uuid = ( SELECT Navaid.uuid FROM Navaid WHERE NEW.tp = 'NDB' AND Navaid.uuid = OLD.uuid);
       UPDATE DME
-      SET ghostFrequency.value = NEW.tf;
+      SET ghostFrequency = NEW.tf
+      WHERE DME.uuid = OLD.uuid OR DME.uuid = ( SELECT Navaid.uuid FROM Navaid WHERE NEW.tp = 'DME' AND Navaid.uuid = OLD.uuid) ;
       UPDATE Localizer
-      SET frequency.value = NEW.tf;
+      SET frequency = NEW.tf
+      WHERE Localizer.uuid = OLD.uuid OR Localizer.uuid = ( SELECT Navaid.uuid FROM Navaid WHERE NEW.tp = 'ILS_DME' AND Navaid.uuid = OLD.uuid) ;
       UPDATE VOR
-      SET frequency.value = NEW.tf;
+      SET frequency = NEW.tf
+      WHERE VOR.uuid = OLD.uuid OR VOR.uuid = ( SELECT Navaid.uuid FROM Navaid WHERE NOT NEW.tp IN ('NDB', 'DME', 'ILS_DME') AND Navaid.uuid = OLD.uuid) ;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
       DELETE FROM Navaid
       WHERE Navaid.uuid = OLD.uuid;
       DELETE FROM EnRouteSegmentPoint
-      WHERE EnRouteSegmentPoint.id = OLD.id;
+      WHERE EnRouteSegmentPoint.id = (SELECT SegmentPoint.id FROM SegmentPoint WHERE SegmentPoint.idSignificantPoint =
+                            (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.idPoint = OLD.id));
       DELETE FROM SegmentPoint
-      WHERE SegmentPoint.id = OLD.id;
+      WHERE SegmentPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE SignificantPoint.idPoint = OLD.id);
       DELETE FROM SignificantPoint
-      WHERE SignificantPoint.id = OLD.id;
+      WHERE SignificantPoint.idPoint = OLD.id;
       DELETE FROM Point
       WHERE Point.id = OLD.id;
       DELETE FROM NDB
