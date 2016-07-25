@@ -13,11 +13,17 @@ AirspaceActivation_OrganisationAuthority, SignificantPointInAirspace, Significan
 AirportHeliport_AirportGroundService, Unit, UnitDependency, CallsignDetail, radiocommunicationchannel, service_radiocommunicationchannel,
 trafficseparationservice, airspace_airtrafficmanagementservice, airtrafficcontrolservice, AuthorityForAirspace, Navaid,
 GroundLightingAvailability, groundtrafficcontrolservice, AircraftGroundService, OrganisationAuthority_PropertiesWithSchedule,
-PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint, airportheliportinformationservice,
-airportheliportairportgroundservice, NavaidEquipment, Azimuth, DME, DirectionFinder, Localizer, Elevation, Glidepath, MarkerBeacon, NDB,
+PropertiesWithSchedule, Timesheet, airportheliport_navaid, DesignatedPoint, AirportHeliport_InformationService,
+AirportHeliport_AirportGroundService, NavaidEquipment, Azimuth, DME, DirectionFinder, Localizer, Elevation, Glidepath, MarkerBeacon, NDB,
 TACAN, SDF, VOR, Navaid_NavaidEquipment, ObstacleArea, VerticalStructure, ObstacleArea_VerticalStructure, GroundLightSystem_VerticalStructure,
 NavaidEquipment_VerticalStructure, OrganisationAuthority_VerticalStructure, Unit_VerticalStructure, Service_VerticalStructure,
-VerticalStructurePart, VerticalStructurePartGeometry, CartographyLabel_OBS, cartographylabel_fir, elevatedcurve CASCADE;
+VerticalStructurePart, VerticalStructurePartGeometry, CartographyLabel_OBS, cartographylabel_fir, elevatedcurve,
+groundlightsystemtimeslice, servicetimeslice, navaidequipmenttimeslice, timesliceinterpretationtype, TimeSlice,
+AirportHeliportTimeSlice, SurveyControlPointTimeSlice, AirportHotSpotTimeSlice, AltimeterSourceTimeSlice, RunwayTimeSlice,
+RunwayDirectionTimeSlice, UnitTimeSlice, RadioCommunicationChannelTimeSlice, DesignatedPointTimeSlice, RouteTimeSlice,
+AirspaceTimeSlice, AuthorityForAirspaceTimeSlice, NavaidTimeSlice, RouteSegmentTimeSlice, SignificantPointInAirspaceTimeSlice,
+ObstacleAreaTimeSlice, VerticalStructureTimeSlice, InformationServiceTimeSlice, AirTrafficManagementServiceTimeSlice,
+AirportGroundServiceTimeSlice, SearchRescueServiceTimeSlice, TrafficSeparationServiceTimeSlice CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -41,7 +47,8 @@ CodeNavaidPurposeType, CodeSignalPerformanceILSType, CodeCourseQualityILSType, C
 CodeDesignatedPointType, CodeMLSAzimuthType, CodeMLSChannelBaseType, CodeDMEType, CodeDMEChannelType, CodeILSBackCourseType,
 CodeMarkerBeaconSignalType, CodeAuralMorseType, CodeNDBUsageType, CodeEmissionBandType, CodeTACANChannelType,
 CodeVORType, CodeNorthReferenceType, codemlschanneltype, CodeObstacleAreaType, CodeObstacleAssessmentSurfaceType,
-CodeVerticalStructureType, CodeStatusConstructionType, CodeVerticalStructureMarkingType, CodeVerticalStructureMaterialType CASCADE;
+CodeVerticalStructureType, CodeStatusConstructionType, CodeVerticalStructureMarkingType, CodeVerticalStructureMaterialType,
+TimesliceInterpretationType CASCADE;
 
 DROP TYPE IF EXISTS CodeAirportHeliportType, uomtemperaturetype, valflbasetype, valdistancebasetype,
 ValDistanceVerticalType, valdistanceverticalbasetype, ValTemperatureType, ValFLType, ValDistanceSignedType, ValDistanceType, ValDepthType,
@@ -1773,15 +1780,29 @@ CREATE TABLE Timesheet
   idPropertiesWithSchedule INTEGER REFERENCES PropertiesWithSchedule (id)
 );
 
+CREATE TABLE TimeSlice
+(
+  id INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_timeslice'),
+  validTime TimeType,
+  interpretation TimesliceInterpretationType,
+  sequenceNumber NoNumberType,
+  correctionNumber NoNumberType
+);
+
 --  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_OrganisationAuthority
+
 CREATE TABLE OrganisationAuthority
 (
-  uuid       id PRIMARY KEY DEFAULT uuid_generate_v4(),
+  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4()
+);
+CREATE TABLE OrganisationAuthorityTimeSlice
+(
+  idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
+  uuid                id REFERENCES OrganisationAuthority (uuid),
   name       TextNameType,
   designator CodeOrganisationDesignatorType,
   type       CodeOrganisationType,
   military   CodeMilitaryOperationsType
-
 );
 
 CREATE TABLE OrganisationAuthority_PropertiesWithSchedule
@@ -1859,14 +1880,6 @@ CREATE TABLE ElevatedSurface
   verticalAccuracy ValDistanceType
 );
 
-CREATE TABLE TimeSlice
-(
-  id INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_timeslice'),
-  validTime TimeType,
-  interpretation TimesliceInterpretationType,
-  sequenceNumber NoNumberType,
-  correctionNumber NoNumberType
-);
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportHeliport
 CREATE TABLE AirportHeliport
@@ -2084,7 +2097,7 @@ CREATE TABLE RunwayDirection
 CREATE TABLE RunwayDirectionTimeSlice
 (
   idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                id REFERENCES RunwayDirection (uuid),
+  uuid                      id REFERENCES RunwayDirection (uuid),
   uuidRunway                id REFERENCES Runway (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   designator                TextDesignatorType,
   trueBearing               ValBearingType,
@@ -2103,12 +2116,12 @@ CREATE TABLE RunwayDirectionTimeSlice
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystemhttps://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundLightSystem
 CREATE TABLE GroundLightSystem
 (
-  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4()
+  uuid                        id NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4()
 );
 CREATE TABLE GroundLightSystemTimeSlice
 (
   idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                id REFERENCES GroundLightSystem (uuid),
+  uuid                id NOT NULL REFERENCES GroundLightSystem (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   emergencyLighting CodeYesNoType,
   intensityLevel    CodeLightIntensityType,
   colour            CodeColourType
@@ -2118,7 +2131,7 @@ CREATE TABLE GroundLightSystemTimeSlice
 CREATE TABLE RunwayDirectionLightSystem
 (
   idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES GroundLightSystemTimeSlice (idTimeSlice),
-  uuid                id REFERENCES GroundLightSystemTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid  id NOT NULL REFERENCES GroundLightSystem (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidRunwayDirection id REFERENCES RunwayDirection (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   position            CodeRunwaySectionType
 );
@@ -2286,31 +2299,43 @@ CREATE TABLE Service_RadioCommunicationChannel
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficManagementService
 CREATE TABLE AirTrafficManagementService
 (
+  uuid id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE AirTrafficManagementServiceTimeSlice
+(
   idTimeSlice   INTEGER NOT NULL PRIMARY KEY REFERENCES ServiceTimeSlice (idTimeSlice),
-  uuid                id REFERENCES ServiceTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid                id REFERENCES AirTrafficManagementService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceATFMType
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirportGroundService
 CREATE TABLE AirportGroundService
 (
+  uuid id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE AirportGroundServiceTimeSlice
+(
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES ServiceTimeSlice (idTimeSlice),
-  uuid        id REFERENCES ServiceTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+  uuid        id REFERENCES AirportGroundService (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AircraftGroundService
 CREATE TABLE AircraftGroundService
 (
-  idTimeSlice   INTEGER NOT NULL PRIMARY KEY REFERENCES AirportGroundService (idTimeSlice),
-  uuidAirportGroundService id PRIMARY KEY REFERENCES AirportGroundService (uuid),
+  idTimeSlice   INTEGER NOT NULL PRIMARY KEY REFERENCES AirportGroundServiceTimeSlice (idTimeSlice),
+  uuid id REFERENCES AirportGroundService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type                     CodeAircraftGroundServiceType
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_InformationService
 CREATE TABLE InformationService
 (
+  uuid id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE InformationServiceTimeSlice
+(
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES ServiceTimeSlice (idTimeSlice),
-  uuid        id REFERENCES ServiceTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES InformationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type     CodeServiceInformationType,
   voice    CodeYesNoType,
   dataLink CodeYesNoType,
@@ -2320,16 +2345,24 @@ CREATE TABLE InformationService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SearchRescueService
 CREATE TABLE SearchRescueService
 (
+  uuid id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE SearchRescueServiceTimeSlice
+(
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES ServiceTimeSlice (idTimeSlice),
-  uuid        id REFERENCES ServiceTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES SearchRescueService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceSARType
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_TrafficSeparationService
 CREATE TABLE TrafficSeparationService
 (
+  uuid id PRIMARY KEY REFERENCES Service (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE TrafficSeparationServiceTimeSlice
+(
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES ServiceTimeSlice (idTimeSlice),
-  uuid        id REFERENCES ServiceTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   radarAssisted   CodeYesNoType,
   dataLinkEnabled CodeYesNoType,
   dataLinkChannel CodeCommunicationChannelType
@@ -2338,7 +2371,7 @@ CREATE TABLE TrafficSeparationService
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficControlService
 CREATE TABLE AirTrafficControlService
 (
-  idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES TrafficSeparationService (idTimeSlice),
+  idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES TrafficSeparationServiceTimeSlice (idTimeSlice),
   uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceATCType
 );
@@ -2346,20 +2379,20 @@ CREATE TABLE AirTrafficControlService
 -- https://extranet.eurocontrol.int/redirect/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundTrafficControlService
 CREATE TABLE GroundTrafficControlService
 (
-  idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES TrafficSeparationService (idTimeSlice),
+  idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES TrafficSeparationServiceTimeSlice (idTimeSlice),
   uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceGroundControlType
 );
 
 --
-CREATE TABLE AirportHeliportInformationService
+CREATE TABLE AirportHeliport_InformationService
 (
   uuidAirportHeliport    id REFERENCES AirportHeliport (uuid),
   uuidInformationService id REFERENCES InformationService (uuid)
 );
 
 --
-CREATE TABLE AirportHeliportAirportGroundService
+CREATE TABLE AirportHeliport_AirportGroundService
 (
   uuidAirportHeliport      id REFERENCES AirportHeliport (uuid),
   uuidAirportGroundService id REFERENCES AirportGroundService (uuid)
@@ -2674,7 +2707,7 @@ CREATE TABLE Navaid_NavaidEquipment
 CREATE TABLE Azimuth
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type                   CodeMLSAzimuthType,
   trueBearing            ValBearingType,
   trueBearingAccuracy    ValAngleType,
@@ -2690,7 +2723,7 @@ CREATE TABLE Azimuth
 CREATE TABLE DME
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type           CodeDMEType,
   channel        CodeDMEChannelType,
   ghostFrequency ValFrequencyType,
@@ -2701,7 +2734,7 @@ CREATE TABLE DME
 CREATE TABLE DirectionFinder
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   doppler CodeYesNoType
 );
 
@@ -2709,7 +2742,7 @@ CREATE TABLE DirectionFinder
 CREATE TABLE Elevation
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   angleNominal  ValAngleType,
   angleMinimum  ValAngleType,
   angleSpan     ValAngleType,
@@ -2720,7 +2753,7 @@ CREATE TABLE Elevation
 CREATE TABLE Glidepath
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   frequency     ValFrequencyType,
   slope         ValAngleType,
   angleAccuracy ValAngleType,
@@ -2732,7 +2765,7 @@ CREATE TABLE Glidepath
 CREATE TABLE Localizer
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   frequency               ValFrequencyType,
   magneticBearing         ValBearingType,
   magneticBearingAccuracy ValAngleType,
@@ -2748,7 +2781,7 @@ CREATE TABLE Localizer
 CREATE TABLE NDB
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   frequency    ValFrequencyType,
   class        CodeNDBUsageType,
   emissionBand CodeEmissionBandType
@@ -2758,7 +2791,7 @@ CREATE TABLE NDB
 CREATE TABLE SDF
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   frequency       ValFrequencyType,
   magneticBearing ValBearingType,
   trueBearing     ValBearingType
@@ -2768,7 +2801,7 @@ CREATE TABLE SDF
 CREATE TABLE TACAN
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   channel     CodeTACANChannelType,
   declination ValMagneticVariationType
 );
@@ -2777,7 +2810,7 @@ CREATE TABLE TACAN
 CREATE TABLE VOR
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type                 CodeVORType,
   frequency            ValFrequencyType,
   zeroBearingDirection CodeNorthReferenceType,
@@ -2853,7 +2886,7 @@ CREATE TABLE Service_VerticalStructure
 CREATE TABLE MarkerBeacon
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES NavaidEquipmentTimeSlice (idTimeSlice),
-  uuid        id REFERENCES NavaidEquipmentTimeSlice (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid        id REFERENCES NavaidEquipment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   class                 CodeMarkerBeaconSignalType,
   frequency             ValFrequencyType,
   axisBearing           ValBearingType,
@@ -2905,10 +2938,10 @@ CREATE VIEW OBS AS
     VerticalStructurePart.id,
     VerticalStructurePart._transasID AS trID,
     VerticalStructurePart.type,
-    VerticalStructure.name           AS nm,
+    VerticalStructureTimeSlice.name  AS nm,
     (ElevatedPoint.elevation).value  AS ab,
     (verticalExtent).value           AS ta,
-    VerticalStructure.lighted        AS le,
+    VerticalStructureTimeSlice.lighted        AS le,
     (SELECT CartographyLabel_OBS.xlbl
      FROM CartographyLabel_OBS
      WHERE CartographyLabel_OBS.idVerticalStructurePart = VerticalStructurePart.id),
@@ -2922,8 +2955,9 @@ CREATE VIEW OBS AS
     Point.longitude,
     point.latitude,
     Point.srid
-  FROM VerticalStructure, VerticalStructurePart, VerticalStructurePartGeometry, ElevatedPoint, Point
+  FROM VerticalStructure, VerticalStructureTimeSlice, VerticalStructurePart, VerticalStructurePartGeometry, ElevatedPoint, Point
   WHERE VerticalStructurePart.uuidVerticalStructure = VerticalStructure.uuid AND
+        VerticalStructureTimeSlice.uuid = VerticalStructure.uuid AND
         VerticalStructurePartGeometry.idVerticalStructurePart = VerticalStructurePart.id AND
         ElevatedPoint.id = VerticalStructurePartGeometry.idElevatedPoint AND ElevatedPoint.id = Point.id;
 
@@ -3010,49 +3044,50 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
 
 CREATE OR REPLACE VIEW ARP AS
   SELECT
-    uuid,
-    _transasID             AS trID,
-    name                   AS nl,
-    designator             AS nm,
-    controltype,
+    TimeSlice.validTime , -- допустим здесь записан цикл
+    AirportHeliport.uuid,
+    AirportHeliport._transasID AS trID,
+    AirportHeliportTimeSlice.name  AS nl,
+    AirportHeliportTimeSlice.designator AS nm,
+    AirportHeliportTimeSlice.controltype AS tp,
     (fieldElevation).value AS ha,
-    (SELECT (nominallength).value AS length
-     FROM Runway
-     WHERE Runway.uuidAirportHeliport = AirportHeliport.uuid),
-    (SELECT count(surfacecharacteristics.composition) AS cover
-     FROM surfacecharacteristics, runway
+    (SELECT (nominallength).value AS lr
+     FROM RunwayTimeSlice
+     WHERE RunwayTimeSlice.idTimeSlice = AirportHeliportTimeSlice.idTimeSlice), -- RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+    (SELECT count(surfacecharacteristics.composition) AS cov
+     FROM surfacecharacteristics, runwaytimeslice
      WHERE
-       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id AND RunwayTimeSlice.idTimeSlice = AirportHeliportTimeSlice.idTimeSlice
        AND surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H')),
-    (SELECT RunwayDirection.trueBearing AS ugol
-     FROM RunwayDirection, Runway
-     WHERE RunwayDirection.uuidRunway = Runway.uuid AND Runway.uuidAirportHeliport = AirportHeliport.uuid),
-    abandoned              AS closed,
+    (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
+     FROM RunwayDirectionTimeSlice, RunwayTimeSlice
+     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+    AirportHeliportTimeSlice.abandoned              AS st,
     (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+     FROM runwaydirectionlightsystem, RunwayDirectionTimeSlice, RunwayTimeSlice
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = RunwayDirectionTimeSlice.uuid AND
+           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = airportheliport.uuid),
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Service, Unit
-     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice
+     WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
     (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
     (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
-    (SELECT Unit.type AS unit_type
-     FROM Unit
-     WHERE Unit.uuidAirportHeliport = AirportHeliport.uuid
+    (SELECT UnitTimeSlice.type AS unit_type
+     FROM UnitTimeSlice
+     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
     CartographyLabel.xlbl,
     CartographyLabel.ylbl,
@@ -3060,56 +3095,59 @@ CREATE OR REPLACE VIEW ARP AS
     Point.longitude,
     point.latitude,
     Point.srid
-  FROM airportheliport, point, CartographyLabel
-  WHERE airportheliport.type IS NULL AND point.id = airportheliport.idelevatedpoint AND
+  FROM AirportHeliportTimeSlice, airportheliport, point, CartographyLabel, TimeSlice
+  WHERE AirportHeliportTimeSlice.type IS NULL AND AirportHeliportTimeSlice.idTimeSlice = TimeSlice.id AND
+        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
         CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
 -- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
 
 CREATE OR REPLACE VIEW ALS AS
   SELECT
-    airportheliport.uuid,
-    airportheliport._transasID AS trID,
-    airportheliport.name       AS nl,
-    airportheliport.designator AS nm,
-    airportheliport.type,
-    (fieldElevation).value     AS ha,
-    (SELECT (nominallength).value AS length
-     FROM Runway
-     WHERE Runway.uuidAirportHeliport = AirportHeliport.uuid),
-    (SELECT count(surfacecharacteristics.composition) AS cover
-     FROM surfacecharacteristics, runway
+
+    TimeSlice.validTime , -- допустим здесь записан цикл
+    AirportHeliport.uuid,
+    AirportHeliport._transasID AS trID,
+    AirportHeliportTimeSlice.name  AS nl,
+    AirportHeliportTimeSlice.designator AS nm,
+    AirportHeliportTimeSlice.type AS tp,
+    (fieldElevation).value AS ha,
+    (SELECT (nominallength).value AS lr
+     FROM RunwayTimeSlice
+     WHERE RunwayTimeSlice.idTimeSlice = AirportHeliportTimeSlice.idTimeSlice),
+    (SELECT count(surfacecharacteristics.composition) AS cov
+     FROM surfacecharacteristics, runwaytimeslice
      WHERE
-       runway.idsurfacecharacteristics = surfacecharacteristics.id AND runway.uuidairportheliport = airportheliport.uuid
+       RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id AND RunwayTimeSlice.idTimeSlice = AirportHeliportTimeSlice.idTimeSlice
        AND surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H')),
-    (SELECT RunwayDirection.trueBearing AS ugol
-     FROM RunwayDirection, Runway
-     WHERE RunwayDirection.uuidRunway = Runway.uuid AND Runway.uuidAirportHeliport = AirportHeliport.uuid),
-    abandoned                  AS closed,
+    (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
+     FROM RunwayDirectionTimeSlice, RunwayTimeSlice
+     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+    AirportHeliportTimeSlice.abandoned              AS st,
     (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
-     FROM runwaydirectionlightsystem, runwaydirection, runway
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = runwaydirection.uuid AND
-           runway.uuid = runwaydirection.uuidrunway AND runway.uuidairportheliport = airportheliport.uuid),
+     FROM runwaydirectionlightsystem, RunwayDirectionTimeSlice, RunwayTimeSlice
+     WHERE runwaydirectionlightsystem.uuidrunwaydirection = RunwayDirectionTimeSlice.uuid AND
+           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = airportheliport.uuid),
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Service, Unit
-     WHERE CallsignDetail.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice
+     WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
     (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
     (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannel, Service_RadioCommunicationChannel, Service, Unit
-     WHERE RadioCommunicationChannel.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Service.uuid AND Service.uuidUnit = Unit.uuid AND
-           Unit.uuidAirportHeliport = AirportHeliport.uuid
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
-    (SELECT Unit.type AS unit_type
-     FROM Unit
-     WHERE Unit.uuidAirportHeliport = AirportHeliport.uuid
+    (SELECT UnitTimeSlice.type AS unit_type
+     FROM UnitTimeSlice
+     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
      LIMIT 1),
     CartographyLabel.xlbl,
     CartographyLabel.ylbl,
@@ -3117,8 +3155,9 @@ CREATE OR REPLACE VIEW ALS AS
     Point.longitude,
     point.latitude,
     Point.srid
-  FROM airportheliport, point, CartographyLabel
-  WHERE airportheliport.type IS NOT NULL AND point.id = airportheliport.idelevatedpoint AND
+  FROM AirportHeliportTimeSlice, airportheliport, point, CartographyLabel, TimeSlice
+  WHERE AirportHeliportTimeSlice.type IS NOT NULL AND AirportHeliportTimeSlice.idTimeSlice = TimeSlice.id AND
+        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
         CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
 
 CREATE OR REPLACE FUNCTION arp_function()
@@ -3136,7 +3175,7 @@ BEGIN
     IF NEW.geom IS NOT NULL
     THEN
       INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
-      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW (NEW.ha, NULL, 'M'), NEW.closed,
+      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.tp, ROW (NEW.ha, NULL, 'M'), NEW.closed,
               (SELECT Point.id
                FROM Point
                WHERE geom = NEW.geom));
