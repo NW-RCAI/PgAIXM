@@ -23,7 +23,8 @@ AirportHeliportTimeSlice, SurveyControlPointTimeSlice, AirportHotSpotTimeSlice, 
 RunwayDirectionTimeSlice, UnitTimeSlice, RadioCommunicationChannelTimeSlice, DesignatedPointTimeSlice, RouteTimeSlice,
 AirspaceTimeSlice, AuthorityForAirspaceTimeSlice, NavaidTimeSlice, RouteSegmentTimeSlice, SignificantPointInAirspaceTimeSlice,
 ObstacleAreaTimeSlice, VerticalStructureTimeSlice, InformationServiceTimeSlice, AirTrafficManagementServiceTimeSlice,
-AirportGroundServiceTimeSlice, SearchRescueServiceTimeSlice, TrafficSeparationServiceTimeSlice CASCADE;
+AirportGroundServiceTimeSlice, SearchRescueServiceTimeSlice, TrafficSeparationServiceTimeSlice, OrganisationAuthorityTimeSlice,
+RunwayDirectionLightSystemTimeSlice, AirTrafficControlServiceTimeSlice, GroundTrafficControlServiceTimeSlice CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -1782,8 +1783,9 @@ CREATE TABLE Timesheet
 
 CREATE TABLE TimeSlice
 (
-  id INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_timeslice'),
-  validTime TimeType,
+  id INTEGER PRIMARY KEY DEFAULT nextval('auto_id_timeslice'),
+  validTimeBegin DateType,
+  validTimeEnd DateType,
   interpretation TimesliceInterpretationType,
   sequenceNumber NoNumberType,
   correctionNumber NoNumberType
@@ -2130,8 +2132,12 @@ CREATE TABLE GroundLightSystemTimeSlice
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_RunwayDirectionLightSystem
 CREATE TABLE RunwayDirectionLightSystem
 (
+  uuid  id PRIMARY KEY REFERENCES GroundLightSystem (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE RunwayDirectionLightSystemTimeSlice
+(
   idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES GroundLightSystemTimeSlice (idTimeSlice),
-  uuid  id NOT NULL REFERENCES GroundLightSystem (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuid  id REFERENCES RunwayDirectionLightSystem (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidRunwayDirection id REFERENCES RunwayDirection (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   position            CodeRunwaySectionType
 );
@@ -2275,8 +2281,8 @@ CREATE TABLE RadioCommunicationChannel
 );
 CREATE TABLE RadioCommunicationChannelTimeSlice
 (
-  idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                id REFERENCES RadioCommunicationChannel (uuid),
+  idTimeSlice           INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
+  uuid                  id REFERENCES RadioCommunicationChannel (uuid),
   mode                  CodeCommunicationModeType,
   rank                  CodeFacilityRankingType,
   frequencyTransmission ValFrequencyType,
@@ -2371,6 +2377,10 @@ CREATE TABLE TrafficSeparationServiceTimeSlice
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirTrafficControlService
 CREATE TABLE AirTrafficControlService
 (
+  uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE AirTrafficControlServiceTimeSlice
+(
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES TrafficSeparationServiceTimeSlice (idTimeSlice),
   uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   type CodeServiceATCType
@@ -2378,6 +2388,10 @@ CREATE TABLE AirTrafficControlService
 
 -- https://extranet.eurocontrol.int/redirect/http://webprisme.cfmu.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_GroundTrafficControlService
 CREATE TABLE GroundTrafficControlService
+(
+  uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE GroundTrafficControlServiceTimeSlice
 (
   idTimeSlice INTEGER NOT NULL PRIMARY KEY REFERENCES TrafficSeparationServiceTimeSlice (idTimeSlice),
   uuid        id REFERENCES TrafficSeparationService (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2446,8 +2460,8 @@ CREATE TABLE Airspace
 );
 CREATE TABLE AirspaceTimeSlice
 (
-  idTimeSlice                 INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                        id REFERENCES Airspace (uuid),
+  idTimeSlice          INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
+  uuid                 id REFERENCES Airspace (uuid),
   type                 CodeAirspaceType,
   designator           CodeAirspaceDesignatorType,
   localType            TextNameType,
@@ -3042,9 +3056,85 @@ CREATE TRIGGER obs_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   OBS FOR EACH ROW EXECUTE PROCEDURE obs_function();
 
-CREATE OR REPLACE VIEW ARP AS
+CREATE OR REPLACE VIEW ARP_1607 AS
   SELECT
-    TimeSlice.validTime , -- допустим здесь записан цикл
+    -- TimeSlice.validTimeBegin || ' - ' ||  TimeSlice.validTimeEnd, -- допустим здесь записан цикл
+    AirportHeliport.uuid,
+    AirportHeliport._transasID AS trID,
+    AirportHeliportTimeSlice.idTimeSlice,
+    AirportHeliportTimeSlice.name  AS nl,
+    AirportHeliportTimeSlice.designator AS nm,
+    AirportHeliportTimeSlice.controltype AS tp,
+    (fieldElevation).value AS ha,
+    (SELECT (nominallength).value AS lr
+     FROM RunwayTimeSlice, timeslice
+     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT
+       CASE WHEN (surfacecharacteristics.composition IN
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
+         THEN text 'искусственное покрытие'
+         ELSE NULL
+         END
+         AS cov
+     FROM surfacecharacteristics, runwaytimeslice, timeslice
+     WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
+           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
+
+    (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
+     FROM RunwayDirectionTimeSlice, RunwayTimeSlice, timeslice
+     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid
+        AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayDirectionTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL) ),
+    AirportHeliportTimeSlice.abandoned  AS st,
+
+    (SELECT count(RunwayDirectionLightSystemTimeSlice.uuid) AS lightsystem
+     FROM runwaydirectionlightsystem, RunwayDirectionLightSystemTimeSlice, RunwayDirectionTimeSlice, RunwayTimeSlice, timeslice
+     WHERE RunwayDirectionLightSystemTimeSlice.uuidrunwaydirection = RunwayDirectionTimeSlice.uuid AND
+           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = AirportHeliport.uuid AND RunwayDirectionLightSystemTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice, timeslice
+     WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND ServiceTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)
+     LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)
+     LIMIT 1),
+    (SELECT UnitTimeSlice.type AS unit_type
+     FROM UnitTimeSlice, timeslice
+     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND UnitTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)
+     LIMIT 1),
+    CartographyLabel.xlbl,
+    CartographyLabel.ylbl,
+    Point.geom,
+    Point.longitude,
+    point.latitude,
+    Point.srid
+  FROM AirportHeliportTimeSlice, AirportHeliport, Point, CartographyLabel, TimeSlice
+  WHERE AirportHeliportTimeSlice.type IS NULL AND
+        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL) AND
+        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
+        CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
+-- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
+
+CREATE OR REPLACE VIEW ARP_1608 AS
+  SELECT
+    -- TimeSlice.validTimeBegin || ' - ' ||  TimeSlice.validTimeEnd, -- допустим здесь записан цикл
     AirportHeliport.uuid,
     AirportHeliport._transasID AS trID,
     AirportHeliportTimeSlice.name  AS nl,
@@ -3053,26 +3143,37 @@ CREATE OR REPLACE VIEW ARP AS
     (fieldElevation).value AS ha,
     (SELECT (nominallength).value AS lr
      FROM RunwayTimeSlice
-     WHERE RunwayTimeSlice.idTimeSlice = AirportHeliportTimeSlice.idTimeSlice), -- RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
-    (SELECT count(surfacecharacteristics.composition) AS cov
+     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+    (SELECT
+       CASE WHEN (surfacecharacteristics.composition IN
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
+         THEN text 'искусственное покрытие'
+         ELSE text 'покрытие отсутствует'
+         END
+         AS cov
      FROM surfacecharacteristics, runwaytimeslice
-     WHERE
-       RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id AND RunwayTimeSlice.idTimeSlice = AirportHeliportTimeSlice.idTimeSlice
-       AND surfacecharacteristics.composition IN
-           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H')),
+     WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
+           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
     (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
      FROM RunwayDirectionTimeSlice, RunwayTimeSlice
-     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
-    AirportHeliportTimeSlice.abandoned              AS st,
-    (SELECT count(runwaydirectionlightsystem.uuid) AS lightsystem
-     FROM runwaydirectionlightsystem, RunwayDirectionTimeSlice, RunwayTimeSlice
-     WHERE runwaydirectionlightsystem.uuidrunwaydirection = RunwayDirectionTimeSlice.uuid AND
-           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = airportheliport.uuid),
+     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid
+                      AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+    CASE WHEN AirportHeliportTimeSlice.abandoned = 'YES' then text 'закрыт'
+      ELSE text 'открыт'
+      END
+      AS st,
+    (SELECT
+      CASE WHEN count(RunwayDirectionLightSystemTimeSlice.idtimeslice) > 0 then text 'освещен'
+      ELSE NULL
+      END
+         AS lightsystem
+     FROM RunwayDirectionLightSystemTimeSlice, RunwayDirectionTimeSlice, RunwayTimeSlice
+     WHERE RunwayDirectionLightSystemTimeSlice.uuidrunwaydirection = RunwayDirectionTimeSlice.uuid AND
+           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = AirportHeliport.uuid),
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice
      WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
-     LIMIT 1),
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid LIMIT 1),
     (SELECT (frequencyTransmission).value AS tf
      FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
      WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
@@ -3091,20 +3192,21 @@ CREATE OR REPLACE VIEW ARP AS
      LIMIT 1),
     CartographyLabel.xlbl,
     CartographyLabel.ylbl,
-    point.geom,
+    Point.geom,
     Point.longitude,
     point.latitude,
     Point.srid
-  FROM AirportHeliportTimeSlice, airportheliport, point, CartographyLabel, TimeSlice
-  WHERE AirportHeliportTimeSlice.type IS NULL AND AirportHeliportTimeSlice.idTimeSlice = TimeSlice.id AND
+  FROM AirportHeliportTimeSlice, AirportHeliport, Point, CartographyLabel, TimeSlice
+  WHERE AirportHeliportTimeSlice.type IS NULL AND
+        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
         AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
         CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
--- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
 
+
+/*
 CREATE OR REPLACE VIEW ALS AS
   SELECT
-
-    TimeSlice.validTime , -- допустим здесь записан цикл
     AirportHeliport.uuid,
     AirportHeliport._transasID AS trID,
     AirportHeliportTimeSlice.name  AS nl,
@@ -3159,6 +3261,7 @@ CREATE OR REPLACE VIEW ALS AS
   WHERE AirportHeliportTimeSlice.type IS NOT NULL AND AirportHeliportTimeSlice.idTimeSlice = TimeSlice.id AND
         AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
         CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
+*/
 
 CREATE OR REPLACE FUNCTION arp_function()
   RETURNS TRIGGER
@@ -3167,372 +3270,233 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    WITH inserted AS ( INSERT INTO Point (geom, latitude, longitude, srid)
-    VALUES (NEW.geom, NEW.latitude, NEW.longitude, NEW.srid)
-    RETURNING id)
-    INSERT INTO ElevatedPoint (id, elevation) VALUES ((SELECT inserted.id
-                                                       FROM inserted), ROW (NEW.ha, NULL, 'M'));
-    IF NEW.geom IS NOT NULL
-    THEN
-      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
-      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.tp, ROW (NEW.ha, NULL, 'M'), NEW.closed,
-              (SELECT Point.id
-               FROM Point
-               WHERE geom = NEW.geom));
-      IF NEW.cover = 1
-      THEN
-        WITH inserted_composition AS (
-          INSERT INTO surfacecharacteristics (id, composition)
-          VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H')
-          RETURNING id)
-        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
-        VALUES (ROW (NEW.length, 'M'), (SELECT AirportHeliport.uuid
-                                        FROM AirportHeliport
-                                        WHERE idElevatedPoint = (SELECT Point.id
-                                                                 FROM Point
-                                                                 WHERE geom = NEW.geom)),
-                (SELECT inserted_composition.id
-                 FROM inserted_composition));
-      ELSE
-        WITH inserted_composition AS (
-          INSERT INTO surfacecharacteristics (id, composition) VALUES (nextval('auto_id_surface_characteristics'), NULL)
-          RETURNING id)
-        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
-        VALUES (ROW (NEW.length, 'M'), (SELECT AirportHeliport.uuid
-                                        FROM AirportHeliport
-                                        WHERE idElevatedPoint = (SELECT Point.id
-                                                                 FROM Point
-                                                                 WHERE geom = NEW.geom)),
-                (SELECT inserted_composition.id
-                 FROM inserted_composition));
-      END IF;
-      INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid
-                                                                               FROM runway
-                                                                               WHERE uuidAirportHeliport =
-                                                                                     (SELECT AirportHeliport.uuid
-                                                                                      FROM AirportHeliport
-                                                                                      WHERE idElevatedPoint =
-                                                                                            (SELECT Point.id
-                                                                                             FROM Point
-                                                                                             WHERE geom = NEW.geom))));
-      IF NEW.lightsystem = 1
-      THEN
-        WITH inserted_lightsystem AS (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL)
-        RETURNING uuid)
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid
-                                                                                    FROM inserted_lightsystem),
-                                                                                   (SELECT RunwayDirection.uuid
-                                                                                    FROM RunwayDirection
-                                                                                    WHERE
-                                                                                      uuidRunway = (SELECT runway.uuid
-                                                                                                    FROM runway
-                                                                                                    WHERE
-                                                                                                      uuidAirportHeliport
-                                                                                                      =
-                                                                                                      (SELECT
-                                                                                                         AirportHeliport.uuid
-                                                                                                       FROM
-                                                                                                         AirportHeliport
-                                                                                                       WHERE
-                                                                                                         idElevatedPoint
-                                                                                                         = (SELECT
-                                                                                                              Point.id
-                                                                                                            FROM Point
-                                                                                                            WHERE geom =
-                                                                                                                  NEW.geom)))));
-      END IF;
-      INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid
-                                                            FROM AirportHeliport
-                                                            WHERE idElevatedPoint = (SELECT Point.id
-                                                                                     FROM Point
-                                                                                     WHERE geom = NEW.geom)),
-                                                           NEW.unit_type);
-      INSERT INTO Service (uuidUnit) VALUES ((SELECT Unit.uuid
-                                              FROM Unit
-                                              WHERE Unit.uuidAirportHeliport =
-                                                    (SELECT AirportHeliport.uuid
-                                                     FROM AirportHeliport
-                                                     WHERE idElevatedPoint = (SELECT Point.id
-                                                                              FROM Point
-                                                                              WHERE geom = NEW.geom))));
-      INSERT INTO CallsignDetail (callSign, uuidService) VALUES (NEW.cs, (SELECT Service.uuid
-                                                                          FROM Service
-                                                                          WHERE Service.uuidUnit =
-                                                                                (SELECT unit.uuid
-                                                                                 FROM Unit
-                                                                                 WHERE Unit.uuidAirportHeliport =
-                                                                                       (SELECT AirportHeliport.uuid
-                                                                                        FROM AirportHeliport
-                                                                                        WHERE idElevatedPoint =
-                                                                                              (SELECT Point.id
-                                                                                               FROM Point
-                                                                                               WHERE
-                                                                                                 geom = NEW.geom)))));
-      WITH inserted2 AS ( INSERT INTO RadioCommunicationChannel (frequencyTransmission, frequencyReception)
-      VALUES (ROW (NEW.tf, NULL), ROW (NEW.tr, NULL))
-      RETURNING RadioCommunicationChannel.uuid)
-      INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel)
-      VALUES ((SELECT Service.uuid
-               FROM Service
-               WHERE Service.uuidUnit =
-                     (SELECT unit.uuid
-                      FROM Unit
-                      WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid
-                                                        FROM AirportHeliport
-                                                        WHERE idElevatedPoint =
-                                                              (SELECT Point.id
-                                                               FROM Point
-                                                               WHERE geom = NEW.geom)))), (SELECT inserted2.uuid
-                                                                                           FROM inserted2));
-    ELSE
-      INSERT INTO AirportHeliport (uuid, _transasID, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
-      VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.controltype, ROW (NEW.ha, NULL, 'M'), NEW.closed,
-              (SELECT Point.id
-               FROM Point
-               WHERE longitude = NEW.longitude AND latitude = NEW.latitude));
-      IF NEW.cover = 1
-      THEN
-        WITH inserted_composition AS (
-          INSERT INTO surfacecharacteristics (id, composition)
-          VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H')
-          RETURNING id)
-        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
-        VALUES (ROW (NEW.length, 'M'), (SELECT AirportHeliport.uuid
-                                        FROM AirportHeliport
-                                        WHERE idElevatedPoint = (SELECT Point.id
-                                                                 FROM Point
-                                                                 WHERE longitude = NEW.longitude AND
-                                                                       latitude = NEW.latitude)),
-                (SELECT inserted_composition.id
-                 FROM inserted_composition));
-      ELSE
-        WITH inserted_composition AS (
-          INSERT INTO surfacecharacteristics (id, composition) VALUES (nextval('auto_id_surface_characteristics'), NULL)
-          RETURNING id)
-        INSERT INTO Runway (nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
-        VALUES (ROW (NEW.length, 'M'), (SELECT AirportHeliport.uuid
-                                        FROM AirportHeliport
-                                        WHERE idElevatedPoint = (SELECT Point.id
-                                                                 FROM Point
-                                                                 WHERE longitude = NEW.longitude AND
-                                                                       latitude = NEW.latitude)),
-                (SELECT inserted_composition.id
-                 FROM inserted_composition));
-      END IF;
-      INSERT INTO RunwayDirection (trueBearing, uuidRunway) VALUES (NEW.ugol, (SELECT runway.uuid
-                                                                               FROM runway
-                                                                               WHERE uuidAirportHeliport =
-                                                                                     (SELECT AirportHeliport.uuid
-                                                                                      FROM AirportHeliport
-                                                                                      WHERE idElevatedPoint =
-                                                                                            (SELECT Point.id
-                                                                                             FROM Point
-                                                                                             WHERE
-                                                                                               longitude = NEW.longitude
-                                                                                               AND latitude =
-                                                                                                   NEW.latitude))));
-      IF NEW.lightsystem = 1
-      THEN
-        WITH inserted_lightsystem AS (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL)
-        RETURNING uuid)
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid
-                                                                                    FROM inserted_lightsystem),
-                                                                                   (SELECT RunwayDirection.uuid
-                                                                                    FROM RunwayDirection
-                                                                                    WHERE
-                                                                                      uuidRunway = (SELECT runway.uuid
-                                                                                                    FROM runway
-                                                                                                    WHERE
-                                                                                                      uuidAirportHeliport
-                                                                                                      =
-                                                                                                      (SELECT
-                                                                                                         AirportHeliport.uuid
-                                                                                                       FROM
-                                                                                                         AirportHeliport
-                                                                                                       WHERE
-                                                                                                         idElevatedPoint
-                                                                                                         = (SELECT
-                                                                                                              Point.id
-                                                                                                            FROM Point
-                                                                                                            WHERE
-                                                                                                              longitude
-                                                                                                              =
-                                                                                                              NEW.longitude
-                                                                                                              AND
-                                                                                                              latitude =
-                                                                                                              NEW.latitude)))));
-      END IF;
-      INSERT INTO Unit (uuidAirportHeliport, type) VALUES ((SELECT AirportHeliport.uuid
-                                                            FROM AirportHeliport
-                                                            WHERE idElevatedPoint =
-                                                                  (SELECT Point.id
-                                                                   FROM Point
-                                                                   WHERE longitude = NEW.longitude AND
-                                                                         latitude = NEW.latitude)), NEW.unit_type);
-      INSERT INTO Service (uuidUnit) VALUES ((SELECT Unit.uuid
-                                              FROM Unit
-                                              WHERE Unit.uuidAirportHeliport =
-                                                    (SELECT AirportHeliport.uuid
-                                                     FROM AirportHeliport
-                                                     WHERE idElevatedPoint = (SELECT Point.id
-                                                                              FROM Point
-                                                                              WHERE longitude = NEW.longitude AND
-                                                                                    latitude = NEW.latitude))));
-      INSERT INTO CallsignDetail (callSign, uuidService) VALUES (NEW.cs, (SELECT Service.uuid
-                                                                          FROM Service
-                                                                          WHERE Service.uuidUnit =
-                                                                                (SELECT unit.uuid
-                                                                                 FROM Unit
-                                                                                 WHERE Unit.uuidAirportHeliport =
-                                                                                       (SELECT AirportHeliport.uuid
-                                                                                        FROM AirportHeliport
-                                                                                        WHERE idElevatedPoint =
-                                                                                              (SELECT Point.id
-                                                                                               FROM Point
-                                                                                               WHERE longitude =
-                                                                                                     NEW.longitude AND
-                                                                                                     latitude =
-                                                                                                     NEW.latitude)))));
-      WITH inserted2 AS ( INSERT INTO RadioCommunicationChannel (frequencyTransmission, frequencyReception)
-      VALUES (ROW (NEW.tf, NULL), ROW (NEW.tr, NULL))
-      RETURNING RadioCommunicationChannel.uuid)
-      INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel)
-      VALUES ((SELECT Service.uuid
-               FROM Service
-               WHERE Service.uuidUnit =
-                     (SELECT unit.uuid
-                      FROM Unit
-                      WHERE Unit.uuidAirportHeliport = (SELECT AirportHeliport.uuid
-                                                        FROM AirportHeliport
-                                                        WHERE idElevatedPoint =
-                                                              (SELECT Point.id
-                                                               FROM Point
-                                                               WHERE longitude = NEW.longitude AND
-                                                                     latitude = NEW.latitude)))), (SELECT inserted2.uuid
-                                                                                                   FROM inserted2));
-    END IF;
+        IF NEW.geom IS NOT NULL THEN
+            WITH insert_AirportHeliport AS (INSERT INTO AirportHeliport(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING uuid),
+            insert_Point AS (INSERT INTO Point(geom, latitude, longitude, srid) VALUES (NEW.geom, NEW.latitude, NEW.longitude, NEW.srid) RETURNING id),
+            insert_ElevatedPoint AS (INSERT INTO ElevatedPoint(id, elevation) VALUES ((SELECT insert_Point.id FROM insert_Point), ROW (NEW.ha, NULL, 'M')))
+            INSERT INTO AirportHeliportTimeSlice(uuid, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
+            VALUES ((SELECT insert_AirportHeliport.uuid FROM insert_AirportHeliport), NEW.nm, NEW.nl, NEW.tp, ROW (NEW.ha, NULL, 'M'), NEW.st,
+                      (SELECT insert_Point.id FROM insert_Point));
+            IF NEW.cov = 1 THEN
+                WITH insert_SurfaceCharacteristics AS (INSERT INTO SurfaceCharacteristics(id, composition) VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H')
+                RETURNING id),
+                insert_Runway AS (INSERT INTO Runway(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+                INSERT INTO RunwayTimeSlice (uuid, nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+                VALUES ((SELECT insert_Runway.uuid FROM insert_Runway), ROW (NEW.lr, 'M'), (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice
+                         WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom)),
+                        (SELECT insert_SurfaceCharacteristics.id FROM insert_SurfaceCharacteristics));
+            ELSE
+                WITH insert_SurfaceCharacteristics AS (INSERT INTO SurfaceCharacteristics(id, composition) VALUES (nextval('auto_id_surface_characteristics'), NULL)
+                RETURNING id),
+                insert_Runway AS (INSERT INTO Runway(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+                INSERT INTO RunwayTimeSlice (uuid, nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+                VALUES ((SELECT insert_Runway.uuid FROM insert_Runway), ROW (NEW.lr, 'M'), (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice
+                         WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom)),
+                        (SELECT insert_SurfaceCharacteristics.id FROM insert_SurfaceCharacteristics));
+
+            END IF;
+
+            WITH insert_RunwayDirection AS (INSERT INTO RunwayDirection(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+            INSERT INTO RunwayDirectionTimeSlice(uuid, uuidrunway, truebearing) VALUES ((SELECT insert_RunwayDirection.uuid FROM insert_RunwayDirection),
+            (SELECT RunwayTimeSlice.uuid FROM RunwayTimeSlice WHERE uuidAirportHeliport = (SELECT AirportHeliportTimeSlice.uuid
+               FROM AirportHeliportTimeSlice WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom))), NEW.ugol);
+
+            IF NEW.lightsystem = 1 THEN
+                WITH inserted_GroundLightSystem AS (INSERT INTO GroundLightSystem(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+                inserted_GroundLightSystemTimeSlice AS (INSERT INTO GroundLightSystemTimeSlice(uuid, emergencyLighting)
+                  VALUES ((SELECT inserted_GroundLightSystem.uuid FROM inserted_GroundLightSystem), NULL) RETURNING uuid),
+                  inserted_RunwayDirectionLightSystem AS (INSERT INTO RunwayDirectionLightSystem(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+                  INSERT INTO RunwayDirectionLightSystemTimeSlice(uuid, uuidRunwayDirection) VALUES
+                  ((SELECT inserted_RunwayDirectionLightSystem.uuid FROM inserted_RunwayDirectionLightSystem),
+                   (SELECT RunwayDirectionTimeSlice.uuid FROM RunwayDirectionTimeSlice WHERE uuidRunway =
+                   (SELECT RunwayTimeSlice.uuid FROM RunwayTimeSlice WHERE uuidAirportHeliport =
+                   (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE geom = NEW.geom)))));
+            END IF;
+
+            WITH insert_Unit AS (INSERT INTO RunwayDirection(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+            insert_UnitTimeSlice AS (INSERT INTO UnitTimeSlice(uuid, uuidAirportHeliport, type) VALUES
+              ((SELECT insert_Unit.uuid FROM insert_Unit), (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice WHERE idElevatedPoint =
+              (SELECT Point.id FROM Point WHERE geom = NEW.geom)), NEW.unit_type)),
+              insert_Service AS (INSERT INTO Service(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+              insert_ServiceTimeSlice AS (INSERT INTO ServiceTimeSlice(uuid, uuidunit) VALUES ((SELECT insert_Service.uuid FROM insert_Service), (SELECT insert_Unit.uuid FROM insert_Unit))),
+              insert_RadioCommunicationChannel AS (INSERT INTO RadioCommunicationChannel(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+              insert_RadioCommunicationChannelTimeSlice AS (INSERT INTO RadioCommunicationChannelTimeSlice(uuid, frequencyTransmission, frequencyReception)
+                VALUES((SELECT insert_RadioCommunicationChannel.uuid FROM insert_RadioCommunicationChannel), ROW(NEW.tf, NULL), ROW(NEW.tr, NULL))),
+              insert_Service_RadioCommunicationChannel AS (INSERT INTO Service_RadioCommunicationChannel(uuidService, uuidRadioCommunicationChannel)
+                VALUES ((SELECT insert_Service.uuid FROM insert_Service), (SELECT insert_RadioCommunicationChannel.uuid FROM insert_RadioCommunicationChannel)))
+            INSERT INTO CallsignDetail(callSign, uuidService) VALUES (NEW.cs, (SELECT insert_Service.uuid FROM insert_Service));
+
+
+        ELSE
+
+            WITH insert_AirportHeliport AS (INSERT INTO AirportHeliport(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING uuid),
+            insert_Point AS (INSERT INTO Point(geom, latitude, longitude, srid) VALUES (NEW.geom, NEW.latitude, NEW.longitude, NEW.srid) RETURNING id),
+            insert_ElevatedPoint AS (INSERT INTO ElevatedPoint(id, elevation) VALUES ((SELECT insert_Point.id FROM insert_Point), ROW (NEW.ha, NULL, 'M')))
+            INSERT INTO AirportHeliportTimeSlice(uuid, designator, name, controlType, fieldElevation, abandoned, idElevatedPoint)
+            VALUES ((SELECT insert_AirportHeliport.uuid FROM insert_AirportHeliport), NEW.nm, NEW.nl, NEW.tp, ROW (NEW.ha, NULL, 'M'), NEW.st,
+                      (SELECT insert_Point.id FROM insert_Point));
+            IF NEW.cov = 1 THEN
+                WITH insert_SurfaceCharacteristics AS (INSERT INTO SurfaceCharacteristics(id, composition) VALUES (nextval('auto_id_surface_characteristics'), 'OTHER: H')
+                RETURNING id),
+                insert_Runway AS (INSERT INTO Runway(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+                INSERT INTO RunwayTimeSlice (uuid, nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+                VALUES ((SELECT insert_Runway.uuid FROM insert_Runway), ROW (NEW.lr, 'M'), (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice
+                         WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)),
+                        (SELECT insert_SurfaceCharacteristics.id FROM insert_SurfaceCharacteristics));
+            ELSE
+                WITH insert_SurfaceCharacteristics AS (INSERT INTO SurfaceCharacteristics(id, composition) VALUES (nextval('auto_id_surface_characteristics'), NULL)
+                RETURNING id),
+                insert_Runway AS (INSERT INTO Runway(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+                INSERT INTO RunwayTimeSlice (uuid, nominalLength, uuidAirportHeliport, idSurfaceCharacteristics)
+                VALUES ((SELECT insert_Runway.uuid FROM insert_Runway), ROW (NEW.lr, 'M'), (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice
+                         WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)),
+                        (SELECT insert_SurfaceCharacteristics.id FROM insert_SurfaceCharacteristics));
+
+            END IF;
+
+            WITH insert_RunwayDirection AS (INSERT INTO RunwayDirection(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+            INSERT INTO RunwayDirectionTimeSlice(uuid, uuidrunway, truebearing) VALUES ((SELECT insert_RunwayDirection.uuid FROM insert_RunwayDirection),
+            (SELECT RunwayTimeSlice.uuid FROM RunwayTimeSlice WHERE uuidAirportHeliport = (SELECT AirportHeliportTimeSlice.uuid
+               FROM AirportHeliportTimeSlice WHERE idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude))), NEW.ugol);
+
+            IF NEW.lightsystem = 1 THEN
+                WITH inserted_GroundLightSystem AS (INSERT INTO GroundLightSystem(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+                inserted_GroundLightSystemTimeSlice AS (INSERT INTO GroundLightSystemTimeSlice(uuid, emergencyLighting)
+                  VALUES ((SELECT inserted_GroundLightSystem.uuid FROM inserted_GroundLightSystem), NULL) RETURNING uuid),
+                  inserted_RunwayDirectionLightSystem AS (INSERT INTO RunwayDirectionLightSystem(uuid) VALUES ((SELECT inserted_GroundLightSystem.uuid FROM inserted_GroundLightSystem)) RETURNING uuid)
+                  INSERT INTO RunwayDirectionLightSystemTimeSlice(uuid, uuidRunwayDirection) VALUES
+                  ((SELECT inserted_RunwayDirectionLightSystem.uuid FROM inserted_RunwayDirectionLightSystem),
+                   (SELECT RunwayDirectionTimeSlice.uuid FROM RunwayDirectionTimeSlice WHERE uuidRunway =
+                   (SELECT RunwayTimeSlice.uuid FROM RunwayTimeSlice WHERE uuidAirportHeliport =
+                   (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice WHERE  idElevatedPoint = (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)))));
+            END IF;
+
+            WITH insert_Unit AS (INSERT INTO RunwayDirection(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+            insert_UnitTimeSlice AS (INSERT INTO UnitTimeSlice(uuid, uuidAirportHeliport, type) VALUES
+              ((SELECT insert_Unit.uuid FROM insert_Unit), (SELECT AirportHeliportTimeSlice.uuid FROM AirportHeliportTimeSlice WHERE idElevatedPoint =
+              (SELECT Point.id FROM Point WHERE longitude = NEW.longitude AND latitude = NEW.latitude)), NEW.unit_type)),
+              insert_Service AS (INSERT INTO Service(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+              insert_ServiceTimeSlice AS (INSERT INTO ServiceTimeSlice(uuid, uuidunit) VALUES ((SELECT insert_Service.uuid FROM insert_Service), (SELECT insert_Unit.uuid FROM insert_Unit))),
+              insert_RadioCommunicationChannel AS (INSERT INTO RadioCommunicationChannel(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+              insert_RadioCommunicationChannelTimeSlice AS (INSERT INTO RadioCommunicationChannelTimeSlice(uuid, frequencyTransmission, frequencyReception)
+                VALUES((SELECT insert_RadioCommunicationChannel.uuid FROM insert_RadioCommunicationChannel), ROW(NEW.tf, NULL), ROW(NEW.tr, NULL))),
+              insert_Service_RadioCommunicationChannel AS (INSERT INTO Service_RadioCommunicationChannel(uuidService, uuidRadioCommunicationChannel)
+                VALUES ((SELECT insert_Service.uuid FROM insert_Service), (SELECT insert_RadioCommunicationChannel.uuid FROM insert_RadioCommunicationChannel)))
+            INSERT INTO CallsignDetail(callSign, uuidService) VALUES (NEW.cs, (SELECT insert_Service.uuid FROM insert_Service));
+
+        END IF;
     RETURN NEW;
-  ELSIF TG_OP = 'UPDATE'
-    THEN
-      UPDATE AirportHeliport
-      SET uuid               = NEW.uuid, designator = NEW.nm, name = NEW.nl, controltype = NEW.controltype,
-        fieldElevation.value = NEW.ha, abandoned = NEW.closed
-      WHERE AirportHeliport.uuid = OLD.uuid;
-      UPDATE Runway
-      SET nominalLength.value = NEW.length
-      WHERE runway.uuidairportheliport = OLD.uuid;
-      UPDATE RunwayDirection
-      SET trueBearing = NEW.ugol
-      WHERE RunwayDirection.uuidRunway = (SELECT uuid
-                                          FROM Runway
-                                          WHERE runway.uuidairportheliport = OLD.uuid);
-      UPDATE CallsignDetail
-      SET callSign = NEW.cs
-      WHERE CallsignDetail.uuidService IN (SELECT Service.uuid
-                                           FROM Service, Unit
-                                           WHERE uuidUnit IN (SELECT Unit.uuid
-                                                              FROM Unit
-                                                              WHERE Unit.uuidAirportHeliport = OLD.uuid));
-      UPDATE RadioCommunicationChannel
-      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
-      WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel
-                                               FROM Service_RadioCommunicationChannel, Service
-                                               WHERE uuidService IN (SELECT Service.uuid
-                                                                     FROM Service, Unit
-                                                                     WHERE uuidUnit IN (SELECT Unit.uuid
-                                                                                        FROM Unit
-                                                                                        WHERE uuidAirportHeliport =
-                                                                                              OLD.uuid)));
-      UPDATE Point
-      SET geom = NEW.geom, latitude = NEW.latitude, longitude = NEW.longitude
-      WHERE Point.id = (SELECT airportheliport.idelevatedpoint
-                        FROM AirportHeliport
-                        WHERE AirportHeliport.uuid = OLD.uuid);
-      UPDATE CartographyLabel
-      SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
-      WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
-      IF NEW.lightsystem = 1
-      THEN
-        WITH inserted_lightsystem AS (INSERT INTO groundlightsystem (emergencyLighting) VALUES (NULL)
-        RETURNING uuid)
-        INSERT INTO runwaydirectionlightsystem (uuid, uuidRunwayDirection) VALUES ((SELECT inserted_lightsystem.uuid
-                                                                                    FROM inserted_lightsystem),
-                                                                                   (SELECT RunwayDirection.uuid
-                                                                                    FROM RunwayDirection
-                                                                                    WHERE
-                                                                                      uuidRunway = (SELECT runway.uuid
-                                                                                                    FROM runway
-                                                                                                    WHERE
-                                                                                                      uuidAirportHeliport
-                                                                                                      = OLD.uuid)));
-      ELSEIF NEW.lightsystem = 0
-        THEN
-          DELETE FROM RunwayDirectionLightSystem
-          WHERE uuidRunwayDirection = (SELECT RunwayDirection.uuid
-                                       FROM RunwayDirection
-                                       WHERE uuidRunway =
-                                             (SELECT runway.uuid
-                                              FROM runway
-                                              WHERE uuidAirportHeliport = OLD.uuid));
-      END IF;
-      IF NEW.cover = 1
-      THEN
-        UPDATE surfacecharacteristics
-        SET composition = 'OTHER: H'
-        WHERE SurfaceCharacteristics.id = (SELECT Runway.idSurfaceCharacteristics
-                                           FROM Runway
-                                           WHERE Runway.uuidAirportHeliport = OLD.uuid);
-      ELSEIF NEW.cover = 0
-        THEN
-          UPDATE surfacecharacteristics
-          SET composition = 'OTHER: SOFT'
-          WHERE SurfaceCharacteristics.id = (SELECT Runway.idSurfaceCharacteristics
-                                             FROM Runway
-                                             WHERE Runway.uuidAirportHeliport = OLD.uuid);
-      END IF;
-      RETURN NEW;
+
+  ELSIF TG_OP = 'UPDATE' THEN
+          UPDATE AirportHeliportTimeSlice
+          SET designator = NEW.nm, name = NEW.nl, controltype = NEW.tp, fieldElevation.value = NEW.ha, abandoned = NEW.st
+          WHERE AirportHeliport.uuid = OLD.uuid;
+          UPDATE RunwayTimeSlice
+          SET nominalLength.value = NEW.lr
+          WHERE RunwayTimeSlice.uuidairportheliport = OLD.uuid;
+          UPDATE RunwayDirectionTimeSlice
+          SET trueBearing = NEW.ugol
+          WHERE RunwayDirectionTimeSlice.uuidRunway = (SELECT uuid
+                                              FROM RunwayDirectionTimeSlice
+                                              WHERE RunwayDirectionTimeSlice.uuidairportheliport = OLD.uuid);
+          UPDATE CallsignDetail
+          SET callSign = NEW.cs
+          WHERE CallsignDetail.uuidService IN (SELECT ServiceTimeSlice.uuid
+                                               FROM ServiceTimeSlice, UnitTimeSlice
+                                               WHERE uuidUnit IN (SELECT UnitTimeSlice.uuid
+                                                                  FROM UnitTimeSlice
+                                                                  WHERE UnitTimeSlice.uuidAirportHeliport = OLD.uuid));
+          UPDATE RadioCommunicationChannelTimeSlice
+          SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
+          WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT uuidRadioCommunicationChannel
+                                                   FROM Service_RadioCommunicationChannel, ServiceTimeSlice
+                                                   WHERE uuidService IN (SELECT ServiceTimeSlice.uuid
+                                                                         FROM ServiceTimeSlice, UnitTimeSlice
+                                                                         WHERE uuidUnit IN (SELECT UnitTimeSlice.uuid
+                                                                                            FROM UnitTimeSlice
+                                                                                            WHERE uuidAirportHeliport =
+                                                                                                  OLD.uuid)));
+          UPDATE Point
+          SET geom = NEW.geom, latitude = NEW.latitude, longitude = NEW.longitude
+          WHERE Point.id = (SELECT AirportHeliportTimeSlice.idelevatedpoint
+                            FROM AirportHeliportTimeSlice
+                            WHERE AirportHeliportTimeSlice.uuid = OLD.uuid);
+          UPDATE CartographyLabel
+          SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
+          WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
+          IF NEW.lightsystem = 1
+          THEN
+            WITH inserted_lightsystem AS (INSERT INTO GroundLightSystemTimeSlice(emergencyLighting) VALUES(NULL) RETURNING uuid),
+              inserted_RunwayDirectionLightSystem AS (INSERT INTO RunwayDirectionLightSystem(uuid) VALUES (uuid_generate_v4()) RETURNING uuid)
+            INSERT INTO RunwayDirectionLightSystemTimeSlice(uuid, uuidRunwayDirection) VALUES
+            ((SELECT inserted_lightsystem.uuid FROM inserted_lightsystem), (SELECT RunwayDirectionTimeSlice.uuid
+             FROM RunwayDirectionTimeSlice WHERE uuidRunway = (SELECT RunwayTimeSlice.uuid FROM RunwayTimeSlice WHERE uuidAirportHeliport = OLD.uuid)));
+          ELSEIF NEW.lightsystem = 0
+            THEN
+              DELETE FROM RunwayDirectionLightSystemTimeSlice WHERE uuidRunwayDirection = (SELECT RunwayDirectionTimeSlice.uuid
+              FROM RunwayDirectionTimeSlice WHERE uuidRunway = (SELECT RunwayTimeSlice.uuid FROM RunwayTimeSlice
+                                                  WHERE uuidAirportHeliport = OLD.uuid));
+          END IF;
+          IF NEW.cov = 1
+          THEN
+            UPDATE surfacecharacteristics
+            SET composition = 'OTHER: H'
+            WHERE SurfaceCharacteristics.id = (SELECT RunwayTimeSlice.idSurfaceCharacteristics
+                                               FROM RunwayTimeSlice
+                                               WHERE RunwayTimeSlice.uuidAirportHeliport = OLD.uuid);
+          ELSEIF NEW.cov = 0
+            THEN
+              UPDATE surfacecharacteristics
+              SET composition = 'OTHER: SOFT'
+              WHERE SurfaceCharacteristics.id = (SELECT RunwayTimeSlice.idSurfaceCharacteristics
+                                                 FROM RunwayTimeSlice
+                                                 WHERE RunwayTimeSlice.uuidAirportHeliport = OLD.uuid);
+          END IF;
+          RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
       DELETE FROM AirportHeliport
       WHERE AirportHeliport.uuid = OLD.uuid;
-      DELETE FROM Runway
-      WHERE runway.uuidairportheliport = OLD.uuid;
-      DELETE FROM RunwayDirection
-      WHERE RunwayDirection.uuidRunway = (SELECT uuid
-                                          FROM Runway
-                                          WHERE runway.uuidairportheliport = OLD.uuid);
+      DELETE FROM AirportHeliportTimeSlice
+      WHERE AirportHeliportTimeSlice.uuid = OLD.uuid;
+      DELETE FROM RunwayTimeSlice
+      WHERE RunwayTimeSlice.uuidairportheliport = OLD.uuid;
+      DELETE FROM RunwayDirectionTimeSlice
+      WHERE RunwayDirectionTimeSlice.uuidRunway = (SELECT uuid
+                                          FROM RunwayTimeSlice
+                                          WHERE RunwayTimeSlice.uuidairportheliport = OLD.uuid);
       DELETE FROM CallsignDetail
-      WHERE CallsignDetail.uuidService IN (SELECT Service.uuid
-                                           FROM Service, Unit
-                                           WHERE uuidUnit IN (SELECT Unit.uuid
-                                                              FROM Unit
-                                                              WHERE Unit.uuidAirportHeliport = OLD.uuid));
+      WHERE CallsignDetail.uuidService IN (SELECT ServiceTimeSlice.uuid
+                                           FROM ServiceTimeSlice, UnitTimeSlice
+                                           WHERE uuidUnit IN (SELECT UnitTimeSlice.uuid
+                                                              FROM UnitTimeSlice
+                                                              WHERE UnitTimeSlice.uuidAirportHeliport = OLD.uuid));
       DELETE FROM RadioCommunicationChannel
       WHERE RadioCommunicationChannel.uuid IN (SELECT uuidRadioCommunicationChannel
-                                               FROM Service_RadioCommunicationChannel, Service
-                                               WHERE uuidService IN (SELECT Service.uuid
-                                                                     FROM Service, Unit
-                                                                     WHERE uuidUnit IN (SELECT Unit.uuid
-                                                                                        FROM Unit
+                                               FROM Service_RadioCommunicationChannel, ServiceTimeSlice
+                                               WHERE uuidService IN (SELECT ServiceTimeSlice.uuid
+                                                                     FROM ServiceTimeSlice, UnitTimeSlice
+                                                                     WHERE uuidUnit IN (SELECT UnitTimeSlice.uuid
+                                                                                        FROM UnitTimeSlice
                                                                                         WHERE uuidAirportHeliport =
                                                                                               OLD.uuid)));
       DELETE FROM Point
-      WHERE Point.id = (SELECT airportheliport.idelevatedpoint
-                        FROM AirportHeliport
-                        WHERE AirportHeliport.uuid = OLD.uuid);
+      WHERE Point.id = (SELECT AirportHeliportTimeSlice.idelevatedpoint
+                        FROM AirportHeliportTimeSlice
+                        WHERE AirportHeliportTimeSlice.uuid = OLD.uuid);
       DELETE FROM CartographyLabel
       WHERE CartographyLabel.uuidairportheliport = OLD.uuid;
       DELETE FROM surfacecharacteristics
-      WHERE surfacecharacteristics.id = (SELECT runway.idsurfacecharacteristics
-                                         FROM runway
-                                         WHERE runway.uuidairportheliport = OLD.uuid);
-      DELETE FROM RunwayDirectionLightSystem
-      WHERE RunwayDirectionLightSystem.uuidRunwayDirection = (SELECT RunwayDirection.uuid
-                                                              FROM RunwayDirection
-                                                              WHERE RunwayDirection.uuidRunway = (SELECT uuid
-                                                                                                  FROM Runway
+      WHERE surfacecharacteristics.id = (SELECT RunwayTimeSlice.idsurfacecharacteristics
+                                         FROM RunwayTimeSlice
+                                         WHERE RunwayTimeSlice.uuidairportheliport = OLD.uuid);
+      DELETE FROM RunwayDirectionLightSystemTimeSlice
+      WHERE RunwayDirectionLightSystemTimeSlice.uuidRunwayDirection = (SELECT RunwayDirectionTimeSlice.uuid
+                                                              FROM RunwayDirectionTimeSlice
+                                                              WHERE RunwayDirectionTimeSlice.uuidRunway = (SELECT uuid
+                                                                                                  FROM RunwayTimeSlice
                                                                                                   WHERE
-                                                                                                    runway.uuidairportheliport
+                                                                                                    RunwayTimeSlice.uuidairportheliport
                                                                                                     = OLD.uuid));
       RETURN NULL;
   END IF;
@@ -3540,10 +3504,16 @@ BEGIN
 END;
 $function$;
 
-CREATE TRIGGER arp_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  ARP FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
+CREATE TRIGGER arp_trigger_1607
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  ARP_1607 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+
+CREATE TRIGGER arp_trigger_1608
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  ARP_1608 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+
+/*
 CREATE OR REPLACE FUNCTION als_function()
   RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -4935,6 +4905,8 @@ CREATE TRIGGER tra_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   TRA FOR EACH ROW EXECUTE PROCEDURE mvl_function();
 
+*/
+
 -- Триггеры для координат
 
 CREATE OR REPLACE FUNCTION trigger_update_CartographyLabel()
@@ -4959,8 +4931,9 @@ END;
 $update_lbl$ LANGUAGE plpgsql;
 
 CREATE TRIGGER CartographyLabel
-AFTER INSERT ON AirportHeliport FOR EACH ROW EXECUTE PROCEDURE trigger_update_CartographyLabel();
+AFTER INSERT ON AirportHeliportTimeSlice FOR EACH ROW EXECUTE PROCEDURE trigger_update_CartographyLabel();
 
+/*
 CREATE OR REPLACE FUNCTION trigger_update_CartographyLabel_CTA()
   RETURNS TRIGGER AS $update_lbl$
 BEGIN
@@ -4977,6 +4950,8 @@ $update_lbl$ LANGUAGE plpgsql;
 
 CREATE TRIGGER CartographyLabel_CTA
 AFTER INSERT ON Airspace FOR EACH ROW EXECUTE PROCEDURE trigger_update_CartographyLabel_CTA();
+
+*/
 
 -- Отслеживание изменений координат и SRID
 --
@@ -5022,7 +4997,7 @@ EXECUTE PROCEDURE trigger_insert_Point();
 --BEFORE INSERT OR UPDATE ON CartographyLabel_CTA_CTR_TMA_UAA FOR EACH ROW
 --EXECUTE PROCEDURE trigger_insert_Point();
 
-
+/*
 CREATE OR REPLACE FUNCTION trigger_insert_polygon()
   RETURNS TRIGGER AS $$
 BEGIN
@@ -5384,3 +5359,4 @@ $function$;
 CREATE TRIGGER nav_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   NAV FOR EACH ROW EXECUTE PROCEDURE nav_function();
+  */
