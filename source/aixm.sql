@@ -2946,7 +2946,7 @@ CREATE TABLE CartographyLabel_OBS
   idVerticalStructurePart INTEGER REFERENCES VerticalStructurePart ON DELETE CASCADE ON UPDATE CASCADE,
   geom                    GEOMETRY(POINT, 4326)
 );
-
+/*
 CREATE VIEW OBS AS
   SELECT
     VerticalStructurePart.id,
@@ -3055,17 +3055,21 @@ $function$;
 CREATE TRIGGER obs_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   OBS FOR EACH ROW EXECUTE PROCEDURE obs_function();
+*/
 
 CREATE OR REPLACE VIEW ARP_1607 AS
   SELECT
-    -- TimeSlice.validTimeBegin || ' - ' ||  TimeSlice.validTimeEnd, -- допустим здесь записан цикл
     AirportHeliport.uuid,
     AirportHeliport._transasID AS trID,
     AirportHeliportTimeSlice.idTimeSlice,
     AirportHeliportTimeSlice.name  AS nl,
     AirportHeliportTimeSlice.designator AS nm,
     AirportHeliportTimeSlice.controltype AS tp,
-    (fieldElevation).value AS ha,
+    (SELECT (elevation).value AS ha
+      FROM elevatedpoint
+    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT (nominallength).value AS lr
      FROM RunwayTimeSlice, timeslice
      WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
@@ -3084,9 +3088,9 @@ CREATE OR REPLACE VIEW ARP_1607 AS
 
     (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
      FROM RunwayDirectionTimeSlice, RunwayTimeSlice, timeslice
-     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid
-        AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayDirectionTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
-         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL) ),
+     WHERE runwaydirectiontimeslice.uuidrunway = runwaytimeslice.uuid AND runwaydirectiontimeslice.idtimeslice = timeslice.id AND
+           RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
     AirportHeliportTimeSlice.abandoned  AS st,
 
     (SELECT count(RunwayDirectionLightSystemTimeSlice.uuid) AS lightsystem
@@ -3118,90 +3122,132 @@ CREATE OR REPLACE VIEW ARP_1607 AS
      WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND UnitTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-06-23' AND
          (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)
      LIMIT 1),
-    CartographyLabel.xlbl,
-    CartographyLabel.ylbl,
-    Point.geom,
-    Point.longitude,
-    point.latitude,
-    Point.srid
-  FROM AirportHeliportTimeSlice, AirportHeliport, Point, CartographyLabel, TimeSlice
+
+    (SELECT Point.geom
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Point.longitude
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Point.latitude
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
+    AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Point.srid
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
+          AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL))
+  FROM AirportHeliportTimeSlice, AirportHeliport,TimeSlice
   WHERE AirportHeliportTimeSlice.type IS NULL AND
-        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-06-23' AND
-         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL) AND
-        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
-        CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
+        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND
+        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-06-23' AND
+         (TimeSlice.validTimeEnd > '2016-06-23' OR TimeSlice.validTimeEnd is NULL) ;
 -- airportheliport.type - для аэродромов пока оставляем пустым, потому что в geojson нету типа аэродрома (только на аэродроме аэродром, или же аэродром и вертодром)
+
 
 CREATE OR REPLACE VIEW ARP_1608 AS
   SELECT
-    -- TimeSlice.validTimeBegin || ' - ' ||  TimeSlice.validTimeEnd, -- допустим здесь записан цикл
     AirportHeliport.uuid,
     AirportHeliport._transasID AS trID,
+    AirportHeliportTimeSlice.idTimeSlice,
     AirportHeliportTimeSlice.name  AS nl,
     AirportHeliportTimeSlice.designator AS nm,
     AirportHeliportTimeSlice.controltype AS tp,
-    (fieldElevation).value AS ha,
+    (SELECT (elevation).value AS ha
+      FROM elevatedpoint
+    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT (nominallength).value AS lr
-     FROM RunwayTimeSlice
-     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+     FROM RunwayTimeSlice, timeslice
+     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT
        CASE WHEN (surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
          THEN text 'искусственное покрытие'
-         ELSE text 'покрытие отсутствует'
+         ELSE NULL
          END
          AS cov
-     FROM surfacecharacteristics, runwaytimeslice
+     FROM surfacecharacteristics, runwaytimeslice, timeslice
      WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
-           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
+           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+
     (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
-     FROM RunwayDirectionTimeSlice, RunwayTimeSlice
-     WHERE RunwayDirectionTimeSlice.uuidRunway = RunwayTimeSlice.uuid
-                      AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid),
-    CASE WHEN AirportHeliportTimeSlice.abandoned = 'YES' then text 'закрыт'
-      ELSE text 'открыт'
-      END
-      AS st,
-    (SELECT
-      CASE WHEN count(RunwayDirectionLightSystemTimeSlice.idtimeslice) > 0 then text 'освещен'
-      ELSE NULL
-      END
-         AS lightsystem
-     FROM RunwayDirectionLightSystemTimeSlice, RunwayDirectionTimeSlice, RunwayTimeSlice
+     FROM RunwayDirectionTimeSlice, RunwayTimeSlice, timeslice
+     WHERE runwaydirectiontimeslice.uuidrunway = runwaytimeslice.uuid AND runwaydirectiontimeslice.idtimeslice = timeslice.id AND
+           RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+    AirportHeliportTimeSlice.abandoned  AS st,
+
+    (SELECT count(RunwayDirectionLightSystemTimeSlice.uuid) AS lightsystem
+     FROM runwaydirectionlightsystem, RunwayDirectionLightSystemTimeSlice, RunwayDirectionTimeSlice, RunwayTimeSlice, timeslice
      WHERE RunwayDirectionLightSystemTimeSlice.uuidrunwaydirection = RunwayDirectionTimeSlice.uuid AND
-           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = AirportHeliport.uuid),
+           RunwayTimeSlice.uuid = RunwayDirectionTimeSlice.uuidrunway AND RunwayTimeSlice.uuidairportheliport = AirportHeliport.uuid AND RunwayDirectionLightSystemTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice
+     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice, timeslice
      WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid LIMIT 1),
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND ServiceTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
     (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
      WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
            Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)
      LIMIT 1),
     (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
      WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
            Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
+           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)
      LIMIT 1),
     (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice
-     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid
+     FROM UnitTimeSlice, timeslice
+     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND UnitTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)
      LIMIT 1),
-    CartographyLabel.xlbl,
-    CartographyLabel.ylbl,
-    Point.geom,
-    Point.longitude,
-    point.latitude,
-    Point.srid
-  FROM AirportHeliportTimeSlice, AirportHeliport, Point, CartographyLabel, TimeSlice
+
+    (SELECT Point.geom
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Point.longitude
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Point.latitude
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
+    AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Point.srid
+      FROM Point
+    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
+          AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+  FROM AirportHeliportTimeSlice, AirportHeliport,TimeSlice
   WHERE AirportHeliportTimeSlice.type IS NULL AND
-        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
-        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND point.id = AirportHeliportTimeSlice.idelevatedpoint AND
-        CartographyLabel.uuidairportheliport = AirportHeliport.uuid;
+        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND
+        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) ;
 
 
 /*
