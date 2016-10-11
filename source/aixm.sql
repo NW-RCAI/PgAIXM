@@ -3119,7 +3119,7 @@ CREATE OR REPLACE VIEW ARP_1608 AS
          AS cov
      FROM surfacecharacteristics, runwaytimeslice, timeslice
      WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
-           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
+           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
     FROM RunwayDirectionTimeSlice
@@ -4117,6 +4117,16 @@ CREATE TRIGGER als_trigger_1608
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   ALS_1608 FOR EACH ROW EXECUTE PROCEDURE als_function();
 
+/*
+CREATE OR REPLACE VIEW ALS_1610 AS
+  SELECT
+    AirportHeliport.uuid,
+    AirportHeliport._transasID AS trID,
+    AirportHeliportTimeSlice.idTimeSlice,
+    AirportHeliportTimeSlice.name  AS nl
+  FROM Navaid, Point, ElevatedPoint
+  WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
+  */
 
 -- CTA
 CREATE VIEW CTA_1610 AS
@@ -4136,7 +4146,7 @@ CREATE VIEW CTA_1610 AS
     (lowerLimit).nonNumeric            AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, AirTrafficManagementServiceTimeSlice
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
@@ -4207,7 +4217,7 @@ CREATE VIEW CTA_1608 AS
     (lowerLimit).nonNumeric            AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, AirTrafficManagementServiceTimeSlice
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
@@ -4278,7 +4288,7 @@ CREATE VIEW CTR_1608 AS
     (lowerLimit).nonNumeric            AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, AirTrafficManagementServiceTimeSlice
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
@@ -4349,7 +4359,7 @@ CREATE VIEW TMA_1608 AS
     (lowerLimit).nonNumeric            AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, AirTrafficManagementServiceTimeSlice
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
@@ -4420,7 +4430,7 @@ CREATE VIEW UAA_1608 AS
     (lowerLimit).nonNumeric            AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, AirTrafficManagementServiceTimeSlice
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
@@ -4490,7 +4500,7 @@ CREATE VIEW FIR_1608 AS
     (lowerLimit).nonNumeric            AS GND,
     AirspaceVolume.lowerLimitReference AS format_bottom,
     (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, AirTrafficManagementServiceTimeSlice
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
            Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
@@ -4770,92 +4780,81 @@ BEGIN
       INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
         (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc), (SELECT insert_rdChnnl.uuid FROM insert_rdChnnl));
     RETURN NEW;
-
-    -- Attention! я остановилась здесь - необходимо подредактировать update и delete! проверить работы в QGIS
   ELSIF TG_OP = 'UPDATE'
     THEN
       UPDATE AirspaceTimeSlice
-      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl, controlType = NEW.tp
-      WHERE Airspace.uuid = OLD.uuid RETURNING uuid;
+        SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl, controlType = NEW.tp
+        WHERE AirspaceTimeSlice.uuid = OLD.uuid ;
+      UPDATE Airspace
+        SET uuid = NEW.uuid, _transasID = NEW.trID
+        WHERE Airspace.uuid = OLD.uuid;
       UPDATE AirspaceVolume
-      SET
-        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
-        upperLimitReference = NEW.format_top,
-        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-        lowerLimitReference = NEW.format_bottom
-      WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+        SET
+          upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+          upperLimitReference = NEW.format_top,
+          lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+          lowerLimitReference = NEW.format_bottom
+        WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
       UPDATE Surface
-      SET geom = NEW.geom, srid = NEW.srid
-      WHERE Surface.id = (SELECT AirspaceVolume.idSurface
-                          FROM AirspaceVolume
-                          WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
-      UPDATE CartographyLabel_CTA_CTR_TMA_UAA
-      SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
-      WHERE CartographyLabel_CTA_CTR_TMA_UAA.uuidairspace = OLD.uuid;
+        SET geom = NEW.geom, srid = NEW.srid
+        WHERE Surface.id = (SELECT AirspaceVolume.idSurface
+                            FROM AirspaceVolume
+                            WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
+      UPDATE CartographyLabelAirspaceAreaTimeSlice
+        SET longitude = NEW.xlbl, latitude = NEW.ylbl
+        WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = OLD.uuid;
       UPDATE CallsignDetail
-      SET callSign = NEW.cs
-      WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                           FROM Airspace_AirTrafficManagementService
-                                           WHERE
-                                             Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
-      UPDATE RadioCommunicationChannel
+        SET callSign = NEW.cs
+        WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+                                             FROM Airspace_AirTrafficManagementService
+                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
+      UPDATE RadioCommunicationChannelTimeSlice
       SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
-      WHERE RadioCommunicationChannel.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
+      WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
                                                FROM Service_RadioCommunicationChannel
-                                               WHERE
-                                                 Service_RadioCommunicationChannel.uuidService IN (SELECT
-                                                                                                     Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                                                                                   FROM
-                                                                                                     Airspace_AirTrafficManagementService
-                                                                                                   WHERE
-                                                                                                     Airspace_AirTrafficManagementService.uuidAirspace
-                                                                                                     = OLD.uuid));
-      UPDATE Unit
+                                               WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+                                                                                                   FROM Airspace_AirTrafficManagementService
+                                                                                                   WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+      UPDATE UnitTimeSlice
       SET type = NEW.unit_type
-      WHERE Unit.uuid IN (SELECT Service.uuidUnit
-                          FROM Service
-                          WHERE
-                            Service.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                             FROM
-                                               Airspace_AirTrafficManagementService
+      WHERE UnitTimeSlice.uuid IN (SELECT ServiceTimeSlice.uuidUnit FROM ServiceTimeSlice WHERE
+                                    ServiceTimeSlice.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+                                             FROM Airspace_AirTrafficManagementService
                                              WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
-      DELETE FROM Airspace
-      WHERE Airspace.uuid = OLD.uuid;
-      DELETE FROM AirspaceVolume
-      WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
-      DELETE FROM Surface
-      WHERE Surface.id = (SELECT AirspaceVolume.idSurface
-                          FROM AirspaceVolume
-                          WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
-      DELETE FROM CartographyLabel_CTA_CTR_TMA_UAA
-      WHERE CartographyLabel_CTA_CTR_TMA_UAA.uuidairspace = OLD.uuid;
-      DELETE FROM CallsignDetail
-      WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                           FROM Airspace_AirTrafficManagementService
-                                           WHERE
-                                             Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
-      DELETE FROM RadioCommunicationChannel
-      WHERE RadioCommunicationChannel.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
-                                               FROM Service_RadioCommunicationChannel
-                                               WHERE
-                                                 Service_RadioCommunicationChannel.uuidService IN (SELECT
-                                                                                                     Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                                                                                   FROM
-                                                                                                     Airspace_AirTrafficManagementService
-                                                                                                   WHERE
-                                                                                                     Airspace_AirTrafficManagementService.uuidAirspace
-                                                                                                     = OLD.uuid));
-      DELETE FROM Unit
-      WHERE Unit.uuid IN (SELECT Service.uuidUnit
-                          FROM Service
-                          WHERE
-                            Service.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                             FROM
-                                               Airspace_AirTrafficManagementService
-                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+      WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = OLD.uuid),
+        deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = OLD.uuid RETURNING AirspaceTimeSlice.idTimeSlice),
+        deleteTSAirspc AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirspcTS.idTimeSlice FROM deleteAirspcTS)),
+        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid RETURNING AirspaceVolume.idSurface),
+        deleteSrfc AS (DELETE FROM Surface WHERE Surface.id IN (SELECT deleteAirspcVlm.idSurface FROM deleteAirspcVlm)),
+        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid RETURNING uuidAirTrafficManagementService),
+        deleteAirTrffcMngmnt AS (DELETE FROM AirTrafficManagementService WHERE AirTrafficManagementService.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
+        deleteAirTrffcMngmntTS AS (DELETE FROM AirTrafficManagementServiceTimeSlice WHERE AirTrafficManagementServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice),
+        deleteTSAirTrffcMngmnt AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirTrffcMngmntTS.idTimeSlice FROM deleteAirTrffcMngmntTS)),
+        delete_AirTrffcCntrlSrvcTS AS (DELETE FROM AirTrafficControlServiceTimeSlice WHERE AirTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING AirTrafficControlServiceTimeSlice.uuid),
+        delete_AirTrffcCntrlSrvc AS (DELETE FROM AirTrafficControlService WHERE AirTrafficControlService.uuid IN (SELECT delete_AirTrffcCntrlSrvcTS.uuid FROM delete_AirTrffcCntrlSrvcTS)),
+        delete_GrndTrffcCntrlSrvcTS AS (DELETE FROM GroundTrafficControlServiceTimeSlice WHERE GroundTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING GroundTrafficControlServiceTimeSlice.uuid),
+        delete_GrndTrffcCntrlSrvc AS (DELETE FROM GroundTrafficControlService WHERE GroundTrafficControlService.uuid IN (SELECT delete_GrndTrffcCntrlSrvcTS.uuid FROM delete_GrndTrffcCntrlSrvcTS)),
+        delete_TrffcSprtnSrvcTS AS (DELETE FROM trafficseparationservicetimeslice WHERE trafficseparationservicetimeslice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING trafficseparationservicetimeslice.uuid),
+        delete_TrffcSprtnSrvc AS (DELETE FROM trafficseparationservice WHERE trafficseparationservice.uuid IN (SELECT delete_TrffcSprtnSrvcTS.uuid FROM delete_TrffcSprtnSrvcTS)),
+        delete_InfrmtnSrvcTS AS (DELETE FROM InformationServiceTimeSlice WHERE InformationServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING InformationServiceTimeSlice.uuid),
+        delete_InfrmtnSrvc AS (DELETE FROM InformationService WHERE InformationService.uuid IN (SELECT delete_InfrmtnSrvcTS.uuid FROM delete_InfrmtnSrvcTS)),
+        deleteSrvc AS (DELETE FROM Service WHERE Service.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) ),
+        deleteSrvcTS AS (DELETE FROM ServiceTimeSlice WHERE ServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice, uuidUnit),
+        deleteTSSrvc AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteSrvcTS.idTimeSlice FROM deleteSrvcTS)),
+        deleteUnit AS (DELETE FROM Unit WHERE Unit.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS)),
+        deleteUnitTS AS (DELETE FROM UnitTimeSlice WHERE UnitTimeSlice.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS) RETURNING idTimeSlice),
+        deleteTSUnit AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteUnitTS.idTimeSlice FROM deleteUnitTS)),
+        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelAirspaceAreaTimeSlice WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = OLD.uuid RETURNING CartographyLabelAirspaceAreaTimeSlice.uuid, idTimeSlice),
+        deleteCrtgrphLbl AS (DELETE FROM CartographyLabelAirspaceArea WHERE CartographyLabelAirspaceArea.uuid IN (SELECT deleteCrtgrphLblTS.uuid FROM deleteCrtgrphLblTS)),
+        deleteTSCrtgrphLbl AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteCrtgrphLblTS.idTimeSlice FROM deleteCrtgrphLblTS)),
+        deleteCllsgnDtl AS (DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
+        deleteSrvcRdCmmnctnChnnl AS (DELETE FROM Service_RadioCommunicationChannel WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING uuidRadioCommunicationChannel),
+        deleteRdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl)),
+        deleteRdCmmnctnChnnlTS AS (DELETE FROM RadioCommunicationChannelTimeSlice WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl) RETURNING idTimeSlice)
+        DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteRdCmmnctnChnnlTS.idTimeSlice FROM deleteRdCmmnctnChnnlTS);
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -4878,7 +4877,7 @@ CREATE TRIGGER uaa_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   UAA_1608 FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
-/*
+
 CREATE OR REPLACE FUNCTION fir_function()
   RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -4886,136 +4885,124 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, NEW.srid);
-    WITH inserted_airspace AS (INSERT INTO Airspace (uuid, _transasID, designator, name)
-    VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl)
-    RETURNING uuid)
-    INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidAirspace)
-    VALUES
-      (ROW (NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-       NEW.format_bottom,
-       (SELECT Surface.id
-        FROM Surface
-        WHERE Surface.geom = NEW.geom), (SELECT inserted_airspace.uuid
-                                         FROM inserted_airspace));
-    WITH insert_Unit AS (INSERT INTO Unit (uuid, type) VALUES (uuid_generate_v4(), NEW.unit_type)
-    RETURNING uuid),
-        insert_service AS (INSERT INTO Service (uuid, uuidUnit) VALUES (uuid_generate_v4(), (SELECT insert_Unit.uuid
-                                                                                             FROM insert_Unit))
-      RETURNING uuid),
-        insert_AirTrafficManagementService AS (INSERT INTO AirTrafficManagementService (uuid)
-      VALUES ((SELECT insert_service.uuid
-               FROM insert_service))
-      RETURNING uuid),
-        insert_Airspace_AirTrafficManagementService AS (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService)
-      VALUES
-        ((SELECT AirspaceVolume.uuidAirspace
-          FROM AirspaceVolume
-          WHERE AirspaceVolume.idSurface =
-                (SELECT Surface.id
-                 FROM Surface
-                 WHERE Surface.geom = NEW.geom)), (SELECT insert_AirTrafficManagementService.uuid
-                                                   FROM insert_AirTrafficManagementService))
-      RETURNING uuidAirTrafficManagementService)
-    INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
-                                                                   (SELECT
-                                                                      insert_Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                                                    FROM insert_Airspace_AirTrafficManagementService));
-    WITH inserted_radioChannel AS (INSERT INTO RadioCommunicationChannel (uuid, frequencyTransmission, frequencyReception)
-    VALUES (uuid_generate_v4(), ROW (NEW.tf, NULL), ROW (NEW.tr, NULL))
-    RETURNING uuid)
+    WITH inserted_Srfc AS (INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, NEW.srid) RETURNING Surface.id),
+      inserted_airspace AS (INSERT INTO Airspace (uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING uuid),
+      insert_TimeSliceAirspace AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      inserted_airspaceTS AS (INSERT INTO AirspaceTimeSlice (uuid, idTimeSlice, designator, name)
+      VALUES (uuid_generate_v4(), (SELECT insert_TimeSliceAirspace.id FROM insert_TimeSliceAirspace), NEW.nm, NEW.nl)),
+      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidAirspace)
+        VALUES (ROW (NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW (NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+       (SELECT inserted_Srfc.id FROM inserted_Srfc), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
+      insert_Unit AS (INSERT INTO Unit (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TimeSliceUnit AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_UnitTS AS (INSERT INTO UnitTimeSlice (uuid, idTimeSlice, type) VALUES ((SELECT insert_Unit.uuid FROM insert_Unit), (SELECT insert_TimeSliceUnit.id FROM insert_TimeSliceUnit), NEW.unit_type)),
+      insert_service AS (INSERT INTO Service (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TimeSliceService AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_serviceTS AS (INSERT INTO ServiceTimeSlice (uuid, idTimeSlice, uuidUnit) VALUES
+        ((SELECT insert_service.uuid FROM insert_service), (SELECT insert_TimeSliceService.id FROM insert_TimeSliceService), (SELECT insert_Unit.uuid FROM insert_Unit)) RETURNING idTimeSlice),
+      insert_AirTrffcMngmntSrvc AS (INSERT INTO AirTrafficManagementService (uuid) VALUES ((SELECT insert_service.uuid FROM insert_service)) RETURNING uuid),
+      insert_TimeSliceAirTrffcMngmntSrvc AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_AirTrafficManagementServiceTS AS (INSERT INTO AirTrafficManagementServiceTimeSlice (idTimeSlice, uuid) VALUES
+        ((SELECT insert_TimeSliceAirTrffcMngmntSrvc.id FROM insert_TimeSliceAirTrffcMngmntSrvc),(SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
+      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService)
+        VALUES ((SELECT inserted_airspace.uuid FROM inserted_airspace), (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
+      insert_CllsgnDtl AS (INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
+                                                                                          (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
+      insert_rdChnnl AS (INSERT INTO RadioCommunicationChannel(uuid) VALUES (uuid_generate_v4()) RETURNING RadioCommunicationChannel.uuid),
+      insert_TimeSliceRdChnnl AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_rdChnnlTS AS (INSERT INTO RadioCommunicationChannelTimeSlice (uuid, idTimeSlice, frequencyTransmission, frequencyReception)
+        VALUES ((SELECT insert_rdChnnl.uuid FROM insert_rdChnnl), (SELECT insert_TimeSliceRdChnnl.id FROM insert_TimeSliceRdChnnl), ROW (NEW.tf, NULL), ROW (NEW.tr, NULL))),
+      insert_lblAirspaceArea AS (INSERT INTO CartographyLabelFIR(uuid) VALUES (uuid_generate_v4()) RETURNING CartographyLabelAirspaceArea.uuid),
+      insert_TimeSliceLblAirspaceArea AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelFIRTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspace) VALUES
+        ((SELECT insert_TimeSliceLblAirspaceArea.id FROM insert_TimeSliceLblAirspaceArea), (SELECT insert_lblAirspaceArea.uuid FROM insert_lblAirspaceArea), NEW.xlbl, NEW.ylbl,
+         (SELECT inserted_airspace.uuid FROM inserted_airspace))),
+      insert_PrprtsWthSchdl AS (INSERT INTO PropertiesWithSchedule (id) VALUES (nextval('auto_id_properties_with_schedule')) RETURNING id),
+      insert_AirspcActvtn AS (INSERT INTO AirspaceActivation (id, uuidAirspace) VALUES ((SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
+      insert_Tmsht AS (INSERT INTO Timesheet (day, startTime, endTime, idPropertiesWithSchedule) VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime, (SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl)))
     INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
-      (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-       FROM Airspace_AirTrafficManagementService
-       WHERE Airspace_AirTrafficManagementService.uuidAirspace =
-             (SELECT AirspaceVolume.uuidAirspace
-              FROM AirspaceVolume
-              WHERE AirspaceVolume.idSurface = (SELECT Surface.id
-                                                FROM Surface
-                                                WHERE Surface.geom = NEW.geom))),
-      (SELECT inserted_radioChannel.uuid
-       FROM inserted_radioChannel));
-    INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (id, xlbl, ylbl, uuidairspace)
-    VALUES (nextval('auto_id_cartography_label'), NEW.xlbl, NEW.ylbl, NEW.uuid);
-    WITH inserted_PropertiesWithSchedule AS (INSERT INTO PropertiesWithSchedule (id)
-    VALUES (nextval('auto_id_properties_with_schedule'))
-    RETURNING id),
-        inserted_AirspaceActivation AS (INSERT INTO AirspaceActivation (id, uuidAirspace) VALUES
-        ((SELECT inserted_PropertiesWithSchedule.id
-          FROM inserted_PropertiesWithSchedule), (SELECT AirspaceVolume.uuidAirspace
-                                                  FROM AirspaceVolume
-                                                  WHERE AirspaceVolume.idSurface =
-                                                        (SELECT Surface.id
-                                                         FROM Surface
-                                                         WHERE Surface.geom = NEW.geom))))
-    INSERT INTO Timesheet (day, startTime, endTime, idPropertiesWithSchedule)
-    VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime, (SELECT inserted_PropertiesWithSchedule.id
-                                                              FROM inserted_PropertiesWithSchedule));
+        (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc), (SELECT insert_rdChnnl.uuid FROM insert_rdChnnl));
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
+      UPDATE AirspaceTimeSlice
+        SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
+        WHERE AirspaceTimeSlice.uuid = OLD.uuid ;
       UPDATE Airspace
-      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
-      WHERE Airspace.uuid = OLD.uuid;
+        SET uuid = NEW.uuid, _transasID = NEW.trID
+        WHERE Airspace.uuid = OLD.uuid;
       UPDATE AirspaceVolume
-      SET
-        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
-        upperLimitReference = NEW.format_top,
-        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-        lowerLimitReference = NEW.format_bottom
-      WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+        SET
+          upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+          upperLimitReference = NEW.format_top,
+          lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+          lowerLimitReference = NEW.format_bottom
+        WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
       UPDATE Surface
-      SET geom = NEW.geom, srid = NEW.srid
-      WHERE Surface.id = (SELECT AirspaceVolume.idSurface
-                          FROM AirspaceVolume
-                          WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
-      UPDATE CartographyLabel_FIR
-      SET xlbl = NEW.xlbl, ylbl = NEW.ylbl
-      WHERE CartographyLabel_FIR.uuidairspace = OLD.uuid;
+        SET geom = NEW.geom, srid = NEW.srid
+        WHERE Surface.id = (SELECT AirspaceVolume.idSurface
+                            FROM AirspaceVolume
+                            WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
+      UPDATE CartographyLabelFIRTimeSlice
+        SET longitude = NEW.xlbl, latitude = NEW.ylbl
+        WHERE CartographyLabelFIRTimeSlice.uuidairspace = OLD.uuid;
       UPDATE CallsignDetail
-      SET callSign = NEW.cs
-      WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                           FROM Airspace_AirTrafficManagementService
-                                           WHERE
-                                             Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
-      UPDATE RadioCommunicationChannel
+        SET callSign = NEW.cs
+        WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+                                             FROM Airspace_AirTrafficManagementService
+                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
+      UPDATE RadioCommunicationChannelTimeSlice
       SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
-      WHERE RadioCommunicationChannel.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
+      WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
                                                FROM Service_RadioCommunicationChannel
-                                               WHERE
-                                                 Service_RadioCommunicationChannel.uuidService IN (SELECT
-                                                                                                     Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                                                                                   FROM
-                                                                                                     Airspace_AirTrafficManagementService
-                                                                                                   WHERE
-                                                                                                     Airspace_AirTrafficManagementService.uuidAirspace
-                                                                                                     = OLD.uuid));
-      UPDATE Unit
+                                               WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+                                                                                                   FROM Airspace_AirTrafficManagementService
+                                                                                                   WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+      UPDATE UnitTimeSlice
       SET type = NEW.unit_type
-      WHERE Unit.uuid IN (SELECT Service.uuidUnit
-                          FROM Service
-                          WHERE
-                            Service.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                             FROM
-                                               Airspace_AirTrafficManagementService
+      WHERE UnitTimeSlice.uuid IN (SELECT ServiceTimeSlice.uuidUnit FROM ServiceTimeSlice WHERE
+                                    ServiceTimeSlice.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
+                                             FROM Airspace_AirTrafficManagementService
                                              WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
       UPDATE Timesheet
       SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
-      UPDATE Unit
-      SET type = NEW.unit_type;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
-      DELETE FROM Airspace
-      WHERE Airspace.uuid = OLD.uuid;
-      DELETE FROM AirspaceVolume
-      WHERE AirspaceVolume.id = OLD.id;
-      DELETE FROM CallsignDetail
-      WHERE CallsignDetail.id = OLD.id;
-      DELETE FROM RadioCommunicationChannel
-      WHERE RadioCommunicationChannel.uuid = OLD.uuid;
-      DELETE FROM Timesheet
-      WHERE Timesheet.id = OLD.id;
+      WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = OLD.uuid),
+        deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = OLD.uuid RETURNING AirspaceTimeSlice.idTimeSlice),
+        deleteTSAirspc AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirspcTS.idTimeSlice FROM deleteAirspcTS)),
+        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid RETURNING AirspaceVolume.idSurface),
+        deleteSrfc AS (DELETE FROM Surface WHERE Surface.id IN (SELECT deleteAirspcVlm.idSurface FROM deleteAirspcVlm)),
+        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid RETURNING uuidAirTrafficManagementService),
+        deleteAirTrffcMngmnt AS (DELETE FROM AirTrafficManagementService WHERE AirTrafficManagementService.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
+        deleteAirTrffcMngmntTS AS (DELETE FROM AirTrafficManagementServiceTimeSlice WHERE AirTrafficManagementServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice),
+        deleteTSAirTrffcMngmnt AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirTrffcMngmntTS.idTimeSlice FROM deleteAirTrffcMngmntTS)),
+        delete_AirTrffcCntrlSrvcTS AS (DELETE FROM AirTrafficControlServiceTimeSlice WHERE AirTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING AirTrafficControlServiceTimeSlice.uuid),
+        delete_AirTrffcCntrlSrvc AS (DELETE FROM AirTrafficControlService WHERE AirTrafficControlService.uuid IN (SELECT delete_AirTrffcCntrlSrvcTS.uuid FROM delete_AirTrffcCntrlSrvcTS)),
+        delete_GrndTrffcCntrlSrvcTS AS (DELETE FROM GroundTrafficControlServiceTimeSlice WHERE GroundTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING GroundTrafficControlServiceTimeSlice.uuid),
+        delete_GrndTrffcCntrlSrvc AS (DELETE FROM GroundTrafficControlService WHERE GroundTrafficControlService.uuid IN (SELECT delete_GrndTrffcCntrlSrvcTS.uuid FROM delete_GrndTrffcCntrlSrvcTS)),
+        delete_TrffcSprtnSrvcTS AS (DELETE FROM trafficseparationservicetimeslice WHERE trafficseparationservicetimeslice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING trafficseparationservicetimeslice.uuid),
+        delete_TrffcSprtnSrvc AS (DELETE FROM trafficseparationservice WHERE trafficseparationservice.uuid IN (SELECT delete_TrffcSprtnSrvcTS.uuid FROM delete_TrffcSprtnSrvcTS)),
+        delete_InfrmtnSrvcTS AS (DELETE FROM InformationServiceTimeSlice WHERE InformationServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING InformationServiceTimeSlice.uuid),
+        delete_InfrmtnSrvc AS (DELETE FROM InformationService WHERE InformationService.uuid IN (SELECT delete_InfrmtnSrvcTS.uuid FROM delete_InfrmtnSrvcTS)),
+        deleteSrvc AS (DELETE FROM Service WHERE Service.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) ),
+        deleteSrvcTS AS (DELETE FROM ServiceTimeSlice WHERE ServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice, uuidUnit),
+        deleteTSSrvc AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteSrvcTS.idTimeSlice FROM deleteSrvcTS)),
+        deleteUnit AS (DELETE FROM Unit WHERE Unit.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS)),
+        deleteUnitTS AS (DELETE FROM UnitTimeSlice WHERE UnitTimeSlice.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS) RETURNING idTimeSlice),
+        deleteTSUnit AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteUnitTS.idTimeSlice FROM deleteUnitTS)),
+        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelFIRTimeSlice WHERE CartographyLabelFIRTimeSlice.uuidairspace = OLD.uuid RETURNING CartographyLabelAirspaceAreaTimeSlice.uuid, idTimeSlice),
+        deleteCrtgrphLbl AS (DELETE FROM CartographyLabelFIR WHERE CartographyLabelFIR.uuid IN (SELECT deleteCrtgrphLblTS.uuid FROM deleteCrtgrphLblTS)),
+        deleteTSCrtgrphLbl AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteCrtgrphLblTS.idTimeSlice FROM deleteCrtgrphLblTS)),
+        deleteCllsgnDtl AS (DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
+        deleteSrvcRdCmmnctnChnnl AS (DELETE FROM Service_RadioCommunicationChannel WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING uuidRadioCommunicationChannel),
+        deleteRdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl)),
+        deleteRdCmmnctnChnnlTS AS (DELETE FROM RadioCommunicationChannelTimeSlice WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl) RETURNING idTimeSlice),
+        deleteAirpcActvtn AS (DELETE FROM AirspaceActivation WHERE AirspaceActivation.uuidairspace = OLD.uuid RETURNING AirspaceActivation.id),
+        deleteTmshht AS (DELETE FROM Timesheet WHERE Timesheet.idpropertieswithschedule = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn)),
+        deletePrprtsWthSchdl AS (DELETE FROM PropertiesWithSchedule WHERE id = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn))
+      DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteRdCmmnctnChnnlTS.idTimeSlice FROM deleteRdCmmnctnChnnlTS);
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -5024,46 +5011,103 @@ $function$;
 
 CREATE TRIGGER fir_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  FIR FOR EACH ROW EXECUTE PROCEDURE fir_function();
+  FIR_1608 FOR EACH ROW EXECUTE PROCEDURE fir_function();
 
-
-
-CREATE OR REPLACE FUNCTION dra_function()
+CREATE OR REPLACE FUNCTION zapr_function()
   RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO Airspace VALUES (NEW.uuid, NEW.trID, NEW.nm, NEW.nl);
-    INSERT INTO AirspaceVolume VALUES
-      (NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top, NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom,
-       NEW.geom);
-    INSERT INTO Timesheet VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime);
+    WITH inserted_Srfc AS (INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, NEW.srid) RETURNING Surface.id),
+      inserted_airspace AS (INSERT INTO Airspace (uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING uuid),
+      insert_TimeSliceAirspace AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      inserted_airspaceTS AS (INSERT INTO AirspaceTimeSlice (uuid, idTimeSlice, designator, name)
+      VALUES (uuid_generate_v4(), (SELECT insert_TimeSliceAirspace.id FROM insert_TimeSliceAirspace), NEW.nm, NEW.nl)),
+      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidAirspace)
+        VALUES (ROW (NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW (NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+       (SELECT inserted_Srfc.id FROM inserted_Srfc), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
+      insert_Unit AS (INSERT INTO Unit (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_service AS (INSERT INTO Service (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TimeSliceService AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_serviceTS AS (INSERT INTO ServiceTimeSlice (uuid, idTimeSlice, uuidUnit) VALUES
+        ((SELECT insert_service.uuid FROM insert_service), (SELECT insert_TimeSliceService.id FROM insert_TimeSliceService), (SELECT insert_Unit.uuid FROM insert_Unit)) RETURNING idTimeSlice),
+      insert_AirTrffcMngmntSrvc AS (INSERT INTO AirTrafficManagementService (uuid) VALUES ((SELECT insert_service.uuid FROM insert_service)) RETURNING uuid),
+      insert_TimeSliceAirTrffcMngmntSrvc AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_AirTrafficManagementServiceTS AS (INSERT INTO AirTrafficManagementServiceTimeSlice (idTimeSlice, uuid) VALUES
+        ((SELECT insert_TimeSliceAirTrffcMngmntSrvc.id FROM insert_TimeSliceAirTrffcMngmntSrvc),(SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
+      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService)
+        VALUES ((SELECT inserted_airspace.uuid FROM inserted_airspace), (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
+      insert_lblAirspaceArea AS (INSERT INTO CartographyLabelDraPraRsa(uuid) VALUES (uuid_generate_v4()) RETURNING CartographyLabelDraPraRsa.uuid),
+      insert_TimeSliceLblAirspaceArea AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelDraPraRsaTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspace) VALUES
+        ((SELECT insert_TimeSliceLblAirspaceArea.id FROM insert_TimeSliceLblAirspaceArea), (SELECT insert_lblAirspaceArea.uuid FROM insert_lblAirspaceArea), NEW.xlbl, NEW.ylbl,
+         (SELECT inserted_airspace.uuid FROM inserted_airspace))),
+      insert_PrprtsWthSchdl AS (INSERT INTO PropertiesWithSchedule (id) VALUES (nextval('auto_id_properties_with_schedule')) RETURNING id),
+      insert_AirspcActvtn AS (INSERT INTO AirspaceActivation (id, uuidAirspace) VALUES ((SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl), (SELECT inserted_airspace.uuid FROM inserted_airspace)))
+      INSERT INTO Timesheet (day, startTime, endTime, idPropertiesWithSchedule) VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime, (SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl));
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
+      UPDATE AirspaceTimeSlice
+        SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
+        WHERE AirspaceTimeSlice.uuid = OLD.uuid ;
       UPDATE Airspace
-      SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
-      WHERE Airspace.uuid = OLD.uuid;
+        SET uuid = NEW.uuid, _transasID = NEW.trID
+        WHERE Airspace.uuid = OLD.uuid;
       UPDATE AirspaceVolume
-      SET
-        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
-        upperLimitReference = NEW.format_top,
-        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-        lowerLimitReference = NEW.format_bottom
-      WHERE AirspaceVolume.id = OLD.id;
+        SET
+          upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
+          upperLimitReference = NEW.format_top,
+          lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
+          lowerLimitReference = NEW.format_bottom
+        WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+      UPDATE Surface
+        SET geom = NEW.geom, srid = NEW.srid
+        WHERE Surface.id = (SELECT AirspaceVolume.idSurface
+                            FROM AirspaceVolume
+                            WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
+      UPDATE CartographyLabelAirspaceAreaTimeSlice
+        SET longitude = NEW.xlbl, latitude = NEW.ylbl
+        WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = OLD.uuid;
       UPDATE Timesheet
       SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
-      DELETE FROM Airspace
-      WHERE Airspace.uuid = OLD.uuid;
-      DELETE FROM AirspaceVolume
-      WHERE AirspaceVolume.id = OLD.id;
-      DELETE FROM Timesheet
-      WHERE Timesheet.id = OLD.id;
+      WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = OLD.uuid),
+        deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = OLD.uuid RETURNING AirspaceTimeSlice.idTimeSlice),
+        deleteTSAirspc AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirspcTS.idTimeSlice FROM deleteAirspcTS)),
+        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid RETURNING AirspaceVolume.idSurface),
+        deleteSrfc AS (DELETE FROM Surface WHERE Surface.id IN (SELECT deleteAirspcVlm.idSurface FROM deleteAirspcVlm)),
+        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid RETURNING uuidAirTrafficManagementService),
+        deleteAirTrffcMngmnt AS (DELETE FROM AirTrafficManagementService WHERE AirTrafficManagementService.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
+        deleteAirTrffcMngmntTS AS (DELETE FROM AirTrafficManagementServiceTimeSlice WHERE AirTrafficManagementServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice),
+        deleteTSAirTrffcMngmnt AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirTrffcMngmntTS.idTimeSlice FROM deleteAirTrffcMngmntTS)),
+        delete_AirTrffcCntrlSrvcTS AS (DELETE FROM AirTrafficControlServiceTimeSlice WHERE AirTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING AirTrafficControlServiceTimeSlice.uuid),
+        delete_AirTrffcCntrlSrvc AS (DELETE FROM AirTrafficControlService WHERE AirTrafficControlService.uuid IN (SELECT delete_AirTrffcCntrlSrvcTS.uuid FROM delete_AirTrffcCntrlSrvcTS)),
+        delete_GrndTrffcCntrlSrvcTS AS (DELETE FROM GroundTrafficControlServiceTimeSlice WHERE GroundTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING GroundTrafficControlServiceTimeSlice.uuid),
+        delete_GrndTrffcCntrlSrvc AS (DELETE FROM GroundTrafficControlService WHERE GroundTrafficControlService.uuid IN (SELECT delete_GrndTrffcCntrlSrvcTS.uuid FROM delete_GrndTrffcCntrlSrvcTS)),
+        delete_TrffcSprtnSrvcTS AS (DELETE FROM trafficseparationservicetimeslice WHERE trafficseparationservicetimeslice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING trafficseparationservicetimeslice.uuid),
+        delete_TrffcSprtnSrvc AS (DELETE FROM trafficseparationservice WHERE trafficseparationservice.uuid IN (SELECT delete_TrffcSprtnSrvcTS.uuid FROM delete_TrffcSprtnSrvcTS)),
+        delete_InfrmtnSrvcTS AS (DELETE FROM InformationServiceTimeSlice WHERE InformationServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING InformationServiceTimeSlice.uuid),
+        delete_InfrmtnSrvc AS (DELETE FROM InformationService WHERE InformationService.uuid IN (SELECT delete_InfrmtnSrvcTS.uuid FROM delete_InfrmtnSrvcTS)),
+        deleteSrvc AS (DELETE FROM Service WHERE Service.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) ),
+        deleteSrvcTS AS (DELETE FROM ServiceTimeSlice WHERE ServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice, uuidUnit),
+        deleteTSSrvc AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteSrvcTS.idTimeSlice FROM deleteSrvcTS)),
+        deleteUnit AS (DELETE FROM Unit WHERE Unit.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS)),
+        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelDraPraRsaTimeSlice WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = OLD.uuid RETURNING CartographyLabelDraPraRsaTimeSlice.uuid, idTimeSlice),
+        deleteCrtgrphLbl AS (DELETE FROM CartographyLabelDraPraRsa WHERE CartographyLabelDraPraRsa.uuid IN (SELECT deleteCrtgrphLblTS.uuid FROM deleteCrtgrphLblTS)),
+        deleteTSCrtgrphLbl AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteCrtgrphLblTS.idTimeSlice FROM deleteCrtgrphLblTS)),
+        deleteCllsgnDtl AS (DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
+        deleteSrvcRdCmmnctnChnnl AS (DELETE FROM Service_RadioCommunicationChannel WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING uuidRadioCommunicationChannel),
+        deleteRdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl)),
+        deleteRdCmmnctnChnnlTS AS (DELETE FROM RadioCommunicationChannelTimeSlice WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl) RETURNING idTimeSlice),
+        deleteAirpcActvtn AS (DELETE FROM AirspaceActivation WHERE AirspaceActivation.uuidairspace = OLD.uuid RETURNING AirspaceActivation.id),
+        deleteTmshht AS (DELETE FROM Timesheet WHERE Timesheet.idpropertieswithschedule = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn)),
+        deletePrprtsWthSchdl AS (DELETE FROM PropertiesWithSchedule WHERE id = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn))
+      DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteRdCmmnctnChnnlTS.idTimeSlice FROM deleteRdCmmnctnChnnlTS);
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -5072,62 +5116,106 @@ $function$;
 
 CREATE TRIGGER dra_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  DRA FOR EACH ROW EXECUTE PROCEDURE dra_function();
-
-CREATE TRIGGER pra_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  PRA FOR EACH ROW EXECUTE PROCEDURE dra_function();
-
+  DRA_1608 FOR EACH ROW EXECUTE PROCEDURE zapr_function();
 CREATE TRIGGER rsa_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  RSA FOR EACH ROW EXECUTE PROCEDURE dra_function();
+  RSA_1608 FOR EACH ROW EXECUTE PROCEDURE zapr_function();
+CREATE TRIGGER pra_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  PRA_1608 FOR EACH ROW EXECUTE PROCEDURE zapr_function();
 
-
-CREATE VIEW MVL AS
+-- TPM - ППМ МВЛ
+CREATE VIEW TPM_1608 AS
   SELECT
-    RouteSegment.uuid                                AS uuid,
-    RouteSegment._transasID                          AS trID,
-    Route.locationDesignator                         AS nm,
-    RouteSegment.magneticTrack                       AS mta,
-    RouteSegment.reverseMagneticTrack                AS rmta,
-    (length).value                                   AS lb,
-    coalesce((widthLeft).value + (widthRight).value) AS wd,
-    CASE WHEN (SELECT DesignatedPoint.designator
-               FROM DesignatedPoint, SignificantPoint, SegmentPoint
-               WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-                     SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart) IS NOT NULL
-      THEN
-        (SELECT DesignatedPoint.designator AS PS
-         FROM DesignatedPoint, SignificantPoint, SegmentPoint
-         WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-               SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-               SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
-    ELSE
-      (SELECT Navaid.designator AS PS
-       FROM Navaid, SignificantPoint, SegmentPoint
-       WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
-             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
-    END,
-    CASE WHEN (SELECT DesignatedPoint.designator
-               FROM DesignatedPoint, SignificantPoint, SegmentPoint
-               WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-                     SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd) IS NOT NULL
-      THEN
+    SegmentPoint.id,
+    (SELECT DesignatedPoint._transasID AS trID
+     FROM DesignatedPoint, significantpoint
+     WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND
+           significantpoint.id = segmentpoint.idsignificantpoint),
+    (SELECT DesignatedPointTimeSlice.designator AS nm
+     FROM DesignatedPointTimeSlice, significantpoint, TimeSlice
+     WHERE DesignatedPointTimeSlice.uuid = significantpoint.uuiddesignatedpoint AND
+           DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+           (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+           significantpoint.id = segmentpoint.idsignificantpoint),
+    segmentpoint.reportingatc AS tp,
+    point.magneticVariation   AS md,
+    point.latitude,
+    point.longitude,
+    point.geom,
+    point.srid
+  FROM SegmentPoint, significantpoint, point
+  WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
+        AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM routesegmenttimeslice
+        WHERE routesegmenttimeslice.uuidRoute IN (SELECT routetimeslice.uuid FROM routetimeslice, timeslice
+        WHERE idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND routetimeslice.type = 'OTHER: MVL')) OR
+        SegmentPoint.id IN (SELECT idenroutesegmentpointend FROM routesegmenttimeslice WHERE routesegmenttimeslice.uuidRoute IN
+              (SELECT routetimeslice.uuid FROM routetimeslice, timeslice WHERE idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+              (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND routetimeslice.type = 'OTHER: MVL')));
 
-        (SELECT DesignatedPoint.designator AS PE
-         FROM DesignatedPoint, SignificantPoint, SegmentPoint
-         WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
+
+CREATE VIEW MVL_1608 AS
+  SELECT
+    RouteSegment.uuid,
+    RouteSegment._transasID AS trID,
+    RouteSegmentTimeSlice.idTimeSlice,
+    (SELECT RouteTimeSlice.locationDesignator AS nm
+    FROM RouteTimeSlice, timeslice
+    WHERE RouteTimeSlice.uuid = RouteSegmentTimeSlice.uuidroute AND RouteTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+    RouteSegmentTimeSlice.magneticTrack AS mta,
+    RouteSegmentTimeSlice.reverseMagneticTrack AS rmta,
+    (length).value AS lb,
+    coalesce((widthLeft).value + (widthRight).value) AS wd,
+    CASE WHEN (SELECT DesignatedPointTimeSlice.designator
+               FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+               WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
+                      DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+                      (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+                     SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart) IS NOT NULL
+      THEN
+        (SELECT DesignatedPointTimeSlice.designator AS PS
+         FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+         WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
+               DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+               (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
                SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-               SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
+               SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart)
     ELSE
-      (SELECT Navaid.designator AS PE
-       FROM Navaid, SignificantPoint, SegmentPoint
-       WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
+      (SELECT NavaidTimeSlice.designator AS PS
+       FROM NavaidTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+       WHERE NavaidTimeSlice.uuid = SignificantPoint.uuidNavaid AND
+             NavaidTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+              (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
+             SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart)
+    END,
+    CASE WHEN (SELECT DesignatedPointTimeSlice.designator
+               FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+               WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
+                      DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+                      (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+                     SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointEnd) IS NOT NULL
+      THEN
+        (SELECT DesignatedPointTimeSlice.designator AS PE
+         FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+         WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
+               DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+               (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+               SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+               SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointEnd)
+    ELSE
+      (SELECT NavaidTimeSlice.designator AS PE
+       FROM NavaidTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+       WHERE NavaidTimeSlice.uuid = SignificantPoint.uuidNavaid AND
+             NavaidTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+              (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointEnd)
     END,
     (upperLimit).value                               AS top,
     (upperLimit).unit                                AS top_unit,
@@ -5137,15 +5225,50 @@ CREATE VIEW MVL AS
     (lowerLimit).unit                                AS bottom_unit,
     (lowerLimit).nonNumeric                          AS GND,
     lowerLimitReference                              AS format_bottom,
-    (SELECT Curve.id
-     FROM Curve
-     WHERE Curve.id = RouteSegment.idCurve),
     (SELECT Curve.geom AS geom
      FROM Curve
-     WHERE Curve.id = RouteSegment.idCurve)
-  FROM RouteSegment
-    LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid
-  WHERE Route.type = 'OTHER: MVL';
+     WHERE Curve.id = RouteSegmentTimeSlice.idCurve)
+  FROM RouteSegmentTimeSlice, RouteSegment, TimeSlice
+  WHERE RouteSegmentTimeSlice.uuidroute IN (SELECT RouteTimeSlice.uuid FROM RouteTimeSlice WHERE RouteTimeSlice.type = 'OTHER: MVL') AND
+        RouteSegmentTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
+
+
+/*
+
+-- РНС (fieldElevation).value AS ha,
+CREATE VIEW NAV AS
+  SELECT
+    Navaid.uuid,
+    Navaid._transasID       AS trID,
+    Navaid.designator       AS nm,
+    Navaid.name             AS nl,
+    Navaid.type             AS tp,
+    CASE WHEN Navaid.type = 'NDB'
+      THEN (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
+            FROM NDB
+            WHERE NDB.uuid = Navaid.uuid)
+    WHEN Navaid.type = 'DME'
+      THEN (SELECT ((ghostFrequency).value || ',' || (ghostFrequency).unit) AS tf
+            FROM DME
+            WHERE DME.uuid = Navaid.uuid)
+    WHEN Navaid.type = 'ILS_DME'
+      THEN (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
+            FROM Localizer
+            WHERE Localizer.uuid = Navaid.uuid)
+    ELSE (SELECT ((frequency).value || ',' || (frequency).unit) AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
+          FROM VOR
+          WHERE VOR.uuid = Navaid.uuid)
+    END,
+    Point.magneticVariation AS md,
+    Point.id,
+    Point.latitude,
+    Point.longitude,
+    Point.geom,
+    (elevation).value       AS height
+  FROM Navaid, Point, ElevatedPoint
+  WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
 
 CREATE OR REPLACE FUNCTION mvl_function()
   RETURNS TRIGGER
@@ -5441,7 +5564,6 @@ CREATE TRIGGER inserting_surface
 BEFORE INSERT OR UPDATE ON Surface FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_polygon();
 
-/*
 CREATE OR REPLACE FUNCTION trigger_insert_curve()
   RETURNS TRIGGER AS $$
 BEGIN
@@ -5465,37 +5587,8 @@ CREATE TRIGGER inserting_curve
 BEFORE INSERT OR UPDATE ON Curve FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_curve();
 
--- TPM - ППМ МВЛ
-CREATE VIEW TPM AS
-  SELECT
-    SegmentPoint.id,
-    (SELECT DesignatedPoint._transasID AS trID
-     FROM DesignatedPoint, significantpoint
-     WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND
-           significantpoint.id = segmentpoint.idsignificantpoint),
-    (SELECT DesignatedPoint.designator AS nm
-     FROM DesignatedPoint, significantpoint
-     WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND
-           significantpoint.id = segmentpoint.idsignificantpoint),
-    segmentpoint.reportingatc AS tp,
-    point.magneticVariation   AS md,
-    point.latitude,
-    point.longitude,
-    point.geom,
-    point.srid
-  FROM SegmentPoint, significantpoint, point
-  WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
-        AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart
-                                 FROM RouteSegment
-                                 WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid
-                                                                  FROM Route
-                                                                  WHERE Route.type = 'OTHER: MVL')) OR
-             SegmentPoint.id IN (SELECT idenroutesegmentpointend
-                                 FROM RouteSegment
-                                 WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid
-                                                                  FROM Route
-                                                                  WHERE Route.type = 'OTHER: MVL')));
 
+/*
 CREATE OR REPLACE FUNCTION tpm_function()
   RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -5640,38 +5733,7 @@ CREATE TRIGGER GP_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   GP FOR EACH ROW EXECUTE PROCEDURE tpm_function();
 
--- РНС (fieldElevation).value AS ha,
-CREATE VIEW NAV AS
-  SELECT
-    Navaid.uuid,
-    Navaid._transasID       AS trID,
-    Navaid.designator       AS nm,
-    Navaid.name             AS nl,
-    Navaid.type             AS tp,
-    CASE WHEN Navaid.type = 'NDB'
-      THEN (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
-            FROM NDB
-            WHERE NDB.uuid = Navaid.uuid)
-    WHEN Navaid.type = 'DME'
-      THEN (SELECT ((ghostFrequency).value || ',' || (ghostFrequency).unit) AS tf
-            FROM DME
-            WHERE DME.uuid = Navaid.uuid)
-    WHEN Navaid.type = 'ILS_DME'
-      THEN (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
-            FROM Localizer
-            WHERE Localizer.uuid = Navaid.uuid)
-    ELSE (SELECT ((frequency).value || ',' || (frequency).unit) AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
-          FROM VOR
-          WHERE VOR.uuid = Navaid.uuid)
-    END,
-    Point.magneticVariation AS md,
-    Point.id,
-    Point.latitude,
-    Point.longitude,
-    Point.geom,
-    (elevation).value       AS height
-  FROM Navaid, Point, ElevatedPoint
-  WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
+
 
 -- ROW(NEW.ha,NULL,'M')
 CREATE OR REPLACE FUNCTION nav_function()
