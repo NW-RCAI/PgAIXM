@@ -26,7 +26,8 @@ ObstacleAreaTimeSlice, VerticalStructureTimeSlice, InformationServiceTimeSlice, 
 AirportGroundServiceTimeSlice, SearchRescueServiceTimeSlice, TrafficSeparationServiceTimeSlice, OrganisationAuthorityTimeSlice,
 RunwayDirectionLightSystemTimeSlice, AirTrafficControlServiceTimeSlice, GroundTrafficControlServiceTimeSlice,
 cartographylabelarp, cartographylabelarptimeslice, CartographyLabelAirspaceArea, CartographyLabelAirspaceAreaTimeSlice,
-CartographyLabelFIR, CartographyLabelFIRTimeSlice, CartographyLabelDraPraRsa, CartographyLabelDraPraRsaTimeSlice CASCADE;
+CartographyLabelFIR, CartographyLabelFIRTimeSlice, CartographyLabelDraPraRsa, CartographyLabelDraPraRsaTimeSlice,
+CartographyLabelMVL, CartographyLabelMVLTimeSlice CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -1840,14 +1841,13 @@ CREATE TABLE ElevatedPoint
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Curve
 CREATE TABLE Curve
 (
-  id                 INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_curve'),
+  id                 INTEGER PRIMARY KEY DEFAULT nextval('auto_id_curve'),
   latitude           latitude,
   longitude          longitude,
   coord              VARCHAR,
   srid               INTEGER REFERENCES spatial_ref_sys (srid),
   horizontalAccuracy ValDistanceType,
   geom               GEOMETRY(LINESTRING, 4326)
-
 );
 
 --  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_ElevatedCurve
@@ -2433,7 +2433,7 @@ CREATE TABLE DesignatedPointTimeSlice
   designator CodeDesignatedPointDesignatorType,
   type       CodeDesignatedPointType,
   name       TextNameType,
-  idPoint    INTEGER NOT NULL REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE
+  idPoint    INTEGER REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
@@ -2507,8 +2507,12 @@ CREATE TABLE CartographyLabelFIRTimeSlice
   uuid                id REFERENCES CartographyLabelFIR (uuid),
   longitude         longitude,
   latitude         latitude,
-  srid         INTEGER REFERENCES spatial_ref_sys (srid),
+  inform character varying(254),
+  time character varying(254),
+  type character varying(8),
+  map character varying(20),
   uuidairspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  srid         INTEGER REFERENCES spatial_ref_sys (srid),
   geom         GEOMETRY(POINT, 4326)
 );
 
@@ -2697,9 +2701,26 @@ CREATE TABLE RouteSegmentTimeSlice
   requiredNavigationPerformance    CodeRNPType,
   designatorSuffix                 CodeRouteDesignatorSuffixType,
   uuidRoute                        id REFERENCES Route (uuid),
-  idCurve                          INTEGER NOT NULL REFERENCES Curve (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  idCurve                          INTEGER REFERENCES Curve (id) ON DELETE CASCADE ON UPDATE CASCADE,
   idEnRouteSegmentPointStart       INTEGER REFERENCES EnRouteSegmentPoint (id) ON DELETE CASCADE ON UPDATE CASCADE,
   idEnRouteSegmentPointEnd         INTEGER REFERENCES EnRouteSegmentPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE CartographyLabelMVL
+(
+  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4()
+);
+
+CREATE TABLE CartographyLabelMVLTimeSlice
+(
+  idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
+  uuid                id REFERENCES CartographyLabelMVL (uuid),
+  longitude                longitude,
+  latitude                latitude,
+  rotation            ValAngleType,
+  srid                INTEGER REFERENCES spatial_ref_sys (srid),
+  uuidroutesegment id REFERENCES RouteSegment (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  geom                GEOMETRY(POINT, 4326)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SignificantPointInAirspace
@@ -4117,17 +4138,6 @@ CREATE TRIGGER als_trigger_1608
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   ALS_1608 FOR EACH ROW EXECUTE PROCEDURE als_function();
 
-/*
-CREATE OR REPLACE VIEW ALS_1610 AS
-  SELECT
-    AirportHeliport.uuid,
-    AirportHeliport._transasID AS trID,
-    AirportHeliportTimeSlice.idTimeSlice,
-    AirportHeliportTimeSlice.name  AS nl
-  FROM Navaid, Point, ElevatedPoint
-  WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
-  */
-
 -- CTA
 CREATE VIEW CTA_1610 AS
   SELECT
@@ -4270,6 +4280,77 @@ CREATE VIEW CTA_1608 AS
         AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
+
+CREATE VIEW CTA_1613 AS
+  SELECT
+    Airspace.uuid,
+    Airspace._transasID AS trID,
+    AirspaceTimeSlice.idTimeSlice,
+    AirspaceTimeSlice.designator AS nm,
+    AirspaceTimeSlice.name                      AS nl,
+    AirspaceTimeSlice.controlType               AS tp,
+    (upperLimit).value                 AS top,
+    (upperLimit).unit                  AS top_unit,
+    (upperLimit).nonNumeric            AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value                 AS bottom,
+    (lowerLimit).unit                  AS bottom_unit,
+    (lowerLimit).nonNumeric            AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
+     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
+           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT UnitTimeSlice.type AS unit_type
+     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
+     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
+     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
+     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
+     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
+     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Surface.geom
+      FROM Surface
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Surface.srid
+      FROM Surface
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
+  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
+  WHERE AirspaceTimeSlice.type = 'CTA' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
+        AirspaceVolume.uuidAirspace = Airspace.uuid AND
+        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL);
 
 CREATE VIEW CTR_1608 AS
   SELECT
@@ -4565,6 +4646,153 @@ CREATE VIEW FIR_1608 AS
         AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
+
+/*
+CREATE VIEW FIR_1613 AS
+  SELECT
+    Airspace.uuid,
+    Airspace._transasID AS trID,
+    AirspaceTimeSlice.idTimeSlice,
+    AirspaceTimeSlice.designator AS nm,
+    AirspaceTimeSlice.name                      AS nl,
+    (upperLimit).value                 AS top,
+    (upperLimit).unit                  AS top_unit,
+    (upperLimit).nonNumeric            AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value                 AS bottom,
+    (lowerLimit).unit                  AS bottom_unit,
+    (lowerLimit).nonNumeric            AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
+    (SELECT CallsignDetail.callSign AS cs
+     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
+     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
+           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT (frequencyTransmission).value AS tf
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT (frequencyReception).value AS tr
+     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
+     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT UnitTimeSlice.type AS unit_type
+     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
+     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    (SELECT Timesheet.day AS day_of_the_week
+     FROM Timesheet, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Timesheet.startTime
+     FROM Timesheet, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT Timesheet.endTime
+     FROM Timesheet, AirspaceActivation
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     LIMIT 1),
+    (SELECT CartographyLabelFIRTimeSlice.longitude as xlbl
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT CartographyLabelFIRTimeSlice.latitude as ylbl
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Surface.geom
+      FROM Surface
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Surface.srid
+      FROM Surface
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
+  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
+  WHERE AirspaceTimeSlice.type = 'FIR' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
+        AirspaceVolume.uuidAirspace = Airspace.uuid AND
+        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL);
+*/
+
+CREATE VIEW FIR_1613 AS
+  SELECT
+    Airspace.uuid,
+    Airspace._transasID AS trID,
+    AirspaceTimeSlice.designator AS nm,
+    AirspaceTimeSlice.name                      AS nl,
+    (upperLimit).value                 AS top,
+    (upperLimit).unit                  AS top_unit,
+    (upperLimit).nonNumeric            AS UNL,
+    AirspaceVolume.upperLimitReference AS format_top,
+    (lowerLimit).value                 AS bottom,
+    (lowerLimit).unit                  AS bottom_unit,
+    (lowerLimit).nonNumeric            AS GND,
+    AirspaceVolume.lowerLimitReference AS format_bottom,
+    (SELECT CartographyLabelFIRTimeSlice.inform as inform
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT CartographyLabelFIRTimeSlice.time as time
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT CartographyLabelFIRTimeSlice.type as type
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT CartographyLabelFIRTimeSlice.map as map
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT CartographyLabelFIRTimeSlice.longitude as xlbl
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT CartographyLabelFIRTimeSlice.latitude as ylbl
+     FROM CartographyLabelFIRTimeSlice, timeslice
+     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
+           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Surface.geom
+      FROM Surface
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT Surface.srid
+      FROM Surface
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
+  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
+  WHERE AirspaceTimeSlice.type = 'FIR' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
+        AirspaceVolume.uuidAirspace = Airspace.uuid AND
+        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL);
 
 CREATE VIEW DRA_1608 AS
   SELECT
@@ -5124,99 +5352,215 @@ CREATE TRIGGER pra_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   PRA_1608 FOR EACH ROW EXECUTE PROCEDURE zapr_function();
 
+
 -- TPM - ППМ МВЛ
 CREATE VIEW TPM_1608 AS
   SELECT
-    SegmentPoint.id,
-    (SELECT DesignatedPoint._transasID AS trID
-     FROM DesignatedPoint, significantpoint
-     WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND
-           significantpoint.id = segmentpoint.idsignificantpoint),
-    (SELECT DesignatedPointTimeSlice.designator AS nm
-     FROM DesignatedPointTimeSlice, significantpoint, TimeSlice
-     WHERE DesignatedPointTimeSlice.uuid = significantpoint.uuiddesignatedpoint AND
-           DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-           (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
-           significantpoint.id = segmentpoint.idsignificantpoint),
-    segmentpoint.reportingatc AS tp,
-    point.magneticVariation   AS md,
-    point.latitude,
-    point.longitude,
-    point.geom,
-    point.srid
-  FROM SegmentPoint, significantpoint, point
-  WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
-        AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart FROM routesegmenttimeslice
-        WHERE routesegmenttimeslice.uuidRoute IN (SELECT routetimeslice.uuid FROM routetimeslice, timeslice
-        WHERE idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND routetimeslice.type = 'OTHER: MVL')) OR
-        SegmentPoint.id IN (SELECT idenroutesegmentpointend FROM routesegmenttimeslice WHERE routesegmenttimeslice.uuidRoute IN
-              (SELECT routetimeslice.uuid FROM routetimeslice, timeslice WHERE idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-              (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND routetimeslice.type = 'OTHER: MVL')));
+    DesignatedPoint.uuid,
+    DesignatedPoint._transasID AS trID,
+    DesignatedPointTimeSlice.designator AS nm,
+    (SELECT segmentpoint.reportingatc AS tp
+     FROM SegmentPoint, SignificantPoint
+     WHERE SegmentPoint.idSignificantPoint = SignificantPoint.id AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.magneticVariation AS md
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.latitude
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.longitude
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.geom
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.srid
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid)
+  FROM DesignatedPointTimeSlice, DesignatedPoint, TimeSlice
+  WHERE DesignatedPointTimeSlice.uuid = DesignatedPoint.uuid AND DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-09-15' AND
+         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) AND DesignatedPoint._transasID LIKE 'TPM%' ;
 
 
-CREATE VIEW MVL_1608 AS
+-- TPT - ППМ МВЛ
+CREATE VIEW TPT_1608 AS
   SELECT
-    RouteSegment.uuid,
-    RouteSegment._transasID AS trID,
-    RouteSegmentTimeSlice.idTimeSlice,
-    (SELECT RouteTimeSlice.locationDesignator AS nm
-    FROM RouteTimeSlice, timeslice
-    WHERE RouteTimeSlice.uuid = RouteSegmentTimeSlice.uuidroute AND RouteTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    RouteSegmentTimeSlice.magneticTrack AS mta,
-    RouteSegmentTimeSlice.reverseMagneticTrack AS rmta,
+    DesignatedPoint.uuid,
+    DesignatedPoint._transasID AS trID,
+    DesignatedPointTimeSlice.idTimeSlice AS TS,
+    DesignatedPointTimeSlice.designator AS nm,
+    (SELECT segmentpoint.reportingatc AS tp
+     FROM SegmentPoint, SignificantPoint
+     WHERE SegmentPoint.idSignificantPoint = SignificantPoint.id AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.magneticVariation AS md
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.latitude
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.longitude
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.geom
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+    (SELECT Point.srid
+     FROM Point, SignificantPoint
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid)
+  FROM DesignatedPointTimeSlice, DesignatedPoint, TimeSlice
+  WHERE DesignatedPointTimeSlice.uuid = DesignatedPoint.uuid AND DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-09-15' AND
+         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) AND DesignatedPoint._transasID LIKE 'TPT%' ;
+
+
+CREATE OR REPLACE FUNCTION tpm_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    WITH insert_Point AS (INSERT INTO Point(id, geom, latitude, longitude, srid, magneticVariation) VALUES
+        (nextval('auto_id_point'), NEW.geom, NEW.latitude, NEW.longitude, NEW.srid, NEW.md) RETURNING id),
+      insert_DsgntdPnt AS (INSERT INTO DesignatedPoint(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING DesignatedPoint.uuid),
+      insert_TSDsgntdPnt AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_DsgntdPntTS AS (INSERT INTO DesignatedPointTimeSlice(uuid, idTimeSlice, designator) VALUES ((SELECT insert_DsgntdPnt.uuid FROM insert_DsgntdPnt), (SELECT insert_TSDsgntdPnt.id FROM insert_TSDsgntdPnt), NEW.nm)),
+      insert_sgnfcntPnt AS (INSERT INTO SignificantPoint(idPoint, uuidDesignatedPoint) VALUES ((SELECT insert_Point.id FROM insert_Point),(SELECT insert_DsgntdPnt.uuid FROM insert_DsgntdPnt)) RETURNING SignificantPoint.id),
+      insert_SgmntPnt AS (INSERT INTO SegmentPoint(id, idsignificantpoint, reportingatc) VALUES (nextval('auto_id_segment_point'), (SELECT insert_sgnfcntPnt.id FROM insert_sgnfcntPnt), NEW.tp) RETURNING SegmentPoint.id),
+      insert_EnRtSgmntPnt AS (INSERT INTO EnRouteSegmentPoint(id) VALUES ((SELECT insert_SgmntPnt.id FROM insert_SgmntPnt))),
+      insert_RtSgmnt AS (INSERT INTO routesegment(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TSRtSgmnt AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+      insert_RtSgmntTS AS (INSERT INTO RouteSegmentTimeSlice(uuid, idTimeSlice, idEnRouteSegmentPointStart) VALUES ((SELECT insert_RtSgmnt.uuid FROM insert_RtSgmnt), (SELECT insert_TSRtSgmnt.id FROM insert_TSRtSgmnt),(SELECT insert_SgmntPnt.id FROM insert_SgmntPnt)) ),
+      insert_Rt AS (INSERT INTO Route(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TSRt AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id)
+      INSERT INTO RouteTimeSlice (uuid, idTimeSlice, type) VALUES ((SELECT insert_Rt.uuid FROM insert_Rt), (SELECT insert_TSRt.id FROM insert_TSRt), 'OTHER: MVL');
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Point
+        SET geom = NEW.geom, srid = NEW.srid, magneticVariation = NEW.md
+        WHERE Point.id = (SELECT idPoint FROM SignificantPoint WHERE uuidDesignatedPoint = OLD.uuid) ;
+      UPDATE DesignatedPointTimeSlice
+        SET designator = NEW.nm
+        WHERE uuid =  OLD.uuid ;
+      UPDATE SegmentPoint
+        SET reportingatc = NEW.tp
+        WHERE SegmentPoint.idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE uuidDesignatedPoint = OLD.uuid);
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      WITH delete_SgmntPnt AS (DELETE FROM SegmentPoint WHERE idSignificantPoint = (SELECT SignificantPoint.id FROM SignificantPoint WHERE uuidDesignatedPoint = OLD.uuid)),
+        delete_DsgntdPntTS AS (DELETE FROM DesignatedPointTimeSlice WHERE uuid =  OLD.uuid RETURNING idTimeSlice),
+        delete_DsgntdPnt AS (DELETE FROM DesignatedPoint WHERE uuid = OLD.uuid),
+        delete_TSDsgntdPnt AS (DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_DsgntdPntTS)),
+        delete_SgnfcntPnt AS (DELETE FROM SignificantPoint WHERE uuidDesignatedPoint = OLD.uuid RETURNING idPoint)
+      DELETE FROM Point WHERE id = (SELECT idPoint FROM delete_SgnfcntPnt) ;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+
+CREATE TRIGGER tpm_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  TPM_1608 FOR EACH ROW EXECUTE PROCEDURE tpm_function();
+
+
+CREATE OR REPLACE FUNCTION tpt_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    WITH insert_Point AS (INSERT INTO Point(geom, latitude, longitude, srid, magneticVariation) VALUES (NEW.geom, NEW.latitude, NEW.longitude, NEW.srid, NEW.md) RETURNING id),
+      insert_DsgntdPnt AS (INSERT INTO DesignatedPoint(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING DesignatedPoint.uuid),
+      insert_TSDsgntdPnt AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-07-21') RETURNING timeslice.id),
+      insert_DsgntdPntTS AS (INSERT INTO DesignatedPointTimeSlice(uuid, idTimeSlice, designator) VALUES ((SELECT insert_DsgntdPnt.uuid FROM insert_DsgntdPnt), (SELECT insert_TSDsgntdPnt.id FROM insert_TSDsgntdPnt), NEW.nm)),
+      insert_sgnfcntPnt AS (INSERT INTO SignificantPoint(idPoint, uuidDesignatedPoint) VALUES ((SELECT insert_Point.id FROM insert_Point),(SELECT insert_DsgntdPnt.uuid FROM insert_DsgntdPnt)) RETURNING SignificantPoint.id),
+      insert_SgmntPnt AS (INSERT INTO SegmentPoint(id, idsignificantpoint, reportingatc) VALUES (nextval('auto_id_segment_point'), (SELECT insert_sgnfcntPnt.id FROM insert_sgnfcntPnt), NEW.tp) RETURNING SegmentPoint.id),
+      insert_EnRtSgmntPnt AS (INSERT INTO EnRouteSegmentPoint(id) VALUES ((SELECT insert_SgmntPnt.id FROM insert_SgmntPnt))),
+      insert_RtSgmnt AS (INSERT INTO routesegment(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TSRtSgmnt AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-07-21') RETURNING timeslice.id),
+      insert_RtSgmntTS AS (INSERT INTO routesegmenttimeslice(uuid, idTimeSlice, idEnRouteSegmentPointStart) VALUES ((SELECT insert_RtSgmnt.uuid FROM insert_RtSgmnt), (SELECT insert_TSRtSgmnt.id FROM insert_TSRtSgmnt),(SELECT insert_SgmntPnt.id FROM insert_SgmntPnt)) ),
+      insert_Rt AS (INSERT INTO route(uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
+      insert_TSRt AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-07-21') RETURNING timeslice.id)
+      INSERT INTO RouteTimeSlice (uuid, idTimeSlice, type) VALUES ((SELECT insert_Rt.uuid FROM insert_Rt), (SELECT insert_TSRt.id FROM insert_TSRt), 'ATS');
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE Point
+        SET geom = NEW.geom, srid = NEW.srid, magneticVariation = NEW.md
+        WHERE Point.id = (SELECT idPoint FROM SignificantPoint WHERE id = (SELECT idsignificantpoint FROM SegmentPoint WHERE SegmentPoint.id = old.id)) ;
+      UPDATE DesignatedPointTimeSlice
+        SET designator = NEW.nm
+        WHERE uuid = (SELECT uuidDesignatedPoint FROM SignificantPoint WHERE id = (SELECT idsignificantpoint FROM SegmentPoint WHERE SegmentPoint.id = old.id)) ;
+      UPDATE SegmentPoint
+        SET reportingatc = NEW.tp
+        WHERE SegmentPoint.id = old.id;
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      WITH delete_SgmntPnt AS (DELETE FROM SegmentPoint WHERE id = OLD.id RETURNING id),
+        delete_DsgntdPntTS AS (DELETE FROM DesignatedPointTimeSlice WHERE uuid = (SELECT uuidDesignatedPoint FROM SignificantPoint WHERE id = (SELECT idsignificantpoint FROM SegmentPoint WHERE SegmentPoint.id = old.id)) RETURNING uuid, idTimeSlice),
+        delete_DsgntdPnt AS (DELETE FROM DesignatedPoint WHERE uuid = (SELECT delete_DsgntdPntTS.uuid FROM delete_DsgntdPntTS)),
+        delete_TSDsgntdPnt AS (DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_DsgntdPntTS)),
+        delete_SgnfcntPnt AS (DELETE FROM SignificantPoint WHERE uuidDesignatedPoint = (SELECT delete_DsgntdPntTS.uuid FROM delete_DsgntdPntTS) RETURNING idPoint)
+      DELETE FROM Point WHERE id = (SELECT idPoint FROM delete_SgnfcntPnt) ;
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+
+CREATE TRIGGER tpt_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  TPT_1608 FOR EACH ROW EXECUTE PROCEDURE tpt_function();
+
+
+CREATE VIEW mvl_1608 AS
+  SELECT RouteSegmentTimeSlice.uuid,
+    (SELECT routesegment._transasid as trID
+    FROM routesegment
+    WHERE routesegment.uuid = RouteSegmentTimeSlice.uuid),
+    routetimeslice.locationDesignator as nm,
+    magneticTrack AS mta,
+    reverseMagneticTrack AS rmta,
     (length).value AS lb,
     coalesce((widthLeft).value + (widthRight).value) AS wd,
-    CASE WHEN (SELECT DesignatedPointTimeSlice.designator
-               FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
-               WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
-                      DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-                      (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
-                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-                     SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart) IS NOT NULL
-      THEN
-        (SELECT DesignatedPointTimeSlice.designator AS PS
-         FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
-         WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
-               DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-               (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
-               SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-               SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart)
-    ELSE
-      (SELECT NavaidTimeSlice.designator AS PS
+    concat((SELECT DesignatedPointTimeSlice.designator
+      FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+      WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuiddesignatedpoint AND
+        significantpoint.id = segmentpoint.idsignificantpoint AND
+        segmentpoint.id = RouteSegmentTimeSlice.idenroutesegmentpointstart AND
+        DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT NavaidTimeSlice.designator
        FROM NavaidTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
        WHERE NavaidTimeSlice.uuid = SignificantPoint.uuidNavaid AND
              NavaidTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
               (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-             SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart)
-    END,
-    CASE WHEN (SELECT DesignatedPointTimeSlice.designator
-               FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
-               WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
-                      DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-                      (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
-                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-                     SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointEnd) IS NOT NULL
-      THEN
-        (SELECT DesignatedPointTimeSlice.designator AS PE
-         FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
-         WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuidDesignatedPoint AND
-               DesignatedPointTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-               (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
-               SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-               SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointEnd)
-    ELSE
-      (SELECT NavaidTimeSlice.designator AS PE
+             SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart)) AS PS,
+    concat((SELECT DesignatedPointTimeSlice.designator
+      FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+      WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuiddesignatedpoint AND
+        significantpoint.id = segmentpoint.idsignificantpoint AND
+        segmentpoint.id = RouteSegmentTimeSlice.idenroutesegmentpointend AND
+        DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT NavaidTimeSlice.designator
        FROM NavaidTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
        WHERE NavaidTimeSlice.uuid = SignificantPoint.uuidNavaid AND
              NavaidTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
               (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
              SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-             SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointEnd)
-    END,
+             SegmentPoint.id = RouteSegmentTimeSlice.idenroutesegmentpointend)) AS PE,
     (upperLimit).value                               AS top,
     (upperLimit).unit                                AS top_unit,
     (upperLimit).nonNumeric                          AS UNL,
@@ -5225,50 +5569,76 @@ CREATE VIEW MVL_1608 AS
     (lowerLimit).unit                                AS bottom_unit,
     (lowerLimit).nonNumeric                          AS GND,
     lowerLimitReference                              AS format_bottom,
-    (SELECT Curve.geom AS geom
-     FROM Curve
-     WHERE Curve.id = RouteSegmentTimeSlice.idCurve)
-  FROM RouteSegmentTimeSlice, RouteSegment, TimeSlice
-  WHERE RouteSegmentTimeSlice.uuidroute IN (SELECT RouteTimeSlice.uuid FROM RouteTimeSlice WHERE RouteTimeSlice.type = 'OTHER: MVL') AND
-        RouteSegmentTimeSlice.idTimeSlice  = TimeSlice.id  AND
+    (SELECT geom
+     FROM curve
+     WHERE curve.id = RouteSegmentTimeSlice.idcurve AND RouteSegmentTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+  FROM RouteSegmentTimeSlice, timeslice, routetimeslice
+  WHERE RouteSegmentTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+           (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+            routetimeslice.uuid = routesegmenttimeslice.uuidroute AND RouteTimeSlice.type = 'OTHER: MVL' ;
 
 
-/*
-
--- РНС (fieldElevation).value AS ha,
-CREATE VIEW NAV AS
-  SELECT
-    Navaid.uuid,
-    Navaid._transasID       AS trID,
-    Navaid.designator       AS nm,
-    Navaid.name             AS nl,
-    Navaid.type             AS tp,
-    CASE WHEN Navaid.type = 'NDB'
-      THEN (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
-            FROM NDB
-            WHERE NDB.uuid = Navaid.uuid)
-    WHEN Navaid.type = 'DME'
-      THEN (SELECT ((ghostFrequency).value || ',' || (ghostFrequency).unit) AS tf
-            FROM DME
-            WHERE DME.uuid = Navaid.uuid)
-    WHEN Navaid.type = 'ILS_DME'
-      THEN (SELECT ((frequency).value || ',' || (frequency).unit) AS tf
-            FROM Localizer
-            WHERE Localizer.uuid = Navaid.uuid)
-    ELSE (SELECT ((frequency).value || ',' || (frequency).unit) AS tf -- Navaid.type = 'VOR_DME' OR 'VORTAC'
-          FROM VOR
-          WHERE VOR.uuid = Navaid.uuid)
-    END,
-    Point.magneticVariation AS md,
-    Point.id,
-    Point.latitude,
-    Point.longitude,
-    Point.geom,
-    (elevation).value       AS height
-  FROM Navaid, Point, ElevatedPoint
-  WHERE point.id = Navaid.idElevatedPoint AND ElevatedPoint.id = Navaid.idElevatedPoint;
+CREATE VIEW tra_1608 AS
+  SELECT RouteSegmentTimeSlice.uuid,
+    (SELECT routesegment._transasid as trID
+    FROM routesegment
+    WHERE routesegment.uuid = RouteSegmentTimeSlice.uuid),
+    routetimeslice.locationDesignator as nm,
+    magneticTrack AS mta,
+    reverseMagneticTrack AS rmta,
+    (length).value AS lb,
+    coalesce((widthLeft).value + (widthRight).value) AS wd,
+    concat((SELECT DesignatedPointTimeSlice.designator
+      FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+      WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuiddesignatedpoint AND
+        significantpoint.id = segmentpoint.idsignificantpoint AND
+        segmentpoint.id = RouteSegmentTimeSlice.idenroutesegmentpointstart AND
+        DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT NavaidTimeSlice.designator
+       FROM NavaidTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+       WHERE NavaidTimeSlice.uuid = SignificantPoint.uuidNavaid AND
+             NavaidTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+              (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegmentTimeSlice.idEnRouteSegmentPointStart)) AS PS,
+    concat((SELECT DesignatedPointTimeSlice.designator
+      FROM DesignatedPointTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+      WHERE DesignatedPointTimeSlice.uuid = SignificantPoint.uuiddesignatedpoint AND
+        significantpoint.id = segmentpoint.idsignificantpoint AND
+        segmentpoint.id = RouteSegmentTimeSlice.idenroutesegmentpointend AND
+        DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+     (SELECT NavaidTimeSlice.designator
+       FROM NavaidTimeSlice, SignificantPoint, SegmentPoint, TimeSlice
+       WHERE NavaidTimeSlice.uuid = SignificantPoint.uuidNavaid AND
+             NavaidTimeSlice.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
+              (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
+             SegmentPoint.id = RouteSegmentTimeSlice.idenroutesegmentpointend)) AS PE,
+    (upperLimit).value                               AS top,
+    (upperLimit).unit                                AS top_unit,
+    (upperLimit).nonNumeric                          AS UNL,
+    upperLimitReference                              AS format_top,
+    (lowerLimit).value                               AS bottom,
+    (lowerLimit).unit                                AS bottom_unit,
+    (lowerLimit).nonNumeric                          AS GND,
+    lowerLimitReference                              AS format_bottom,
+    (SELECT geom
+     FROM curve
+     WHERE curve.id = RouteSegmentTimeSlice.idcurve AND RouteSegmentTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+  FROM RouteSegmentTimeSlice, timeslice, routetimeslice
+  WHERE RouteSegmentTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+           (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) AND
+            routetimeslice.uuid = routesegmenttimeslice.uuidroute AND RouteTimeSlice.type = 'ATS' ;
 
 CREATE OR REPLACE FUNCTION mvl_function()
   RETURNS TRIGGER
@@ -5277,83 +5647,104 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    INSERT INTO RouteSegment VALUES
-      (NEW.uuid, NEW.trID, NEW.mta, NEW.rmta, NEW.lb, NEW.wd, NEW.top, NEW.top_unit, NEW.UNL, NEW.format_top,
-                 NEW.bottom, NEW.bottom_unit, NEW.GND, NEW.format_bottom);
-    INSERT INTO Route VALUES
-      (NEW.nm);
-    INSERT INTO Curve VALUES
-      (NEW.geom);
-    INSERT INTO DesignatedPoint VALUES
-      (NEW.PS, NEW.PE);
+     IF ((SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PS) is NULL
+       AND (SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PE) is NULL)
+     THEN
+    with insert_Curve AS (INSERT INTO Curve (geom, srid) VALUES (NEW.geom, '4326') RETURNING Curve.id),
+      -- здесь нужно вставить точку TPM TPT
+      -- point Start
+      insert_PointS AS (INSERT INTO Point(srid, geom) VALUES ('4326', ST_StartPoint(NEW.geom)) RETURNING Point.id),
+      insert_dsgntdpntS AS (INSERT INTO DesignatedPoint(uuid) VALUES (uuid_generate_v4()) RETURNING DesignatedPoint.uuid),
+      insert_TSdsgntdpntS AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-07-21') RETURNING timeslice.id),
+      insert_dsgntdpntSTS AS (INSERT INTO DesignatedPointTimeSlice(idTimeSlice, uuid, designator, type, idpoint) VALUES
+        ((SELECT insert_TSdsgntdpntS.id FROM insert_TSdsgntdpntS),(SELECT insert_dsgntdpntS.uuid FROM insert_dsgntdpntS),(NEW.PS), 'ICAO', (SELECT insert_PointS.id FROM insert_PointS))),
+      insert_sgnfS AS (INSERT INTO SignificantPoint(id, uuidDesignatedPoint, idPoint) VALUES
+        (nextval('auto_id_significant_point'),(SELECT insert_dsgntdpntS.uuid FROM insert_dsgntdpntS), (SELECT insert_PointS.id FROM insert_PointS)) RETURNING SignificantPoint.id),
+      insert_sgmntPS AS (INSERT INTO SegmentPoint (idSignificantPoint) VALUES ((SELECT insert_sgnfS.id FROM insert_sgnfS)) RETURNING SegmentPoint.id),
+      insert_enRtSgmntPS AS (INSERT INTO EnRouteSegmentPoint(id) VALUES ((SELECT insert_sgmntPS.id FROM insert_sgmntPS))),
+      -- point End
+      insert_PointE AS (INSERT INTO Point(srid, geom) VALUES ('4326', ST_EndPoint(NEW.geom)) RETURNING Point.id),
+      insert_dsgntdpntE AS (INSERT INTO DesignatedPoint(uuid) VALUES (uuid_generate_v4()) RETURNING DesignatedPoint.uuid),
+      insert_TSdsgntdpntE AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_dsgntdpntETS AS (INSERT INTO DesignatedPointTimeSlice(idTimeSlice, uuid, designator, type, idpoint) VALUES
+        ((SELECT insert_TSdsgntdpntE.id FROM insert_TSdsgntdpntE),(SELECT insert_dsgntdpntE.uuid FROM insert_dsgntdpntE),(NEW.PE), 'ICAO', (SELECT insert_PointE.id FROM insert_PointE))),
+      insert_sgnfE AS (INSERT INTO SignificantPoint(id, uuidDesignatedPoint, idPoint) VALUES
+        (nextval('auto_id_significant_point'),(SELECT insert_dsgntdpntE.uuid FROM insert_dsgntdpntE), (SELECT insert_PointE.id FROM insert_PointE)) RETURNING SignificantPoint.id),
+      insert_sgmntPE AS (INSERT INTO SegmentPoint (idSignificantPoint) VALUES ((SELECT insert_sgnfE.id FROM insert_sgnfE)) RETURNING SegmentPoint.id),
+      insert_enRtSgmntPE AS (INSERT INTO EnRouteSegmentPoint(id) VALUES ((SELECT insert_sgmntPE.id FROM insert_sgmntPE))),
+      -- route
+      insert_route AS (INSERT INTO Route (uuid) VALUES (uuid_generate_v4()) RETURNING Route.uuid),
+      insert_TSrt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmnt AS (INSERT INTO RouteSegment(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING RouteSegment.uuid),
+      insert_TSrtsgmnt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmntTS AS (INSERT INTO RouteSegmentTimeSlice (uuid, idTimeSlice, magneticTrack, reverseMagneticTrack,
+                                                                length, widthLeft, widthRight, upperLimit, upperLimitReference, lowerLimit,
+                                                                lowerLimitReference, idCurve, idEnRouteSegmentPointStart, idEnRouteSegmentPointEnd, uuidRoute) VALUES
+        ((SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt), (SELECT insert_TSrtsgmnt.id FROM insert_TSrtsgmnt), NEW.mta, NEW.rmta, ROW(NEW.lb, 'M'), ROW(NEW.wd/2, 'M'),
+                   ROW(NEW.wd/2, 'M'), ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+                  (SELECT insert_Curve.id FROM insert_Curve),(SELECT insert_sgmntPS.id FROM insert_sgmntPS),(SELECT insert_sgmntPE.id FROM insert_sgmntPE), (SELECT insert_route.uuid FROM insert_route))),
+      insert_crtgrphLblMVL AS (INSERT INTO cartographylabelmvl(uuid) VALUES (uuid_generate_v4()) RETURNING cartographylabelmvl.uuid),
+      insert_TScrtgrphLblMVL AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_crtgrphLblMVLTS AS (INSERT INTO  cartographylabelmvltimeslice(uuid, idTimeSlice, uuidroutesegment) VALUES ((SELECT insert_crtgrphLblMVL.uuid FROM insert_crtgrphLblMVL),
+                                                                                                                        (SELECT insert_TScrtgrphLblMVL.id FROM insert_TScrtgrphLblMVL),
+                                                                                                                        (SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt)))
+       INSERT INTO RouteTimeSlice (idTimeSlice, uuid, locationDesignator, type) VALUES ((SELECT insert_TSrt.id FROM insert_TSrt), (SELECT insert_route.uuid FROM insert_route), NEW.nm, 'OTHER: MVL');
+      ELSE
+      WITH insert_Curve AS (INSERT INTO Curve (geom, srid) VALUES (NEW.geom, '4326') RETURNING Curve.id),
+      select_pointStart AS (SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PS),
+      select_pointEnd AS (SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PE),
+      insert_route AS (INSERT INTO Route (uuid) VALUES (uuid_generate_v4()) RETURNING Route.uuid),
+      insert_TSrt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmnt AS (INSERT INTO RouteSegment(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING RouteSegment.uuid),
+      insert_TSrtsgmnt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmntTS AS (INSERT INTO RouteSegmentTimeSlice (uuid, idTimeSlice, magneticTrack, reverseMagneticTrack,
+                                                                length, widthLeft, widthRight, upperLimit, upperLimitReference, lowerLimit,
+                                                                lowerLimitReference, idCurve, idEnRouteSegmentPointStart, idEnRouteSegmentPointEnd, uuidRoute) VALUES
+        ((SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt), (SELECT insert_TSrtsgmnt.id FROM insert_TSrtsgmnt), NEW.mta, NEW.rmta, ROW(NEW.lb, 'M'), ROW(NEW.wd/2, 'M'),
+                   ROW(NEW.wd/2, 'M'), ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+                  (SELECT insert_Curve.id FROM insert_Curve),
+                  (SELECT SegmentPoint.id FROM SegmentPoint WHERE idSignificantPoint = (SELECT id FROM SignificantPoint WHERE uuidDesignatedPoint = (SELECT select_pointStart.uuid FROM select_pointStart))),
+                  (SELECT SegmentPoint.id FROM SegmentPoint WHERE idSignificantPoint = (SELECT id FROM SignificantPoint WHERE uuidDesignatedPoint = (SELECT select_pointEnd.uuid FROM select_pointEnd))), (SELECT insert_route.uuid FROM insert_route))),
+      insert_crtgrphLblMVL AS (INSERT INTO cartographylabelmvl(uuid) VALUES (uuid_generate_v4()) RETURNING cartographylabelmvl.uuid),
+      insert_TScrtgrphLblMVL AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_crtgrphLblMVLTS AS (INSERT INTO  cartographylabelmvltimeslice(uuid, idTimeSlice, uuidroutesegment) VALUES ((SELECT insert_crtgrphLblMVL.uuid FROM insert_crtgrphLblMVL),
+                                                                                                                        (SELECT insert_TScrtgrphLblMVL.id FROM insert_TScrtgrphLblMVL),
+                                                                                                                        (SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt)))
+       INSERT INTO RouteTimeSlice (idTimeSlice, uuid, locationDesignator, type) VALUES ((SELECT insert_TSrt.id FROM insert_TSrt), (SELECT insert_route.uuid FROM insert_route), NEW.nm, 'OTHER: MVL');
+      END IF ;
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
-      UPDATE RouteSegment
-      SET uuid              = NEW.uuid, _transasID = NEW.trID, magneticTrack = NEW.mta, reverseMagneticTrack = NEW.rmta,
-        length.value        = NEW.lb,
-        upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
-        upperLimitReference = NEW.format_top,
-        lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-        lowerLimitReference = NEW.format_bottom
-      WHERE RouteSegment.uuid = OLD.uuid;
-      UPDATE Route
-      SET locationDesignator = NEW.nm
-      WHERE Route.uuid = (SELECT RouteSegment.uuidRoute
-                          FROM RouteSegment
-                          WHERE RouteSegment.uuid = OLD.uuid);
+      UPDATE RouteSegmentTimeSlice
+        SET magneticTrack = NEW.mta, reverseMagneticTrack = NEW.rmta, length =  ROW(NEW.lb, 'M'), widthLeft = ROW(NEW.wd/2, 'M'), widthRight = ROW(NEW.wd/2, 'M'),
+          upperLimit = ROW(NEW.top, NEW.UNL, NEW.top_unit), upperLimitReference =  NEW.format_top, lowerLimit = ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), lowerLimitReference = NEW.format_bottom
+        WHERE RouteSegmentTimeSlice.uuid = OLD.uuid;
       UPDATE Curve
-      SET geom = NEW.geom
-      WHERE Curve.id = OLD.id;
-      UPDATE DesignatedPoint
-      SET designator = NEW.PE
-      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint
-                                    FROM SignificantPoint
-                                    WHERE SignificantPoint.id =
-                                          (SELECT SegmentPoint.idSignificantPoint
-                                           FROM SegmentPoint
-                                           WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointEnd
-                                                                    FROM RouteSegment
-                                                                    WHERE RouteSegment.uuid = OLD.uuid)));
-      UPDATE DesignatedPoint
-      SET designator = NEW.PS
-      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint
-                                    FROM SignificantPoint
-                                    WHERE SignificantPoint.id =
-                                          (SELECT SegmentPoint.idSignificantPoint
-                                           FROM SegmentPoint
-                                           WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointStart
-                                                                    FROM RouteSegment
-                                                                    WHERE RouteSegment.uuid = OLD.uuid)));
+        SET geom = NEW.geom
+        WHERE id = (SELECT idCurve FROM RouteSegmentTimeSlice WHERE RouteSegmentTimeSlice.uuid = OLD.uuid);
+      UPDATE RouteTimeSlice
+        SET locationDesignator = NEW.nm
+        WHERE RouteTimeSlice.uuid = (SELECT uuidRoute FROM RouteSegmentTimeSlice WHERE RouteSegmentTimeSlice.uuid = OLD.uuid);
+      UPDATE DesignatedPointTimeSlice
+        SET designator = NEW.PS
+        WHERE DesignatedPointTimeSlice.uuid IN (SELECT uuidDesignatedPoint FROM SignificantPoint WHERE id IN (SELECT idSignificantPoint FROM SegmentPoint WHERE id = (SELECT idEnRouteSegmentPointStart FROM RouteSegmentTimeSlice WHERE RouteSegmentTimeSlice.uuid = OLD.uuid)));
+      UPDATE DesignatedPointTimeSlice
+        SET designator = NEW.PE
+        WHERE DesignatedPointTimeSlice.uuid IN (SELECT uuidDesignatedPoint FROM SignificantPoint WHERE id IN (SELECT idSignificantPoint FROM SegmentPoint WHERE id = (SELECT idEnRouteSegmentPointEnd FROM RouteSegmentTimeSlice WHERE  RouteSegmentTimeSlice.uuid = OLD.uuid)));
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
-      DELETE FROM RouteSegment
-      WHERE RouteSegment.uuid = OLD.uuid;
-      DELETE FROM Route
-      WHERE Route.uuid = (SELECT RouteSegment.uuidRoute
-                          FROM RouteSegment
-                          WHERE RouteSegment.uuid = OLD.uuid);
-      DELETE FROM Curve
-      WHERE Curve.id = OLD.id;
-      DELETE FROM DesignatedPoint
-      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint
-                                    FROM SignificantPoint
-                                    WHERE SignificantPoint.id =
-                                          (SELECT SegmentPoint.idSignificantPoint
-                                           FROM SegmentPoint
-                                           WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointEnd
-                                                                    FROM RouteSegment
-                                                                    WHERE RouteSegment.uuid = OLD.uuid)));
-      DELETE FROM DesignatedPoint
-      WHERE DesignatedPoint.uuid = (SELECT SignificantPoint.uuidDesignatedPoint
-                                    FROM SignificantPoint
-                                    WHERE SignificantPoint.id =
-                                          (SELECT SegmentPoint.idSignificantPoint
-                                           FROM SegmentPoint
-                                           WHERE SegmentPoint.id = (SELECT RouteSegment.idEnRouteSegmentPointStart
-                                                                    FROM RouteSegment
-                                                                    WHERE RouteSegment.uuid = OLD.uuid)));
+      WITH
+        delete_RtSgmntTS AS (DELETE FROM RouteSegmentTimeSlice WHERE uuid = OLD.uuid RETURNING uuidRoute, idEnRouteSegmentPointStart, idEnRouteSegmentPointEnd, idCurve, idTimeSlice),
+        delete_RtSgmt AS (DELETE FROM RouteSegment WHERE uuid = OLD.uuid),
+        delete_TSRtSgmnt AS (DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_RtSgmntTS)),
+        delete_Curve AS (DELETE FROM Curve WHERE id = (SELECT idCurve FROM delete_RtSgmntTS)),
+        delete_RtTS AS (DELETE FROM RouteTimeSlice WHERE uuid = (SELECT uuidRoute FROM delete_RtSgmntTS) RETURNING idTimeSlice),
+        delete_Rt AS (DELETE FROM Route WHERE uuid = (SELECT uuidRoute FROM delete_RtSgmntTS)),
+        delete_TSRt AS (DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_RtTS)),
+        delete_crtgrphLblMVLTS AS (DELETE FROM CartographyLabelMVLTimeSlice WHERE uuidroutesegment = OLD.uuid RETURNING uuid, idTimeSlice),
+        delete_crtgrphLblMVL AS (DELETE FROM CartographyLabelMVL WHERE uuid = (SELECT delete_crtgrphLblMVLTS.uuid FROM delete_crtgrphLblMVLTS))
+      DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_crtgrphLblMVLTS);
       RETURN NULL;
   END IF;
   RETURN NEW;
@@ -5362,81 +5753,173 @@ $function$;
 
 CREATE TRIGGER mvl_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  MVL FOR EACH ROW EXECUTE PROCEDURE mvl_function();
+  mvl_1608 FOR EACH ROW EXECUTE PROCEDURE mvl_function();
 
-CREATE VIEW TRA AS
-  SELECT
-    RouteSegment.uuid                                AS uuid,
-    RouteSegment._transasID                          AS trID,
-    Route.locationDesignator                         AS nm,
-    RouteSegment.magneticTrack                       AS mta,
-    RouteSegment.reverseMagneticTrack                AS rmta,
-    (length).value                                   AS lb,
-    coalesce((widthLeft).value + (widthRight).value) AS wd,
-    CASE WHEN (SELECT DesignatedPoint.designator
-               FROM DesignatedPoint, SignificantPoint, SegmentPoint
-               WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-                     SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart) IS NOT NULL
-      THEN
-        (SELECT DesignatedPoint.designator AS PS
-         FROM DesignatedPoint, SignificantPoint, SegmentPoint
-         WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-               SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-               SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
-    ELSE
-      (SELECT Navaid.designator AS PS
-       FROM Navaid, SignificantPoint, SegmentPoint
-       WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
-             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointStart)
-    END,
-    CASE WHEN (SELECT DesignatedPoint.designator
-               FROM DesignatedPoint, SignificantPoint, SegmentPoint
-               WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-                     SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-                     SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd) IS NOT NULL
-      THEN
-
-        (SELECT DesignatedPoint.designator AS PE
-         FROM DesignatedPoint, SignificantPoint, SegmentPoint
-         WHERE DesignatedPoint.uuid = SignificantPoint.uuidDesignatedPoint AND
-               SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-               SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
-    ELSE
-      (SELECT Navaid.designator AS PE
-       FROM Navaid, SignificantPoint, SegmentPoint
-       WHERE Navaid.uuid = SignificantPoint.uuidNavaid AND
-             SignificantPoint.id = SegmentPoint.idSignificantPoint AND
-             SegmentPoint.id = RouteSegment.idEnRouteSegmentPointEnd)
-    END,
-    (upperLimit).value                               AS top,
-    (upperLimit).unit                                AS top_unit,
-    (upperLimit).nonNumeric                          AS UNL,
-    upperLimitReference                              AS format_top,
-    (lowerLimit).value                               AS bottom,
-    (lowerLimit).unit                                AS bottom_unit,
-    (lowerLimit).nonNumeric                          AS GND,
-    lowerLimitReference                              AS format_bottom,
-    (SELECT Curve.id
-     FROM Curve
-     WHERE Curve.id = RouteSegment.idCurve),
-    (SELECT Curve.geom AS geom
-     FROM Curve
-     WHERE Curve.id = RouteSegment.idCurve)
-
-  FROM RouteSegment
-    LEFT JOIN Route ON RouteSegment.uuidRoute = Route.uuid
-  WHERE Route.type = 'ATS';
+CREATE OR REPLACE FUNCTION tra_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+     IF ((SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PS) is NULL
+       AND (SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PE) is NULL)
+     THEN
+    with insert_Curve AS (INSERT INTO Curve (geom, srid) VALUES (NEW.geom, '4326') RETURNING Curve.id),
+      -- здесь нужно вставить точку TPM TPT
+      -- point Start
+      insert_PointS AS (INSERT INTO Point(srid, geom) VALUES ('4326', ST_StartPoint(NEW.geom)) RETURNING Point.id),
+      insert_dsgntdpntS AS (INSERT INTO DesignatedPoint(uuid) VALUES (uuid_generate_v4()) RETURNING DesignatedPoint.uuid),
+      insert_TSdsgntdpntS AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-07-21') RETURNING timeslice.id),
+      insert_dsgntdpntSTS AS (INSERT INTO DesignatedPointTimeSlice(idTimeSlice, uuid, designator, type, idpoint) VALUES
+        ((SELECT insert_TSdsgntdpntS.id FROM insert_TSdsgntdpntS),(SELECT insert_dsgntdpntS.uuid FROM insert_dsgntdpntS),(NEW.PS), 'ICAO', (SELECT insert_PointS.id FROM insert_PointS))),
+      insert_sgnfS AS (INSERT INTO SignificantPoint(id, uuidDesignatedPoint, idPoint) VALUES
+        (nextval('auto_id_significant_point'),(SELECT insert_dsgntdpntS.uuid FROM insert_dsgntdpntS), (SELECT insert_PointS.id FROM insert_PointS)) RETURNING SignificantPoint.id),
+      insert_sgmntPS AS (INSERT INTO SegmentPoint (idSignificantPoint) VALUES ((SELECT insert_sgnfS.id FROM insert_sgnfS)) RETURNING SegmentPoint.id),
+      insert_enRtSgmntPS AS (INSERT INTO EnRouteSegmentPoint(id) VALUES ((SELECT insert_sgmntPS.id FROM insert_sgmntPS))),
+      -- point End
+      insert_PointE AS (INSERT INTO Point(srid, geom) VALUES ('4326', ST_EndPoint(NEW.geom)) RETURNING Point.id),
+      insert_dsgntdpntE AS (INSERT INTO DesignatedPoint(uuid) VALUES (uuid_generate_v4()) RETURNING DesignatedPoint.uuid),
+      insert_TSdsgntdpntE AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_dsgntdpntETS AS (INSERT INTO DesignatedPointTimeSlice(idTimeSlice, uuid, designator, type, idpoint) VALUES
+        ((SELECT insert_TSdsgntdpntE.id FROM insert_TSdsgntdpntE),(SELECT insert_dsgntdpntE.uuid FROM insert_dsgntdpntE),(NEW.PE), 'ICAO', (SELECT insert_PointE.id FROM insert_PointE))),
+      insert_sgnfE AS (INSERT INTO SignificantPoint(id, uuidDesignatedPoint, idPoint) VALUES
+        (nextval('auto_id_significant_point'),(SELECT insert_dsgntdpntE.uuid FROM insert_dsgntdpntE), (SELECT insert_PointE.id FROM insert_PointE)) RETURNING SignificantPoint.id),
+      insert_sgmntPE AS (INSERT INTO SegmentPoint (idSignificantPoint) VALUES ((SELECT insert_sgnfE.id FROM insert_sgnfE)) RETURNING SegmentPoint.id),
+      insert_enRtSgmntPE AS (INSERT INTO EnRouteSegmentPoint(id) VALUES ((SELECT insert_sgmntPE.id FROM insert_sgmntPE))),
+      -- route
+      insert_route AS (INSERT INTO Route (uuid) VALUES (uuid_generate_v4()) RETURNING Route.uuid),
+      insert_TSrt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmnt AS (INSERT INTO RouteSegment(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING RouteSegment.uuid),
+      insert_TSrtsgmnt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmntTS AS (INSERT INTO RouteSegmentTimeSlice (uuid, idTimeSlice, magneticTrack, reverseMagneticTrack,
+                                                                length, widthLeft, widthRight, upperLimit, upperLimitReference, lowerLimit,
+                                                                lowerLimitReference, idCurve, idEnRouteSegmentPointStart, idEnRouteSegmentPointEnd, uuidRoute) VALUES
+        ((SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt), (SELECT insert_TSrtsgmnt.id FROM insert_TSrtsgmnt), NEW.mta, NEW.rmta, ROW(NEW.lb, 'M'), ROW(NEW.wd/2, 'M'),
+                   ROW(NEW.wd/2, 'M'), ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+                  (SELECT insert_Curve.id FROM insert_Curve),(SELECT insert_sgmntPS.id FROM insert_sgmntPS),(SELECT insert_sgmntPE.id FROM insert_sgmntPE), (SELECT insert_route.uuid FROM insert_route))),
+      insert_crtgrphLblMVL AS (INSERT INTO cartographylabelmvl(uuid) VALUES (uuid_generate_v4()) RETURNING cartographylabelmvl.uuid),
+      insert_TScrtgrphLblMVL AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_crtgrphLblMVLTS AS (INSERT INTO  cartographylabelmvltimeslice(uuid, idTimeSlice, uuidroutesegment) VALUES ((SELECT insert_crtgrphLblMVL.uuid FROM insert_crtgrphLblMVL),
+                                                                                                                        (SELECT insert_TScrtgrphLblMVL.id FROM insert_TScrtgrphLblMVL),
+                                                                                                                        (SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt)))
+       INSERT INTO RouteTimeSlice (idTimeSlice, uuid, locationDesignator, type) VALUES ((SELECT insert_TSrt.id FROM insert_TSrt), (SELECT insert_route.uuid FROM insert_route), NEW.nm, 'ATS');
+      ELSE
+      WITH insert_Curve AS (INSERT INTO Curve (geom, srid) VALUES (NEW.geom, '4326') RETURNING Curve.id),
+      select_pointStart AS (SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PS),
+      select_pointEnd AS (SELECT DesignatedPointTimeSlice.uuid FROM DesignatedPointTimeSlice WHERE DesignatedPointTimeSlice.designator = NEW.PE),
+      insert_route AS (INSERT INTO Route (uuid) VALUES (uuid_generate_v4()) RETURNING Route.uuid),
+      insert_TSrt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmnt AS (INSERT INTO RouteSegment(uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING RouteSegment.uuid),
+      insert_TSrtsgmnt AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_rtsgmntTS AS (INSERT INTO RouteSegmentTimeSlice (uuid, idTimeSlice, magneticTrack, reverseMagneticTrack,
+                                                                length, widthLeft, widthRight, upperLimit, upperLimitReference, lowerLimit,
+                                                                lowerLimitReference, idCurve, idEnRouteSegmentPointStart, idEnRouteSegmentPointEnd, uuidRoute) VALUES
+        ((SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt), (SELECT insert_TSrtsgmnt.id FROM insert_TSrtsgmnt), NEW.mta, NEW.rmta, ROW(NEW.lb, 'M'), ROW(NEW.wd/2, 'M'),
+                   ROW(NEW.wd/2, 'M'), ROW(NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
+                  (SELECT insert_Curve.id FROM insert_Curve),
+                  (SELECT SegmentPoint.id FROM SegmentPoint WHERE idSignificantPoint = (SELECT id FROM SignificantPoint WHERE uuidDesignatedPoint = (SELECT select_pointStart.uuid FROM select_pointStart))),
+                  (SELECT SegmentPoint.id FROM SegmentPoint WHERE idSignificantPoint = (SELECT id FROM SignificantPoint WHERE uuidDesignatedPoint = (SELECT select_pointEnd.uuid FROM select_pointEnd))), (SELECT insert_route.uuid FROM insert_route))),
+      insert_crtgrphLblMVL AS (INSERT INTO cartographylabelmvl(uuid) VALUES (uuid_generate_v4()) RETURNING cartographylabelmvl.uuid),
+      insert_TScrtgrphLblMVL AS (INSERT INTO TimeSlice (validTimeBegin) VALUES ('2016-07-21') RETURNING timeslice.id),
+      insert_crtgrphLblMVLTS AS (INSERT INTO  cartographylabelmvltimeslice(uuid, idTimeSlice, uuidroutesegment) VALUES ((SELECT insert_crtgrphLblMVL.uuid FROM insert_crtgrphLblMVL),
+                                                                                                                        (SELECT insert_TScrtgrphLblMVL.id FROM insert_TScrtgrphLblMVL),
+                                                                                                                        (SELECT insert_rtsgmnt.uuid FROM insert_rtsgmnt)))
+       INSERT INTO RouteTimeSlice (idTimeSlice, uuid, locationDesignator, type) VALUES ((SELECT insert_TSrt.id FROM insert_TSrt), (SELECT insert_route.uuid FROM insert_route), NEW.nm, 'ATS');
+      END IF ;
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE'
+    THEN
+      UPDATE RouteSegmentTimeSlice
+        SET magneticTrack = NEW.mta, reverseMagneticTrack = NEW.rmta, length =  ROW(NEW.lb, 'M'), widthLeft = ROW(NEW.wd/2, 'M'), widthRight = ROW(NEW.wd/2, 'M'),
+          upperLimit = ROW(NEW.top, NEW.UNL, NEW.top_unit), upperLimitReference =  NEW.format_top, lowerLimit = ROW(NEW.bottom, NEW.GND, NEW.bottom_unit), lowerLimitReference = NEW.format_bottom
+        WHERE RouteSegmentTimeSlice.uuid = OLD.uuid;
+      UPDATE Curve
+        SET geom = NEW.geom
+        WHERE id = (SELECT idCurve FROM RouteSegmentTimeSlice WHERE RouteSegmentTimeSlice.uuid = OLD.uuid);
+      UPDATE RouteTimeSlice
+        SET locationDesignator = NEW.nm
+        WHERE RouteTimeSlice.uuid = (SELECT uuidRoute FROM RouteSegmentTimeSlice WHERE RouteSegmentTimeSlice.uuid = OLD.uuid);
+      UPDATE DesignatedPointTimeSlice
+        SET designator = NEW.PS
+        WHERE DesignatedPointTimeSlice.uuid IN (SELECT uuidDesignatedPoint FROM SignificantPoint WHERE id IN (SELECT idSignificantPoint FROM SegmentPoint WHERE id = (SELECT idEnRouteSegmentPointStart FROM RouteSegmentTimeSlice WHERE RouteSegmentTimeSlice.uuid = OLD.uuid)));
+      UPDATE DesignatedPointTimeSlice
+        SET designator = NEW.PE
+        WHERE DesignatedPointTimeSlice.uuid IN (SELECT uuidDesignatedPoint FROM SignificantPoint WHERE id IN (SELECT idSignificantPoint FROM SegmentPoint WHERE id = (SELECT idEnRouteSegmentPointEnd FROM RouteSegmentTimeSlice WHERE  RouteSegmentTimeSlice.uuid = OLD.uuid)));
+      RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+      WITH
+        delete_RtSgmntTS AS (DELETE FROM RouteSegmentTimeSlice WHERE uuid = OLD.uuid RETURNING uuidRoute, idEnRouteSegmentPointStart, idEnRouteSegmentPointEnd, idCurve, idTimeSlice),
+        delete_RtSgmt AS (DELETE FROM RouteSegment WHERE uuid = OLD.uuid),
+        delete_TSRtSgmnt AS (DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_RtSgmntTS)),
+        delete_Curve AS (DELETE FROM Curve WHERE id = (SELECT idCurve FROM delete_RtSgmntTS)),
+        delete_RtTS AS (DELETE FROM RouteTimeSlice WHERE uuid = (SELECT uuidRoute FROM delete_RtSgmntTS) RETURNING idTimeSlice),
+        delete_Rt AS (DELETE FROM Route WHERE uuid = (SELECT uuidRoute FROM delete_RtSgmntTS)),
+        delete_TSRt AS (DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_RtTS)),
+        delete_crtgrphLblMVLTS AS (DELETE FROM CartographyLabelMVLTimeSlice WHERE uuidroutesegment = OLD.uuid RETURNING uuid, idTimeSlice),
+        delete_crtgrphLblMVL AS (DELETE FROM CartographyLabelMVL WHERE uuid = (SELECT delete_crtgrphLblMVLTS.uuid FROM delete_crtgrphLblMVLTS))
+      DELETE FROM TimeSlice WHERE id = (SELECT idTimeSlice FROM delete_crtgrphLblMVLTS);
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
 
 CREATE TRIGGER tra_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  TRA FOR EACH ROW EXECUTE PROCEDURE mvl_function();
+  tra_1608 FOR EACH ROW EXECUTE PROCEDURE tra_function();
 
-*/
+
+CREATE VIEW nav_1608 AS
+  SELECT
+    Navaid.uuid,
+    Navaid._transasID       AS trID,
+    NavaidTimeSlice.idTimeSlice,
+    NavaidTimeSlice.designator       AS nm,
+    NavaidTimeSlice.name             AS nl,
+    NavaidTimeSlice.type             AS tp,
+    CASE WHEN NavaidTimeSlice.type = 'NDB'
+      THEN (SELECT ((frequency).value || ' ' || (frequency).unit) AS tf
+            FROM NDB, timeslice
+            WHERE NDB.uuid = Navaid.uuid AND NDB.idtimeslice = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+    WHEN NavaidTimeSlice.type = 'DME'
+      THEN (SELECT ((ghostFrequency).value || ' ' || (ghostFrequency).unit) AS tf
+            FROM DME, timeslice
+            WHERE DME.uuid = Navaid.uuid AND DME.idtimeslice = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+    WHEN NavaidTimeSlice.type = 'ILS_DME'
+      THEN (SELECT ((frequency).value || ' ' || (frequency).unit) AS tf
+            FROM Localizer, timeslice
+            WHERE Localizer.uuid = Navaid.uuid AND localizer.idtimeslice = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+    ELSE (SELECT ((frequency).value || ' ' || (frequency).unit) AS tf
+          FROM VOR, timeslice
+          WHERE VOR.uuid = Navaid.uuid AND VOR.idtimeslice = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+    END,
+    Point.magneticVariation AS md,
+    Point.latitude,
+    Point.longitude,
+    Point.geom,
+    (SELECT (elevation).value AS height
+      FROM elevatedpoint
+    WHERE elevatedpoint.id = NavaidTimeSlice.idelevatedpoint  AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-07-21' AND
+         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
+  FROM Navaid, Point, NavaidTimeSlice, TimeSlice
+  WHERE point.id = NavaidTimeSlice.idElevatedPoint AND
+        NavaidTimeSlice.uuid = Navaid.uuid AND
+        NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND
+        TimeSlice.validTimeBegin <= '2016-07-21' AND
+        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
 
 -- Триггеры для координат
-
 /*
 CREATE OR REPLACE FUNCTION trigger_update_CartographyLabel()
   RETURNS TRIGGER AS $update_lbl$
@@ -5570,16 +6053,25 @@ BEGIN
   IF (TG_OP = 'INSERT' OR
       (TG_OP = 'UPDATE' AND (NEW.coord <> OLD.coord)))
   THEN
-    IF (NEW.srid = 4326)
+    IF NEW.coord IS NULL
     THEN
-      NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid));
+        IF NEW.srid = 4326 OR NEW.srid IS NULL
+        THEN
+          NEW.geom = ST_SetSRID(NEW.geom, 4326);
+        ELSE
+          NEW.geom = ST_Transform(ST_SetSRID(NEW.geom, NEW.srid), 4326);
+        END IF;
     ELSE
-      NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)), 4326));
+        IF NEW.srid = 4326 OR NEW.srid IS NULL
+        THEN
+          NEW.geom = ST_Shift_Longitude(ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), 4326));
+        ELSE
+          NEW.geom = ST_Shift_Longitude(ST_Transform((ST_SetSRID(ST_GeomFromGeoJSON(NEW.coord), NEW.srid)), 4326));
+        END IF;
     END IF;
   END IF;
   RETURN NEW;
 END;
-
 $$ LANGUAGE plpgsql;
 
 
@@ -5596,7 +6088,7 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    WITH inserted_point AS ( INSERT INTO Point (latitude, longitude, srid, magneticVariation, geom)
+    WITH inserted_point AS (INSERT INTO Point (latitude, longitude, srid, magneticVariation, geom)
     VALUES (NEW.latitude, NEW.longitude, NEW.srid, NEW.md, NEW.geom)
     RETURNING id),
         inserted_significantpoint AS (INSERT INTO significantpoint (idpoint) VALUES ((SELECT inserted_point.id
