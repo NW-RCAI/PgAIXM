@@ -64,9 +64,9 @@ That quality which relates to the trust which can be placed in the correctness o
 ### Многие ко многим:
 
 - F AirportHeliport
-- F TouchDownLiftOff
+- F ~~TouchDownLiftOff~~
 - F NavaidEquipment
-- F ~~RunwayDirection~~
+- F RunwayDirection
 
 ### Многие к одному:
 

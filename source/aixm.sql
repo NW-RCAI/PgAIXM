@@ -27,7 +27,7 @@ AirportGroundServiceTimeSlice, SearchRescueServiceTimeSlice, TrafficSeparationSe
 RunwayDirectionLightSystemTimeSlice, AirTrafficControlServiceTimeSlice, GroundTrafficControlServiceTimeSlice,
 cartographylabelarp, cartographylabelarptimeslice, CartographyLabelAirspaceArea, CartographyLabelAirspaceAreaTimeSlice,
 CartographyLabelFIR, CartographyLabelFIRTimeSlice, CartographyLabelDraPraRsa, CartographyLabelDraPraRsaTimeSlice,
-CartographyLabelMVL, CartographyLabelMVLTimeSlice CASCADE;
+CartographyLabelMVL, CartographyLabelMVLTimeSlice, cartographylabeltpt, cartographylabelnav CASCADE;
 
 DROP DOMAIN IF EXISTS id, CodeAirportHeliportDesignatorType, TextNameType, CodeICAOType, CodeIATAType, CodeVerticalDatumType,
 ValMagneticVariationType, ValAngleType, DateYearType, ValMagneticVariationChangeType, DateType, CodeOrganisationDesignatorType,
@@ -83,10 +83,11 @@ CREATE DOMAIN id AS UUID;
 CREATE DOMAIN CodeAirportHeliportDesignatorType AS VARCHAR(10)
 CHECK (VALUE ~ '[A-Z]{3,4}|[A-Z]{2}[0-9]{4}');
 
--- Используется для названий с максимальной длинной в 60 символов.
+-- Используется для названий с максимальной длиной в 60 символов.
 --
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/DataType_TextNameType
 CREATE DOMAIN TextNameType AS VARCHAR(60);
+
 
 -- A full free text address.
 --
@@ -1727,7 +1728,9 @@ DROP SEQUENCE IF EXISTS auto_id_timesheet, auto_id_city, auto_id_point, auto_id_
 auto_id_surface_contamination, auto_id_surface_arp_availability, auto_id_surface_characteristics, auto_id_cartography_label, auto_id_cartography_label_CTA, auto_id_cartography_label_FIR,
 auto_id_unit_dependency, auto_id_callsign, auto_id_contact_information, auto_id_postal_address, auto_id_online_contact,
 auto_id_segment_point, auto_id_route_portion, auto_id_airspace_layer_class, auto_id_airspace_layer,
-auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability, auto_id_properties_with_schedule, auto_id_timeslice CASCADE;
+auto_id_airspace_volume, auto_id_telephone_contact, auto_ground_lighting_availability, auto_id_properties_with_schedule,
+auto_id_timeslice, auto_id_cartography_label_airspacearea, auto_id_cartography_label_tpt, auto_id_cartography_label_arp,
+auto_id_cartography_label_nav CASCADE;
 
 CREATE SEQUENCE auto_id_properties_with_schedule;
 CREATE SEQUENCE auto_id_timesheet;
@@ -1742,7 +1745,11 @@ CREATE SEQUENCE auto_id_surface_arp_availability;
 CREATE SEQUENCE auto_id_surface_characteristics;
 CREATE SEQUENCE auto_id_cartography_label;
 CREATE SEQUENCE auto_id_cartography_label_CTA;
-CREATE SEQUENCE auto_id_cartography_label_FIR;
+CREATE SEQUENCE auto_id_cartography_label_fir;
+CREATE SEQUENCE auto_id_cartography_label_arp;
+CREATE SEQUENCE auto_id_cartography_label_tpt;
+CREATE SEQUENCE auto_id_cartography_label_nav;
+CREATE SEQUENCE auto_id_cartography_label_airspacearea;
 CREATE SEQUENCE auto_id_unit_dependency;
 CREATE SEQUENCE auto_id_callsign;
 CREATE SEQUENCE auto_id_contact_information;
@@ -1756,6 +1763,7 @@ CREATE SEQUENCE auto_id_airspace_volume;
 CREATE SEQUENCE auto_id_telephone_contact;
 CREATE SEQUENCE auto_ground_lighting_availability;
 CREATE SEQUENCE auto_id_timeslice;
+
 
 CREATE TABLE PropertiesWithSchedule
 (
@@ -1929,13 +1937,13 @@ CREATE TABLE AirportHeliportTimeSlice
 --  https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_City
 CREATE TABLE City
 (
-  id   INTEGER NOT NULL PRIMARY KEY DEFAULT nextval('auto_id_city'),
+  uuid   id PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TextNameType
 );
 CREATE TABLE AirportHeliportCity
 (
   uuidAirportHeliport id REFERENCES AirportHeliport (uuid),
-  idCity              INTEGER NOT NULL REFERENCES City (id)
+  uuidCity              id REFERENCES City (uuid)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_SurveyControlPoint
@@ -2154,20 +2162,16 @@ CREATE TABLE GroundLightingAvailability
 
 CREATE TABLE CartographyLabelARP
 (
-  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4()
-);
-
-CREATE TABLE CartographyLabelARPTimeSlice
-(
-  idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                id REFERENCES CartographyLabelARP (uuid),
+  id INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_arp'),
   longitude                longitude,
   latitude                latitude,
+  map character varying(20),
   -- rotation            ValAngleType,
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
   uuidairportheliport id REFERENCES AirportHeliport (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   geom                GEOMETRY(POINT, 4326)
 );
+
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Unit
 CREATE TABLE Unit
@@ -2436,6 +2440,17 @@ CREATE TABLE DesignatedPointTimeSlice
   idPoint    INTEGER REFERENCES Point (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE TABLE CartographyLabelTPT
+(
+  id INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_tpt'),
+  longitude                longitude,
+  latitude                latitude,
+  map character varying(20),
+  srid                INTEGER REFERENCES spatial_ref_sys (srid),
+  uuiddesignatedpoint id REFERENCES DesignatedPoint (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  geom                GEOMETRY(POINT, 4326)
+);
+
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Route
 CREATE TABLE Route
 (
@@ -2480,41 +2495,33 @@ CREATE TABLE AirspaceTimeSlice
   uuidRoute            id REFERENCES Route (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE CartographyLabelAirspaceArea
-(
-  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4()
-);
-
-CREATE TABLE CartographyLabelAirspaceAreaTimeSlice
-(
-  idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                id REFERENCES CartographyLabelAirspaceArea (uuid),
-  longitude                longitude,
-  latitude                latitude,
-  srid                INTEGER REFERENCES spatial_ref_sys (srid),
-  uuidairspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
-  geom                GEOMETRY(POINT, 4326)
-);
-
 CREATE TABLE CartographyLabelFIR
 (
-  uuid                        id PRIMARY KEY DEFAULT uuid_generate_v4()
-);
-
-CREATE TABLE CartographyLabelFIRTimeSlice
-(
-  idTimeSlice         INTEGER NOT NULL PRIMARY KEY REFERENCES TimeSlice (id),
-  uuid                id REFERENCES CartographyLabelFIR (uuid),
+  id INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_fir'),
   longitude         longitude,
   latitude         latitude,
   inform character varying(254),
   time character varying(254),
   type character varying(8),
+  classfir character varying(254),
+  layerpos character varying(254),
   map character varying(20),
-  uuidairspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidairspc id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   srid         INTEGER REFERENCES spatial_ref_sys (srid),
   geom         GEOMETRY(POINT, 4326)
 );
+
+CREATE TABLE CartographyLabelAirspaceArea
+(
+  id                      INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_airspacearea'),
+  longitude longitude,
+  latitude latitude,
+  srid INTEGER REFERENCES spatial_ref_sys (srid),
+  map character varying(20),
+  uuidairspc id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  geom GEOMETRY(POINT, 4326)
+);
+
 
 CREATE TABLE CartographyLabelDraPraRsa
 (
@@ -2528,13 +2535,13 @@ CREATE TABLE CartographyLabelDraPraRsaTimeSlice
   longitude         longitude,
   latitude         latitude,
   srid         INTEGER REFERENCES spatial_ref_sys (srid),
-  uuidairspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidairspc id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   geom         GEOMETRY(POINT, 4326)
 );
 
 CREATE TABLE Airspace_AirTrafficManagementService
 (
-  uuidAirspace                    id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  uuidairspc                    id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
   uuidAirTrafficManagementService id REFERENCES AirTrafficManagementService (uuid)
 );
 
@@ -2544,7 +2551,7 @@ CREATE TABLE AirspaceActivation
   id           INTEGER PRIMARY KEY REFERENCES PropertiesWithSchedule (id) ON DELETE CASCADE ON UPDATE CASCADE,
   activity     CodeAirspaceActivityType,
   status       CodeStatusAirspaceType,
-  uuidAirspace id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+  uuidairspc id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE AirspaceActivation_OrganisationAuthority
@@ -2558,7 +2565,7 @@ CREATE TABLE AirspaceLayerClass
 (
   id             INTEGER PRIMARY KEY DEFAULT nextval('auto_id_airspace_layer_class'),
   classification CodeAirspaceClassificationType,
-  uuidAirspace   id REFERENCES Airspace (uuid)
+  uuidairspc   id REFERENCES Airspace (uuid)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AirspaceLayer
@@ -2589,7 +2596,7 @@ CREATE TABLE AirspaceVolume
   width                 ValDistanceType,
   idSurface             INTEGER REFERENCES Surface (id),
   idCurve               INTEGER REFERENCES Curve (id),
-  uuidAirspace          id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+  uuidairspc          id REFERENCES Airspace (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_AuthorityForAirspace
@@ -2603,7 +2610,7 @@ CREATE TABLE AuthorityForAirspaceTimeSlice
   uuid                        id REFERENCES AuthorityForAirspace (uuid),
   type                      CodeAuthorityType,
   uuidOrganisationAuthority id REFERENCES OrganisationAuthority (uuid),
-  uuidAirspace              id REFERENCES Airspace (uuid)
+  uuidairspc              id REFERENCES Airspace (uuid)
 );
 
 -- https://ext.eurocontrol.int/aixmwiki_public/bin/view/AIXM/Class_Navaid
@@ -2627,6 +2634,19 @@ CREATE TABLE NavaidTimeSlice
   idElevatedPoint   INTEGER REFERENCES ElevatedPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- Таблица подписей РНС
+CREATE TABLE CartographyLabelNAV
+(
+  id INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_nav'),
+  longitude                longitude,
+  latitude                latitude,
+  map character varying(20),
+  srid                INTEGER REFERENCES spatial_ref_sys (srid),
+  uuidnavaid id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+  geom                GEOMETRY(POINT, 4326)
+);
+
+-- Связующая таблица для реализации связи многие-ко-многим таблиц аэродромов и РНС
 CREATE TABLE AirportHeliport_Navaid
 (
   uuidNavaid          id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2734,7 +2754,7 @@ CREATE TABLE SignificantPointInAirspaceTimeSlice
   uuid                        id REFERENCES SignificantPointInAirspace (uuid),
   type               CodeAirspacePointRoleType,
   relativeLocation   CodeAirspacePointPositionType,
-  uuidAirspace       id REFERENCES Airspace (uuid),
+  uuidairspc       id REFERENCES Airspace (uuid),
   idSignificantPoint INTEGER NOT NULL REFERENCES SignificantPoint (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -3114,234 +3134,96 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
   OBS FOR EACH ROW EXECUTE PROCEDURE obs_function();
 */
 
-CREATE OR REPLACE VIEW ARP_1608 AS
+
+CREATE OR REPLACE VIEW arp1613 AS
   SELECT
-    AirportHeliport.uuid,
-    AirportHeliport._transasID AS trID,
-    AirportHeliportTimeSlice.idTimeSlice,
-    AirportHeliportTimeSlice.name  AS nl,
-    AirportHeliportTimeSlice.designator AS nm,
-    AirportHeliportTimeSlice.controltype AS tp,
-    (SELECT (elevation).value AS ha
-      FROM elevatedpoint
-    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT (nominallength).value AS lr
+    cartographylabelarp.id AS gid,
+    (SELECT AirportHeliport._transasID AS id
+    FROM AirportHeliport
+    WHERE AirportHeliport.uuid = cartographylabelarp.uuidairportheliport),
+    -- наименование на русском
+    (SELECT AirportHeliportTimeSlice.name AS nl
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidairportheliport AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- четырехбуквенник
+    (SELECT AirportHeliportTimeSlice.designator AS nm
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidairportheliport AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    --  тип аэродрома
+    (SELECT AirportHeliportTimeSlice.controltype AS tp
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidairportheliport AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT (elevation).value AS ha_m
+      FROM elevatedpoint, airportheliporttimeslice, timeslice
+    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidairportheliport
+          AND airportheliporttimeslice.idTimeSlice  = timeslice.id
+          AND timeslice.validTimeBegin <= '2016-12-08' AND (timeslice.validTimeEnd > '2016-12-08' OR timeslice.validTimeEnd is NULL)),
+    (SELECT (nominallength).value AS lr_m
      FROM RunwayTimeSlice, timeslice
-     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+     WHERE RunwayTimeSlice.uuidairportheliport = cartographylabelarp.uuidairportheliport AND
+           RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- поле покрытие ВПП аэродрома cov
     (SELECT
-       CASE WHEN (surfacecharacteristics.composition IN
+       CASE WHEN
+         -- если composition равен любому значению из перечисленного множества - то покрытие ВПП аэродрома твёрдон
+         (surfacecharacteristics.composition IN
            ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
          THEN text 'твердое покрытие'
-         ELSE NULL
+        -- если покрытие не входит в этот список - то оно NULL
+        ELSE NULL
          END
          AS cov
      FROM surfacecharacteristics, runwaytimeslice, timeslice
      WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
-           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+           AND RunwayTimeSlice.uuidAirportHeliport = cartographylabelarp.uuidairportheliport AND RunwayTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- поле угол поворота ВПП аэродрома
     (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
     FROM RunwayDirectionTimeSlice
     WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
-      TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)) AND
-      runwaytimeslice.uuidairportheliport = airportheliport.uuid )
-          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))),
-    AirportHeliportTimeSlice.abandoned  AS st,
-       (SELECT
+      TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)) AND
+      runwaytimeslice.uuidairportheliport = cartographylabelarp.uuidairportheliport)
+          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))),
+    -- закрыт или открыт аэродром
+    (SELECT AirportHeliportTimeSlice.abandoned AS st
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidairportheliport AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- освещение аэродрома
+    (SELECT
        CASE WHEN RunwayDirectionTimeSlice.classLightingJAR = 'BALS' THEN text 'есть'
          WHEN RunwayDirectionTimeSlice.classLightingJAR = 'OTHER: NODATA' THEN text 'неизвестно'
          WHEN RunwayDirectionTimeSlice.classLightingJAR = 'NALS' THEN text 'нет'
          ELSE RunwayDirectionTimeSlice.classLightingJAR
       END
-         AS lightsystem
+         AS le
     FROM RunwayDirectionTimeSlice
     WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
-      TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)) AND
-      runwaytimeslice.uuidairportheliport = airportheliport.uuid )
-          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))),
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND ServiceTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice
-     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND UnitTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT CartographyLabelARPTimeSlice.longitude as xlbl
-     FROM CartographyLabelARPTimeSlice, timeslice
-     WHERE CartographyLabelARPTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND
-           CartographyLabelARPTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelARPTimeSlice.latitude as ylbl
-     FROM CartographyLabelARPTimeSlice, timeslice
-     WHERE CartographyLabelARPTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND
-           CartographyLabelARPTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
+      TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)) AND
+      runwaytimeslice.uuidairportheliport = cartographylabelarp.uuidairportheliport)
+          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))),
+    -- координаты подписи
+    CartographyLabelARP.longitude as xlbl,
+    CartographyLabelARP.latitude as ylbl,
+    CartographyLabelARP.map as map,
+    -- геометрия
     (SELECT Point.geom
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.longitude
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.latitude
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
-    AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.srid
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
-          AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM AirportHeliportTimeSlice, AirportHeliport, TimeSlice
-  WHERE AirportHeliportTimeSlice.type IS NULL AND
-        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND
-        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
+      FROM Point, airportheliporttimeslice, timeslice
+      WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidairportheliport  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
+  FROM cartographylabelarp;
 
-CREATE OR REPLACE VIEW ARP_1610 AS
-  SELECT
-    AirportHeliport.uuid,
-    AirportHeliport._transasID AS trID,
-    AirportHeliportTimeSlice.idTimeSlice,
-    AirportHeliportTimeSlice.name  AS nl,
-    AirportHeliportTimeSlice.designator AS nm,
-    AirportHeliportTimeSlice.controltype AS tp,
-    (SELECT (elevation).value AS ha
-      FROM elevatedpoint
-    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT (nominallength).value AS lr
-     FROM RunwayTimeSlice, timeslice
-     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT
-       CASE WHEN (surfacecharacteristics.composition IN
-           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
-         THEN text 'твердое покрытие'
-         ELSE NULL
-         END
-         AS cov
-     FROM surfacecharacteristics, runwaytimeslice, timeslice
-     WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
-           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
-    FROM RunwayDirectionTimeSlice
-    WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
-      TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)) AND
-      runwaytimeslice.uuidairportheliport = airportheliport.uuid )
-          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))),
-    AirportHeliportTimeSlice.abandoned  AS st,
-       (SELECT
-       CASE WHEN RunwayDirectionTimeSlice.classLightingJAR = 'BALS' THEN text 'есть'
-         WHEN RunwayDirectionTimeSlice.classLightingJAR = 'OTHER: NODATA' THEN text 'неизвестно'
-         WHEN RunwayDirectionTimeSlice.classLightingJAR = 'NALS' THEN text 'нет'
-         ELSE RunwayDirectionTimeSlice.classLightingJAR
-      END
-         AS lightsystem
-    FROM RunwayDirectionTimeSlice
-    WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
-      TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)) AND
-      runwaytimeslice.uuidairportheliport = airportheliport.uuid )
-          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))),
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND ServiceTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice
-     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND UnitTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT CartographyLabelARPTimeSlice.longitude as xlbl
-     FROM CartographyLabelARPTimeSlice, timeslice
-     WHERE CartographyLabelARPTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND
-           CartographyLabelARPTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelARPTimeSlice.latitude as ylbl
-     FROM CartographyLabelARPTimeSlice, timeslice
-     WHERE CartographyLabelARPTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND
-           CartographyLabelARPTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.geom
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.longitude
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.latitude
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
-    AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.srid
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
-          AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))
-  FROM AirportHeliportTimeSlice, AirportHeliport, TimeSlice
-  WHERE AirportHeliportTimeSlice.type IS NULL AND
-        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND
-        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL);
 
+/*
 CREATE OR REPLACE VIEW ALS_1608 AS
   SELECT
     AirportHeliport.uuid,
@@ -3455,120 +3337,7 @@ CREATE OR REPLACE VIEW ALS_1608 AS
         AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
-
-CREATE OR REPLACE VIEW ALS_1610 AS
-  SELECT
-    AirportHeliport.uuid,
-    AirportHeliport._transasID AS trID,
-    AirportHeliportTimeSlice.idTimeSlice,
-    AirportHeliportTimeSlice.name  AS nl,
-    AirportHeliportTimeSlice.designator AS nm,
-    AirportHeliportTimeSlice.type AS tp,
-    (SELECT (elevation).value AS ha
-      FROM elevatedpoint
-    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT (nominallength).value AS lr
-     FROM RunwayTimeSlice, timeslice
-     WHERE RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT
-       CASE WHEN (surfacecharacteristics.composition IN
-           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
-         THEN text 'твердое покрытие'
-         ELSE NULL
-         END
-         AS cov
-     FROM surfacecharacteristics, runwaytimeslice, timeslice
-     WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
-           AND RunwayTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
-    FROM RunwayDirectionTimeSlice
-    WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
-      TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)) AND
-      runwaytimeslice.uuidairportheliport = airportheliport.uuid )
-          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))),
-    AirportHeliportTimeSlice.abandoned  AS st,
-       (SELECT
-       CASE WHEN RunwayDirectionTimeSlice.classLightingJAR = 'BALS' THEN text 'есть'
-         WHEN RunwayDirectionTimeSlice.classLightingJAR = 'OTHER: NODATA' THEN text 'неизвестно'
-         WHEN RunwayDirectionTimeSlice.classLightingJAR = 'NALS' THEN text 'нет'
-         ELSE RunwayDirectionTimeSlice.classLightingJAR
-      END
-         AS lightsystem
-    FROM RunwayDirectionTimeSlice
-    WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
-      TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)) AND
-      runwaytimeslice.uuidairportheliport = airportheliport.uuid )
-          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))),
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE CallsignDetail.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND ServiceTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, ServiceTimeSlice, UnitTimeSlice, timeslice
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = ServiceTimeSlice.uuid AND ServiceTimeSlice.uuidUnit = UnitTimeSlice.uuid AND
-           UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice
-     WHERE UnitTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND UnitTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)
-     LIMIT 1),
-    (SELECT CartographyLabelARPTimeSlice.longitude as xlbl
-     FROM CartographyLabelARPTimeSlice, timeslice
-     WHERE CartographyLabelARPTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND
-           CartographyLabelARPTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelARPTimeSlice.latitude as ylbl
-     FROM CartographyLabelARPTimeSlice, timeslice
-     WHERE CartographyLabelARPTimeSlice.uuidAirportHeliport = AirportHeliport.uuid AND
-           CartographyLabelARPTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.geom
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.longitude
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.latitude
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
-    AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Point.srid
-      FROM Point
-    WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = airportheliport.uuid
-          AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))
-  FROM AirportHeliportTimeSlice, AirportHeliport, TimeSlice
-  WHERE AirportHeliportTimeSlice.type IS NOT NULL AND
-        AirportHeliportTimeSlice.uuid = AirportHeliport.uuid AND
-        AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL);
+*/
 
 CREATE OR REPLACE FUNCTION arp_function()
   RETURNS TRIGGER
@@ -3833,7 +3602,7 @@ BEGIN
          delete_SrvcRdCmmnctnChnnl AS (DELETE FROM service_radiocommunicationchannel WHERE service_radiocommunicationchannel.uuidservice IN (SELECT delete_SrvcTS.uuid FROM delete_SrvcTS)),
          delete_TSRdCmmnctnChnnl AS (DELETE FROM timeslice WHERE timeslice.id IN (SELECT delete_RdCmmnctnChnnlTS.idtimeslice FROM delete_RdCmmnctnChnnlTS)),
          delete_RdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT delete_RdCmmnctnChnnlTS.uuid FROM delete_RdCmmnctnChnnlTS)),
-         delete_CrtgrphLblArpTS AS (DELETE FROM CartographyLabelARPTimeSlice WHERE CartographyLabelARPTimeSlice.uuidairportheliport IN (SELECT delete_arpTS.uuid FROM delete_arpTS) RETURNING cartographylabelarptimeslice.uuid, cartographylabelarptimeslice.idtimeslice),
+         delete_CrtgrphLblArpTS AS (DELETE FROM CartographyLabelARP WHERE CartographyLabelARPTimeSlice.uuidairportheliport IN (SELECT delete_arpTS.uuid FROM delete_arpTS) RETURNING cartographylabelarptimeslice.uuid, cartographylabelarptimeslice.idtimeslice),
          delete_CrtgrphLblArp AS (DELETE FROM CartographyLabelARP WHERE CartographyLabelARP.uuid IN (SELECT delete_CrtgrphLblArpTS.uuid FROM delete_CrtgrphLblArpTS)),
          delete_TSofCrtgrphLblArp AS (DELETE FROM timeslice WHERE timeslice.id IN (SELECT delete_CrtgrphLblArpTS.idtimeslice FROM delete_CrtgrphLblArpTS))
       DELETE FROM ElevatedPoint
@@ -3846,13 +3615,9 @@ BEGIN
 END;
 $function$;
 
-CREATE TRIGGER arp_trigger_1610
+CREATE TRIGGER arp_trigger_1613
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  ARP_1610 FOR EACH ROW EXECUTE PROCEDURE arp_function();
-
-CREATE TRIGGER arp_trigger_1608
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  ARP_1608 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+  arp1613 FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
 CREATE OR REPLACE FUNCTION als_function()
   RETURNS TRIGGER
@@ -4130,669 +3895,205 @@ BEGIN
 END;
 $function$;
 
-CREATE TRIGGER als_trigger_1610
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  ALS_1610 FOR EACH ROW EXECUTE PROCEDURE als_function();
-
-CREATE TRIGGER als_trigger_1608
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  ALS_1608 FOR EACH ROW EXECUTE PROCEDURE als_function();
-
 -- CTA
-CREATE VIEW CTA_1610 AS
+ CREATE OR REPLACE VIEW cta1613 AS
   SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    AirspaceTimeSlice.controlType               AS tp,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
+    cartographylabelairspacearea.id AS gid,
+    (SELECT Airspace._transasID AS id
+    FROM Airspace
+    WHERE Airspace.uuid = cartographylabelairspacearea.uuidairspc),
+    -- наименование ИКАО воздушного пространства
+    (SELECT AirspaceTimeSlice.designator AS nm
+    FROM AirspaceTimeSlice, TimeSlice
+    WHERE AirspaceTimeSlice.uuid = cartographylabelairspacearea.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- наименование русское воздушного пространства
+    (SELECT AirspaceTimeSlice.name AS nl
+    FROM AirspaceTimeSlice, TimeSlice
+    WHERE AirspaceTimeSlice.uuid = cartographylabelairspacearea.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- соединение всех высотных полей для правильного вывода для стилистики
+    (SELECT concat(
+                    CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN '(' END,
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    (CASE WHEN (lowerLimit).unit = 'FL' THEN (lowerLimit).unit
+                      ELSE ''
+                      END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((lowerLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((lowerLimit).value,0))
+                      WHEN (lowerLimit).value IS NULL THEN 'GND'
+                      ELSE cast(round((lowerLimit).value,0) as text)
+                      END),
+                      CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN ')' END,
+                     '#',
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN '(' END,
+                    (CASE WHEN (upperLimit).unit = 'FL' THEN (upperLimit).unit
+                      ELSE ''
+                      END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((upperLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((upperLimit).value,0))
+                      WHEN (upperLimit).value IS NULL THEN 'UNL'
+                      ELSE cast(round((upperLimit).value,0) as text)
+                      END),
+                   CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN ')' END)
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidairspc = cartographylabelairspacearea.uuidairspc)
+    AS he,
+   -- Позывной
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'CTA' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL);
-
-CREATE VIEW CTA_1608 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    AirspaceTimeSlice.controlType               AS tp,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
-     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
-           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'CTA' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
-
-CREATE VIEW CTA_1613 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    AirspaceTimeSlice.controlType               AS tp,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
-     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
-           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace_AirTrafficManagementService.uuidairspc = cartographylabelairspacearea.uuidairspc AND
            AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
          (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    -- Частота
     (SELECT (frequencyTransmission).value AS tf
      FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
      WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
            Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace_AirTrafficManagementService.uuidairspc = cartographylabelairspacearea.uuidairspc AND
            RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
          (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    cartographylabelairspacearea.longitude as xlbl,
+    cartographylabelairspacearea.latitude as ylbl,
     (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'CTA' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL);
+      FROM Surface, AirspaceVolume, AirspaceTimeSlice, timeslice
+    WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidairspc = cartographylabelairspacearea.uuidairspc AND
+          AirspaceTimeSlice.uuid = AirspaceVolume.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    cartographylabelairspacearea.map as map
+  FROM cartographylabelairspacearea WHERE cartographylabelairspacearea.uuidairspc IN
+          (SELECT airspacetimeslice.uuid FROM airspacetimeslice, timeslice WHERE AirspaceTimeSlice.type = 'CTA' AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL));
 
-CREATE VIEW CTR_1608 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    AirspaceTimeSlice.controlType               AS tp,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
-     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
-           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'CTR' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
-
-CREATE VIEW TMA_1608 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    AirspaceTimeSlice.controlType               AS tp,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
-     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
-           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'TMA' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
-
-CREATE VIEW UAA_1608 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    AirspaceTimeSlice.controlType               AS tp,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
-     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
-           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT CartographyLabelAirspaceAreaTimeSlice.longitude as xlbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelAirspaceAreaTimeSlice.latitude as ylbl
-     FROM CartographyLabelAirspaceAreaTimeSlice, timeslice
-     WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelAirspaceAreaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'ATZ' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
-
-CREATE VIEW FIR_1608 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CallsignDetail.callSign AS cs
-     FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
-     WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
-           AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyTransmission).value AS tf
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT Timesheet.day AS day_of_the_week
-     FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT Timesheet.startTime
-     FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT Timesheet.endTime
-     FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT CartographyLabelFIRTimeSlice.longitude as xlbl
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelFIRTimeSlice.latitude as ylbl
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'FIR' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
-
+-- второй вариант создания CTA с помощью JOIN (выбрать какой эффективнее)
 /*
-CREATE VIEW FIR_1613 AS
+ CREATE OR REPLACE VIEW cta1613_2 AS
   SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.idTimeSlice,
+    cartographylabelairspacearea.id AS gid,
+    (SELECT Airspace._transasID AS id
+    FROM Airspace
+    WHERE Airspace.uuid = cartographylabelairspacearea.uuidairspc),
+    -- наименование ИКАО воздушного пространства
     AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
+    -- наименование русское воздушного пространства
+    AirspaceTimeSlice.name AS nl,
+    -- соединение всех высотных полей для правильного вывода для стилистики
+    (SELECT concat(
+                    CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN '(' END,
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    (CASE WHEN (lowerLimit).unit = 'FL' THEN (lowerLimit).unit
+                      ELSE ''
+                      END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((lowerLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((lowerLimit).value,0))
+                      WHEN (lowerLimit).value IS NULL THEN 'GND'
+                      ELSE cast(round((lowerLimit).value,0) as text)
+                      END),
+                      CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN ')' END,
+                     '#',
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN '(' END,
+                    (CASE WHEN (upperLimit).unit = 'FL' THEN (upperLimit).unit
+                      ELSE ''
+                      END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((upperLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((upperLimit).value,0))
+                      WHEN (upperLimit).value IS NULL THEN 'UNL'
+                      ELSE cast(round((upperLimit).value,0) as text)
+                      END),
+                   CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN ')' END)
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidairspc = cartographylabelairspacearea.uuidairspc)
+    AS he,
+   -- Позывной
     (SELECT CallsignDetail.callSign AS cs
      FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
      WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
            AirTrafficManagementServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace_AirTrafficManagementService.uuidairspc = cartographylabelairspacearea.uuidairspc AND
            AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
          (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
+    -- Частота
     (SELECT (frequencyTransmission).value AS tf
      FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
      WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
            Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
+           Airspace_AirTrafficManagementService.uuidairspc = cartographylabelairspacearea.uuidairspc AND
            RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
          (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT (frequencyReception).value AS tr
-     FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice, Airspace_AirTrafficManagementService
-     WHERE RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
-           Service_RadioCommunicationChannel.uuidService = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND
-           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT UnitTimeSlice.type AS unit_type
-     FROM UnitTimeSlice, timeslice, Airspace_AirTrafficManagementService, ServiceTimeSlice
-     WHERE UnitTimeSlice.uuid = ServiceTimeSlice.uuidUnit AND ServiceTimeSlice.uuid = Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
-           Airspace_AirTrafficManagementService.uuidAirspace = Airspace.uuid AND UnitTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL) LIMIT 1),
-    (SELECT Timesheet.day AS day_of_the_week
-     FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT Timesheet.startTime
-     FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT Timesheet.endTime
-     FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
-     LIMIT 1),
-    (SELECT CartographyLabelFIRTimeSlice.longitude as xlbl
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelFIRTimeSlice.latitude as ylbl
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    cartographylabelairspacearea.longitude as xlbl,
+    cartographylabelairspacearea.latitude as ylbl,
     (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'FIR' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL);
-*/
+      FROM Surface, AirspaceVolume, AirspaceTimeSlice, timeslice
+    WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidairspc = cartographylabelairspacearea.uuidairspc AND
+          AirspaceTimeSlice.uuid = AirspaceVolume.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    cartographylabelairspacearea.map as map
+  FROM cartographylabelairspacearea LEFT JOIN airspacetimeslice ON airspacetimeslice.uuid = cartographylabelairspacearea.uuidairspc WHERE airspacetimeslice.type = 'CTA';
+ */
 
-CREATE VIEW FIR_1613 AS
-  SELECT
-    Airspace.uuid,
-    Airspace._transasID AS trID,
-    AirspaceTimeSlice.designator AS nm,
-    AirspaceTimeSlice.name                      AS nl,
-    (upperLimit).value                 AS top,
-    (upperLimit).unit                  AS top_unit,
-    (upperLimit).nonNumeric            AS UNL,
-    AirspaceVolume.upperLimitReference AS format_top,
-    (lowerLimit).value                 AS bottom,
-    (lowerLimit).unit                  AS bottom_unit,
-    (lowerLimit).nonNumeric            AS GND,
-    AirspaceVolume.lowerLimitReference AS format_bottom,
-    (SELECT CartographyLabelFIRTimeSlice.inform as inform
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT CartographyLabelFIRTimeSlice.time as time
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT CartographyLabelFIRTimeSlice.type as type
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT CartographyLabelFIRTimeSlice.map as map
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT CartographyLabelFIRTimeSlice.longitude as xlbl
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-     (SELECT CartographyLabelFIRTimeSlice.latitude as ylbl
-     FROM CartographyLabelFIRTimeSlice, timeslice
-     WHERE CartographyLabelFIRTimeSlice.uuidairspace = airspace.uuid AND
-           CartographyLabelFIRTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+-- Создание представления FIR
+CREATE OR REPLACE VIEW fir1613 AS
+SELECT
+    cartographylabelfir.id AS gid,
+    (SELECT Airspace._transasID AS id
+    FROM Airspace
+    WHERE Airspace.uuid = CartographyLabelFIR.uuidairspc),
+    (SELECT AirspaceTimeSlice.designator AS nm
+    FROM AirspaceTimeSlice, TimeSlice
+    WHERE AirspaceTimeSlice.uuid = CartographyLabelFIR.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT AirspaceTimeSlice.name AS nl
+    FROM AirspaceTimeSlice, TimeSlice
+    WHERE AirspaceTimeSlice.uuid = CartographyLabelFIR.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT concat(
+                    CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN '(' END,
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    (CASE WHEN (lowerLimit).unit = 'FL' THEN (lowerLimit).unit END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((lowerLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((lowerLimit).value,0))
+                      WHEN (lowerLimit).value IS NULL THEN 'GND'
+                      ELSE cast(round((lowerLimit).value,0) as text)
+                      END),
+                      CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN ')' END,
+                     ' - ',
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN '(' END,
+                    (CASE WHEN (upperLimit).unit = 'FL' THEN (upperLimit).unit END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((upperLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((upperLimit).value,0))
+                      WHEN (upperLimit).value IS NULL THEN 'UNL'
+                      ELSE cast(round((upperLimit).value,0) as text)
+                      END),
+                   CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN ')' END)
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidairspc = CartographyLabelFIR.uuidairspc)
+    AS he,
+    CartographyLabelFIR.inform as inform,
+    CartographyLabelFIR.time as time,
+    CartographyLabelFIR.type as type,
+    CartographyLabelFIR.longitude as xlbl,
+    CartographyLabelFIR.latitude as ylbl,
+    CartographyLabelFIR.classfir as class,
+    CartographyLabelFIR.layerpos,
     (SELECT Surface.geom
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
-    (SELECT Surface.srid
-      FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
-    and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
-  FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
-  WHERE AirspaceTimeSlice.type = 'FIR' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
-        AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-12-08' AND
-         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL);
+      FROM Surface, AirspaceVolume, AirspaceTimeSlice, timeslice
+    WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidairspc = CartographyLabelFIR.uuidairspc AND
+          AirspaceTimeSlice.uuid = AirspaceVolume.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    CartographyLabelFIR.map as map
+  FROM CartographyLabelFIR;
+
 
 CREATE VIEW DRA_1608 AS
   SELECT
@@ -4811,42 +4112,42 @@ CREATE VIEW DRA_1608 AS
     AirspaceVolume.lowerLimitReference AS format_bottom,
      (SELECT Timesheet.day AS day_of_the_week
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT Timesheet.startTime
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT Timesheet.endTime
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT CartographyLabelDraPraRsaTimeSlice.longitude as xlbl
      FROM CartographyLabelDraPraRsaTimeSlice, timeslice
-     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = airspace.uuid AND
+     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = airspace.uuid AND
            CartographyLabelDraPraRsaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
      (SELECT CartographyLabelDraPraRsaTimeSlice.latitude as ylbl
      FROM CartographyLabelDraPraRsaTimeSlice, timeslice
-     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = airspace.uuid AND
+     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = airspace.uuid AND
            CartographyLabelDraPraRsaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT Surface.geom
       FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidairspc = Airspace.uuid
     and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT Surface.srid
       FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidairspc = Airspace.uuid
     and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
   -- AirspaceVolume.id,
   FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
   WHERE AirspaceTimeSlice.type = 'D' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
+        AirspaceVolume.uuidairspc = Airspace.uuid AND
         AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
@@ -4868,42 +4169,42 @@ CREATE VIEW PRA_1608 AS
     AirspaceVolume.lowerLimitReference AS format_bottom,
      (SELECT Timesheet.day AS day_of_the_week
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT Timesheet.startTime
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT Timesheet.endTime
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT CartographyLabelDraPraRsaTimeSlice.longitude as xlbl
      FROM CartographyLabelDraPraRsaTimeSlice, timeslice
-     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = airspace.uuid AND
+     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = airspace.uuid AND
            CartographyLabelDraPraRsaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
      (SELECT CartographyLabelDraPraRsaTimeSlice.latitude as ylbl
      FROM CartographyLabelDraPraRsaTimeSlice, timeslice
-     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = airspace.uuid AND
+     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = airspace.uuid AND
            CartographyLabelDraPraRsaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT Surface.geom
       FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidairspc = Airspace.uuid
     and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT Surface.srid
       FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidairspc = Airspace.uuid
     and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
   -- AirspaceVolume.id,
   FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
   WHERE AirspaceTimeSlice.type = 'P' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
+        AirspaceVolume.uuidairspc = Airspace.uuid AND
         AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
@@ -4925,42 +4226,42 @@ CREATE VIEW RSA_1608 AS
     AirspaceVolume.lowerLimitReference AS format_bottom,
      (SELECT Timesheet.day AS day_of_the_week
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT Timesheet.startTime
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT Timesheet.endTime
      FROM Timesheet, AirspaceActivation
-     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidAirspace = Airspace.uuid
+     WHERE Timesheet.idPropertiesWithSchedule = AirspaceActivation.id AND AirspaceActivation.uuidairspc = Airspace.uuid
      LIMIT 1),
     (SELECT CartographyLabelDraPraRsaTimeSlice.longitude as xlbl
      FROM CartographyLabelDraPraRsaTimeSlice, timeslice
-     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = airspace.uuid AND
+     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = airspace.uuid AND
            CartographyLabelDraPraRsaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
      (SELECT CartographyLabelDraPraRsaTimeSlice.latitude as ylbl
      FROM CartographyLabelDraPraRsaTimeSlice, timeslice
-     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = airspace.uuid AND
+     WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = airspace.uuid AND
            CartographyLabelDraPraRsaTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT Surface.geom
       FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidairspc = Airspace.uuid
     and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL)),
     (SELECT Surface.srid
       FROM Surface
-    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidAirspace = Airspace.uuid
+    WHERE Surface.id = AirspaceVolume.idSurface AND  AirspaceVolume.uuidairspc = Airspace.uuid
     and Airspace.uuid = AirspaceTimeSlice.uuid  AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
   -- AirspaceVolume.id,
   FROM Airspace, AirspaceVolume, AirspaceTimeSlice, TimeSlice
   WHERE AirspaceTimeSlice.type = 'R' AND AirspaceTimeSlice.uuid = Airspace.uuid AND
-        AirspaceVolume.uuidAirspace = Airspace.uuid AND
+        AirspaceVolume.uuidairspc = Airspace.uuid AND
         AirspaceTimeSlice.idTimeSlice  = TimeSlice.id  AND
            TimeSlice.validTimeBegin <= '2016-07-21' AND
          (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
@@ -4978,7 +4279,7 @@ BEGIN
       insert_TimeSliceAirspace AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
       inserted_airspaceTS AS (INSERT INTO AirspaceTimeSlice (uuid, idTimeSlice, designator, name, controlType)
       VALUES (uuid_generate_v4(), (SELECT insert_TimeSliceAirspace.id FROM insert_TimeSliceAirspace), NEW.nm, NEW.nl, NEW.tp)),
-      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidAirspace)
+      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidairspc)
         VALUES (ROW (NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW (NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
        (SELECT inserted_Srfc.id FROM inserted_Srfc), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
       insert_Unit AS (INSERT INTO Unit (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
@@ -4992,7 +4293,7 @@ BEGIN
       insert_TimeSliceAirTrffcMngmntSrvc AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
       insert_AirTrafficManagementServiceTS AS (INSERT INTO AirTrafficManagementServiceTimeSlice (idTimeSlice, uuid) VALUES
         ((SELECT insert_TimeSliceAirTrffcMngmntSrvc.id FROM insert_TimeSliceAirTrffcMngmntSrvc),(SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
-      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService)
+      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidairspc, uuidAirTrafficManagementService)
         VALUES ((SELECT inserted_airspace.uuid FROM inserted_airspace), (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
       insert_CllsgnDtl AS (INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
                                                                                           (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
@@ -5002,7 +4303,7 @@ BEGIN
         VALUES ((SELECT insert_rdChnnl.uuid FROM insert_rdChnnl), (SELECT insert_TimeSliceRdChnnl.id FROM insert_TimeSliceRdChnnl), ROW (NEW.tf, NULL), ROW (NEW.tr, NULL))),
       insert_lblAirspaceArea AS (INSERT INTO CartographyLabelAirspaceArea(uuid) VALUES (uuid_generate_v4()) RETURNING CartographyLabelAirspaceArea.uuid),
       insert_TimeSliceLblAirspaceArea AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelAirspaceAreaTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspace) VALUES
+      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelAirspaceAreaTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspc) VALUES
         ((SELECT insert_TimeSliceLblAirspaceArea.id FROM insert_TimeSliceLblAirspaceArea), (SELECT insert_lblAirspaceArea.uuid FROM insert_lblAirspaceArea), NEW.xlbl, NEW.ylbl,
          (SELECT inserted_airspace.uuid FROM inserted_airspace)))
       INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
@@ -5022,42 +4323,42 @@ BEGIN
           upperLimitReference = NEW.format_top,
           lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
           lowerLimitReference = NEW.format_bottom
-        WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+        WHERE AirspaceVolume.uuidairspc = OLD.uuid;
       UPDATE Surface
         SET geom = NEW.geom, srid = NEW.srid
         WHERE Surface.id = (SELECT AirspaceVolume.idSurface
                             FROM AirspaceVolume
-                            WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
+                            WHERE AirspaceVolume.uuidairspc = OLD.uuid);
       UPDATE CartographyLabelAirspaceAreaTimeSlice
         SET longitude = NEW.xlbl, latitude = NEW.ylbl
-        WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = OLD.uuid;
+        WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspc = OLD.uuid;
       UPDATE CallsignDetail
         SET callSign = NEW.cs
         WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
                                              FROM Airspace_AirTrafficManagementService
-                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
+                                             WHERE Airspace_AirTrafficManagementService.uuidairspc = OLD.uuid);
       UPDATE RadioCommunicationChannelTimeSlice
       SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
       WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
                                                FROM Service_RadioCommunicationChannel
                                                WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
                                                                                                    FROM Airspace_AirTrafficManagementService
-                                                                                                   WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+                                                                                                   WHERE Airspace_AirTrafficManagementService.uuidairspc = OLD.uuid));
       UPDATE UnitTimeSlice
       SET type = NEW.unit_type
       WHERE UnitTimeSlice.uuid IN (SELECT ServiceTimeSlice.uuidUnit FROM ServiceTimeSlice WHERE
                                     ServiceTimeSlice.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
                                              FROM Airspace_AirTrafficManagementService
-                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
+                                             WHERE Airspace_AirTrafficManagementService.uuidairspc = OLD.uuid));
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
       WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = OLD.uuid),
         deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = OLD.uuid RETURNING AirspaceTimeSlice.idTimeSlice),
         deleteTSAirspc AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirspcTS.idTimeSlice FROM deleteAirspcTS)),
-        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid RETURNING AirspaceVolume.idSurface),
+        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidairspc = OLD.uuid RETURNING AirspaceVolume.idSurface),
         deleteSrfc AS (DELETE FROM Surface WHERE Surface.id IN (SELECT deleteAirspcVlm.idSurface FROM deleteAirspcVlm)),
-        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid RETURNING uuidAirTrafficManagementService),
+        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidairspc = OLD.uuid RETURNING uuidAirTrafficManagementService),
         deleteAirTrffcMngmnt AS (DELETE FROM AirTrafficManagementService WHERE AirTrafficManagementService.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
         deleteAirTrffcMngmntTS AS (DELETE FROM AirTrafficManagementServiceTimeSlice WHERE AirTrafficManagementServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice),
         deleteTSAirTrffcMngmnt AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirTrffcMngmntTS.idTimeSlice FROM deleteAirTrffcMngmntTS)),
@@ -5075,7 +4376,7 @@ BEGIN
         deleteUnit AS (DELETE FROM Unit WHERE Unit.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS)),
         deleteUnitTS AS (DELETE FROM UnitTimeSlice WHERE UnitTimeSlice.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS) RETURNING idTimeSlice),
         deleteTSUnit AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteUnitTS.idTimeSlice FROM deleteUnitTS)),
-        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelAirspaceAreaTimeSlice WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = OLD.uuid RETURNING CartographyLabelAirspaceAreaTimeSlice.uuid, idTimeSlice),
+        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelAirspaceAreaTimeSlice WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspc = OLD.uuid RETURNING CartographyLabelAirspaceAreaTimeSlice.uuid, idTimeSlice),
         deleteCrtgrphLbl AS (DELETE FROM CartographyLabelAirspaceArea WHERE CartographyLabelAirspaceArea.uuid IN (SELECT deleteCrtgrphLblTS.uuid FROM deleteCrtgrphLblTS)),
         deleteTSCrtgrphLbl AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteCrtgrphLblTS.idTimeSlice FROM deleteCrtgrphLblTS)),
         deleteCllsgnDtl AS (DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
@@ -5089,157 +4390,101 @@ BEGIN
 END;
 $function$;
 
-CREATE TRIGGER cta_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  CTA_1608 FOR EACH ROW EXECUTE PROCEDURE cta_function();
 
-CREATE TRIGGER ctr_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  CTR_1608 FOR EACH ROW EXECUTE PROCEDURE cta_function();
-
-CREATE TRIGGER tma_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  TMA_1608 FOR EACH ROW EXECUTE PROCEDURE cta_function();
-
-CREATE TRIGGER uaa_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  UAA_1608 FOR EACH ROW EXECUTE PROCEDURE cta_function();
-
-
-CREATE OR REPLACE FUNCTION fir_function()
+CREATE OR REPLACE FUNCTION fir_function1613()
   RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
 BEGIN
   IF TG_OP = 'INSERT'
   THEN
-    WITH inserted_Srfc AS (INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, NEW.srid) RETURNING Surface.id),
-      inserted_airspace AS (INSERT INTO Airspace (uuid, _transasID) VALUES (uuid_generate_v4(), NEW.trID) RETURNING uuid),
-      insert_TimeSliceAirspace AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
+    -- вставляем все данные из представления в соответствующие ячейки реально существующих таблиц БД
+    WITH inserted_Srfc AS (INSERT INTO Surface (id, geom, srid) VALUES (nextval('auto_id_surface'), NEW.geom, '4326') RETURNING Surface.id),
+      inserted_airspace AS (INSERT INTO Airspace (uuid, _transasID) VALUES (uuid_generate_v4(), NEW.id) RETURNING uuid),
+      insert_TimeSliceAirspace AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-12-08') RETURNING timeslice.id),
       inserted_airspaceTS AS (INSERT INTO AirspaceTimeSlice (uuid, idTimeSlice, designator, name)
-      VALUES (uuid_generate_v4(), (SELECT insert_TimeSliceAirspace.id FROM insert_TimeSliceAirspace), NEW.nm, NEW.nl)),
-      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidAirspace)
-        VALUES (ROW (NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW (NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
-       (SELECT inserted_Srfc.id FROM inserted_Srfc), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
-      insert_Unit AS (INSERT INTO Unit (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
-      insert_TimeSliceUnit AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_UnitTS AS (INSERT INTO UnitTimeSlice (uuid, idTimeSlice, type) VALUES ((SELECT insert_Unit.uuid FROM insert_Unit), (SELECT insert_TimeSliceUnit.id FROM insert_TimeSliceUnit), NEW.unit_type)),
-      insert_service AS (INSERT INTO Service (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
-      insert_TimeSliceService AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_serviceTS AS (INSERT INTO ServiceTimeSlice (uuid, idTimeSlice, uuidUnit) VALUES
-        ((SELECT insert_service.uuid FROM insert_service), (SELECT insert_TimeSliceService.id FROM insert_TimeSliceService), (SELECT insert_Unit.uuid FROM insert_Unit)) RETURNING idTimeSlice),
-      insert_AirTrffcMngmntSrvc AS (INSERT INTO AirTrafficManagementService (uuid) VALUES ((SELECT insert_service.uuid FROM insert_service)) RETURNING uuid),
-      insert_TimeSliceAirTrffcMngmntSrvc AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_AirTrafficManagementServiceTS AS (INSERT INTO AirTrafficManagementServiceTimeSlice (idTimeSlice, uuid) VALUES
-        ((SELECT insert_TimeSliceAirTrffcMngmntSrvc.id FROM insert_TimeSliceAirTrffcMngmntSrvc),(SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
-      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService)
-        VALUES ((SELECT inserted_airspace.uuid FROM inserted_airspace), (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
-      insert_CllsgnDtl AS (INSERT INTO CallsignDetail (id, callSign, uuidService) VALUES (nextval('auto_id_callsign'), NEW.cs,
-                                                                                          (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
-      insert_rdChnnl AS (INSERT INTO RadioCommunicationChannel(uuid) VALUES (uuid_generate_v4()) RETURNING RadioCommunicationChannel.uuid),
-      insert_TimeSliceRdChnnl AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_rdChnnlTS AS (INSERT INTO RadioCommunicationChannelTimeSlice (uuid, idTimeSlice, frequencyTransmission, frequencyReception)
-        VALUES ((SELECT insert_rdChnnl.uuid FROM insert_rdChnnl), (SELECT insert_TimeSliceRdChnnl.id FROM insert_TimeSliceRdChnnl), ROW (NEW.tf, NULL), ROW (NEW.tr, NULL))),
-      insert_lblAirspaceArea AS (INSERT INTO CartographyLabelFIR(uuid) VALUES (uuid_generate_v4()) RETURNING CartographyLabelAirspaceArea.uuid),
-      insert_TimeSliceLblAirspaceArea AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelFIRTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspace) VALUES
-        ((SELECT insert_TimeSliceLblAirspaceArea.id FROM insert_TimeSliceLblAirspaceArea), (SELECT insert_lblAirspaceArea.uuid FROM insert_lblAirspaceArea), NEW.xlbl, NEW.ylbl,
-         (SELECT inserted_airspace.uuid FROM inserted_airspace))),
-      insert_PrprtsWthSchdl AS (INSERT INTO PropertiesWithSchedule (id) VALUES (nextval('auto_id_properties_with_schedule')) RETURNING id),
-      insert_AirspcActvtn AS (INSERT INTO AirspaceActivation (id, uuidAirspace) VALUES ((SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
-      insert_Tmsht AS (INSERT INTO Timesheet (day, startTime, endTime, idPropertiesWithSchedule) VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime, (SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl)))
-    INSERT INTO Service_RadioCommunicationChannel (uuidService, uuidRadioCommunicationChannel) VALUES (
-        (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc), (SELECT insert_rdChnnl.uuid FROM insert_rdChnnl));
+      VALUES ((SELECT inserted_airspace.uuid FROM inserted_airspace), (SELECT insert_TimeSliceAirspace.id FROM insert_TimeSliceAirspace), NEW.nm, NEW.nl)),
+      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (lowerLimit, lowerLimitReference, upperLimit, upperLimitReference, idSurface, uuidairspc)
+        VALUES (ROW
+                -- парсим столбец he из БД, чтобы вытащить нижнюю границу (достаем оттуда отдельно значение высоты, отдельно ед-цы измерения
+                ( (SELECT cast(regexp_matches(NEW.he, '[1-9][0-9]*(?= ?-)', 'g')as DECIMAL(12,4))), (SELECT regexp_matches(NEW.he,'GND', 'g')),
+                -- две строчки ниже - выбирают единицы измерения: если в нижней границе есть 'FL' - то ед-цы = FL, если только цифры - то ед-цы = М, в противном случае NULL
+                (SELECT (CASE WHEN (SELECT (regexp_matches(NEW.he,'^FL', 'g'))[1]) ILIKE 'FL' THEN text 'FL'
+                WHEN (exists(SELECT regexp_matches(NEW.he, '[1-9][0-9]*(?= ?-)', '')) OR NEW.he ILIKE '%(%') THEN 'M' ELSE NULL END))),
+                -- Если ед-цы измерения = M то нужно еще определить SFC или MSL (по нашему AGL или AMSL)
+                (CASE WHEN  (SELECT (regexp_matches(NEW.he,'^\(', 'g'))[1]) ILIKE '('THEN 'SFC'
+                WHEN (SELECT (regexp_matches(NEW.he,'^FL', 'g'))[1]) ILIKE 'FL' THEN NULL
+                WHEN exists(SELECT regexp_matches(NEW.he, '[1-9][0-9]*(?= ?-)', '')) THEN 'MSL' ELSE NULL END),
+                -- парсим столбец he из БД, чтобы вытащить верхнюю границу
+                ROW( (SELECT cast(regexp_matches(NEW.he, '([1-9][0-9]*)\)?$', 's')as DECIMAL(12,4))), (SELECT regexp_matches(NEW.he,'UNL', 'g')),
+                (SELECT (CASE WHEN (SELECT (regexp_matches(NEW.he,'\sFL', 'g'))[1]) ILIKE ' FL' THEN text 'FL'
+                  WHEN (regexp_replace(NEW.he, '[A-Z]*([0-9]*)? ?- ?([A-Z]*?)0*', '') != '' OR NEW.he ILIKE '%(%') THEN 'M' ELSE NULL END))),
+                -- Если ед-цы измерения = M то нужно еще определить SFC или MSL (по нашему AGL или AMSL)
+                CASE WHEN (SELECT (regexp_matches(NEW.he,'\s\(', 'g'))[1]) ILIKE ' (' THEN 'SFC'
+                WHEN (SELECT (regexp_matches(NEW.he,'\sFL', 'g'))[1]) ILIKE ' FL' THEN NULL
+                WHEN (SELECT regexp_matches(NEW.he, '([1-9][0-9]*)\)?$', 's')) NOTNULL THEN 'MSL' ELSE NULL END,
+       (SELECT inserted_Srfc.id FROM inserted_Srfc), (SELECT inserted_airspace.uuid FROM inserted_airspace)))
+    INSERT INTO CartographyLabelFIR(id, inform, time, type, longitude, latitude, map, uuidairspc) VALUES
+        (nextval('auto_id_cartography_label_fir'), NEW.inform, NEW.time, NEW.type, NEW.xlbl, NEW.ylbl, NEW.map,
+         (SELECT inserted_airspace.uuid FROM inserted_airspace));
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
     THEN
       UPDATE AirspaceTimeSlice
-        SET uuid = NEW.uuid, designator = NEW.nm, name = NEW.nl
-        WHERE AirspaceTimeSlice.uuid = OLD.uuid ;
+        SET designator = NEW.nm, name = NEW.nl
+        WHERE AirspaceTimeSlice.uuid = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid);
       UPDATE Airspace
-        SET uuid = NEW.uuid, _transasID = NEW.trID
-        WHERE Airspace.uuid = OLD.uuid;
+        SET  _transasID = NEW.id
+        WHERE Airspace.uuid = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid);
       UPDATE AirspaceVolume
-        SET
-          upperLimit          = ROW (NEW.top, NEW.UNL, NEW.top_unit),
-          upperLimitReference = NEW.format_top,
-          lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
-          lowerLimitReference = NEW.format_bottom
-        WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+
+      SET
+          lowerLimit     =     ROW
+                -- парсим столбец he из БД, чтобы вытащить нижнюю границу (достаем оттуда отдельно значение высоты, отдельно ед-цы измерения
+                ( (SELECT cast((regexp_matches(NEW.he, '[1-9][0-9]*(?= ?-)', 'g'))[1] as DECIMAL(12,4))), (SELECT (regexp_matches(NEW.he,'GND', 'g'))[1]),
+                -- две строчки ниже - выбирают единицы измерения: если в нижней границе есть 'FL' - то ед-цы = FL, если только цифры - то ед-цы = М, в противном случае NULL
+                (SELECT (CASE WHEN (SELECT (regexp_matches(NEW.he,'^FL', 'g'))[1]) ILIKE 'FL' THEN text 'FL'
+                WHEN (exists(SELECT regexp_matches(NEW.he, '[1-9][0-9]*(?= ?-)', '')) OR NEW.he ILIKE '%(%') THEN 'M' ELSE NULL END))),
+          lowerLimitReference = (CASE WHEN  (SELECT (regexp_matches(NEW.he,'^\(', 'g'))[1]) ILIKE '('THEN 'SFC'
+                WHEN (SELECT (regexp_matches(NEW.he,'^FL', 'g'))[1]) ILIKE 'FL' THEN NULL
+                WHEN exists(SELECT regexp_matches(NEW.he, '[1-9][0-9]*(?= ?-)', '')) THEN 'MSL' ELSE NULL END),
+          upperLimit          = ROW( (SELECT cast((regexp_matches(NEW.he, '([1-9][0-9]*)\)?$', 's'))[1] as DECIMAL(12,4))), (SELECT (regexp_matches(NEW.he,'UNL', 'g'))[1]),
+                (SELECT (CASE WHEN (SELECT (regexp_matches(NEW.he,'\sFL', 'g'))[1]) ILIKE ' FL' THEN text 'FL'
+                  WHEN (regexp_replace(NEW.he, '[A-Z]*([0-9]*)? ?- ?([A-Z]*?)0*', '') != '' OR NEW.he ILIKE '%(%') THEN 'M' ELSE NULL END))),
+          upperLimitReference =  CASE WHEN (SELECT (regexp_matches(NEW.he,'\s\(', 'g'))[1]) ILIKE ' (' THEN 'SFC'
+                WHEN (SELECT (regexp_matches(NEW.he,'\sFL', 'g'))[1]) ILIKE ' FL' THEN NULL
+                WHEN (SELECT regexp_matches(NEW.he, '([1-9][0-9]*)\)?$', 's')) NOTNULL THEN 'MSL' ELSE NULL END
+        WHERE AirspaceVolume.uuidairspc = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid);
+
       UPDATE Surface
-        SET geom = NEW.geom, srid = NEW.srid
+        SET geom = NEW.geom
         WHERE Surface.id = (SELECT AirspaceVolume.idSurface
                             FROM AirspaceVolume
-                            WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
-      UPDATE CartographyLabelFIRTimeSlice
-        SET longitude = NEW.xlbl, latitude = NEW.ylbl
-        WHERE CartographyLabelFIRTimeSlice.uuidairspace = OLD.uuid;
-      UPDATE CallsignDetail
-        SET callSign = NEW.cs
-        WHERE CallsignDetail.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                             FROM Airspace_AirTrafficManagementService
-                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid);
-      UPDATE RadioCommunicationChannelTimeSlice
-      SET frequencyTransmission.value = NEW.tf, frequencyReception.value = NEW.tr
-      WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT Service_RadioCommunicationChannel.uuidRadioCommunicationChannel
-                                               FROM Service_RadioCommunicationChannel
-                                               WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                                                                                   FROM Airspace_AirTrafficManagementService
-                                                                                                   WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
-      UPDATE UnitTimeSlice
-      SET type = NEW.unit_type
-      WHERE UnitTimeSlice.uuid IN (SELECT ServiceTimeSlice.uuidUnit FROM ServiceTimeSlice WHERE
-                                    ServiceTimeSlice.uuid IN (SELECT Airspace_AirTrafficManagementService.uuidAirTrafficManagementService
-                                             FROM Airspace_AirTrafficManagementService
-                                             WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid));
-      UPDATE Timesheet
-      SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
+                            WHERE AirspaceVolume.uuidairspc = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid));
+      UPDATE CartographyLabelFIR
+        SET longitude = NEW.xlbl, latitude = NEW.ylbl, inform = NEW.inform, time = NEW.time, type = NEW.type, map = NEW.map
+        WHERE CartographyLabelFIR.id = OLD.gid;
       RETURN NEW;
   ELSIF TG_OP = 'DELETE'
     THEN
-      WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = OLD.uuid),
-        deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = OLD.uuid RETURNING AirspaceTimeSlice.idTimeSlice),
+      WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid)),
+        deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid) RETURNING AirspaceTimeSlice.idTimeSlice),
         deleteTSAirspc AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirspcTS.idTimeSlice FROM deleteAirspcTS)),
-        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid RETURNING AirspaceVolume.idSurface),
+        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidairspc = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid) RETURNING AirspaceVolume.idSurface),
         deleteSrfc AS (DELETE FROM Surface WHERE Surface.id IN (SELECT deleteAirspcVlm.idSurface FROM deleteAirspcVlm)),
-        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid RETURNING uuidAirTrafficManagementService),
-        deleteAirTrffcMngmnt AS (DELETE FROM AirTrafficManagementService WHERE AirTrafficManagementService.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
-        deleteAirTrffcMngmntTS AS (DELETE FROM AirTrafficManagementServiceTimeSlice WHERE AirTrafficManagementServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice),
-        deleteTSAirTrffcMngmnt AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirTrffcMngmntTS.idTimeSlice FROM deleteAirTrffcMngmntTS)),
-        delete_AirTrffcCntrlSrvcTS AS (DELETE FROM AirTrafficControlServiceTimeSlice WHERE AirTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING AirTrafficControlServiceTimeSlice.uuid),
-        delete_AirTrffcCntrlSrvc AS (DELETE FROM AirTrafficControlService WHERE AirTrafficControlService.uuid IN (SELECT delete_AirTrffcCntrlSrvcTS.uuid FROM delete_AirTrffcCntrlSrvcTS)),
-        delete_GrndTrffcCntrlSrvcTS AS (DELETE FROM GroundTrafficControlServiceTimeSlice WHERE GroundTrafficControlServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING GroundTrafficControlServiceTimeSlice.uuid),
-        delete_GrndTrffcCntrlSrvc AS (DELETE FROM GroundTrafficControlService WHERE GroundTrafficControlService.uuid IN (SELECT delete_GrndTrffcCntrlSrvcTS.uuid FROM delete_GrndTrffcCntrlSrvcTS)),
-        delete_TrffcSprtnSrvcTS AS (DELETE FROM trafficseparationservicetimeslice WHERE trafficseparationservicetimeslice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING trafficseparationservicetimeslice.uuid),
-        delete_TrffcSprtnSrvc AS (DELETE FROM trafficseparationservice WHERE trafficseparationservice.uuid IN (SELECT delete_TrffcSprtnSrvcTS.uuid FROM delete_TrffcSprtnSrvcTS)),
-        delete_InfrmtnSrvcTS AS (DELETE FROM InformationServiceTimeSlice WHERE InformationServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)  RETURNING InformationServiceTimeSlice.uuid),
-        delete_InfrmtnSrvc AS (DELETE FROM InformationService WHERE InformationService.uuid IN (SELECT delete_InfrmtnSrvcTS.uuid FROM delete_InfrmtnSrvcTS)),
-        deleteSrvc AS (DELETE FROM Service WHERE Service.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) ),
-        deleteSrvcTS AS (DELETE FROM ServiceTimeSlice WHERE ServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice, uuidUnit),
-        deleteTSSrvc AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteSrvcTS.idTimeSlice FROM deleteSrvcTS)),
-        deleteUnit AS (DELETE FROM Unit WHERE Unit.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS)),
-        deleteUnitTS AS (DELETE FROM UnitTimeSlice WHERE UnitTimeSlice.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS) RETURNING idTimeSlice),
-        deleteTSUnit AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteUnitTS.idTimeSlice FROM deleteUnitTS)),
-        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelFIRTimeSlice WHERE CartographyLabelFIRTimeSlice.uuidairspace = OLD.uuid RETURNING CartographyLabelAirspaceAreaTimeSlice.uuid, idTimeSlice),
-        deleteCrtgrphLbl AS (DELETE FROM CartographyLabelFIR WHERE CartographyLabelFIR.uuid IN (SELECT deleteCrtgrphLblTS.uuid FROM deleteCrtgrphLblTS)),
-        deleteTSCrtgrphLbl AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteCrtgrphLblTS.idTimeSlice FROM deleteCrtgrphLblTS)),
-        deleteCllsgnDtl AS (DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
-        deleteSrvcRdCmmnctnChnnl AS (DELETE FROM Service_RadioCommunicationChannel WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING uuidRadioCommunicationChannel),
-        deleteRdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl)),
-        deleteRdCmmnctnChnnlTS AS (DELETE FROM RadioCommunicationChannelTimeSlice WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl) RETURNING idTimeSlice),
-        deleteAirpcActvtn AS (DELETE FROM AirspaceActivation WHERE AirspaceActivation.uuidairspace = OLD.uuid RETURNING AirspaceActivation.id),
-        deleteTmshht AS (DELETE FROM Timesheet WHERE Timesheet.idpropertieswithschedule = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn)),
-        deletePrprtsWthSchdl AS (DELETE FROM PropertiesWithSchedule WHERE id = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn))
-      DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteRdCmmnctnChnnlTS.idTimeSlice FROM deleteRdCmmnctnChnnlTS);
+        deleteCrtgrphLbl AS (DELETE FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid),
+        deleteAirpcActvtn AS (DELETE FROM AirspaceActivation WHERE AirspaceActivation.uuidairspc = (SELECT CartographyLabelFIR.uuidairspc FROM CartographyLabelFIR WHERE CartographyLabelFIR.id = OLD.gid) RETURNING AirspaceActivation.id),
+        deleteTmshht AS (DELETE FROM Timesheet WHERE Timesheet.idpropertieswithschedule = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn))
+        DELETE FROM PropertiesWithSchedule WHERE id = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn);
       RETURN NULL;
   END IF;
   RETURN NEW;
 END;
 $function$;
 
-CREATE TRIGGER fir_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  FIR_1608 FOR EACH ROW EXECUTE PROCEDURE fir_function();
+CREATE TRIGGER fir_function1613
+INSTEAD OF INSERT OR UPDATE OR DELETE ON fir1613 FOR EACH ROW EXECUTE PROCEDURE fir_function1613();
+
 
 CREATE OR REPLACE FUNCTION zapr_function()
   RETURNS TRIGGER
@@ -5253,7 +4498,7 @@ BEGIN
       insert_TimeSliceAirspace AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
       inserted_airspaceTS AS (INSERT INTO AirspaceTimeSlice (uuid, idTimeSlice, designator, name)
       VALUES (uuid_generate_v4(), (SELECT insert_TimeSliceAirspace.id FROM insert_TimeSliceAirspace), NEW.nm, NEW.nl)),
-      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidAirspace)
+      inserted_AirspaceVolume AS (INSERT INTO AirspaceVolume (upperLimit, upperLimitReference, lowerLimit, lowerLimitReference, idSurface, uuidairspc)
         VALUES (ROW (NEW.top, NEW.UNL, NEW.top_unit), NEW.format_top, ROW (NEW.bottom, NEW.GND, NEW.bottom_unit), NEW.format_bottom,
        (SELECT inserted_Srfc.id FROM inserted_Srfc), (SELECT inserted_airspace.uuid FROM inserted_airspace))),
       insert_Unit AS (INSERT INTO Unit (uuid) VALUES (uuid_generate_v4()) RETURNING uuid),
@@ -5265,15 +4510,15 @@ BEGIN
       insert_TimeSliceAirTrffcMngmntSrvc AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
       insert_AirTrafficManagementServiceTS AS (INSERT INTO AirTrafficManagementServiceTimeSlice (idTimeSlice, uuid) VALUES
         ((SELECT insert_TimeSliceAirTrffcMngmntSrvc.id FROM insert_TimeSliceAirTrffcMngmntSrvc),(SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
-      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidAirspace, uuidAirTrafficManagementService)
+      insert_Arspc_AirTrffcMngmntSrvc AS (INSERT INTO Airspace_AirTrafficManagementService (uuidairspc, uuidAirTrafficManagementService)
         VALUES ((SELECT inserted_airspace.uuid FROM inserted_airspace), (SELECT insert_AirTrffcMngmntSrvc.uuid FROM insert_AirTrffcMngmntSrvc))),
       insert_lblAirspaceArea AS (INSERT INTO CartographyLabelDraPraRsa(uuid) VALUES (uuid_generate_v4()) RETURNING CartographyLabelDraPraRsa.uuid),
       insert_TimeSliceLblAirspaceArea AS (INSERT INTO TimeSlice (id, validTimeBegin) VALUES (nextval('auto_id_timeslice'), '2016-09-15') RETURNING timeslice.id),
-      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelDraPraRsaTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspace) VALUES
+      insert_lblAirspaceAreaTS AS (INSERT INTO CartographyLabelDraPraRsaTimeSlice(idTimeSlice, uuid, longitude, latitude, uuidairspc) VALUES
         ((SELECT insert_TimeSliceLblAirspaceArea.id FROM insert_TimeSliceLblAirspaceArea), (SELECT insert_lblAirspaceArea.uuid FROM insert_lblAirspaceArea), NEW.xlbl, NEW.ylbl,
          (SELECT inserted_airspace.uuid FROM inserted_airspace))),
       insert_PrprtsWthSchdl AS (INSERT INTO PropertiesWithSchedule (id) VALUES (nextval('auto_id_properties_with_schedule')) RETURNING id),
-      insert_AirspcActvtn AS (INSERT INTO AirspaceActivation (id, uuidAirspace) VALUES ((SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl), (SELECT inserted_airspace.uuid FROM inserted_airspace)))
+      insert_AirspcActvtn AS (INSERT INTO AirspaceActivation (id, uuidairspc) VALUES ((SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl), (SELECT inserted_airspace.uuid FROM inserted_airspace)))
       INSERT INTO Timesheet (day, startTime, endTime, idPropertiesWithSchedule) VALUES (NEW.day_of_the_week, NEW.startTime, NEW.endTime, (SELECT insert_PrprtsWthSchdl.id FROM insert_PrprtsWthSchdl));
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE'
@@ -5290,15 +4535,15 @@ BEGIN
           upperLimitReference = NEW.format_top,
           lowerLimit          = ROW (NEW.bottom, NEW.GND, NEW.bottom_unit),
           lowerLimitReference = NEW.format_bottom
-        WHERE AirspaceVolume.uuidAirspace = OLD.uuid;
+        WHERE AirspaceVolume.uuidairspc = OLD.uuid;
       UPDATE Surface
         SET geom = NEW.geom, srid = NEW.srid
         WHERE Surface.id = (SELECT AirspaceVolume.idSurface
                             FROM AirspaceVolume
-                            WHERE AirspaceVolume.uuidAirspace = OLD.uuid);
+                            WHERE AirspaceVolume.uuidairspc = OLD.uuid);
       UPDATE CartographyLabelAirspaceAreaTimeSlice
         SET longitude = NEW.xlbl, latitude = NEW.ylbl
-        WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspace = OLD.uuid;
+        WHERE CartographyLabelAirspaceAreaTimeSlice.uuidairspc = OLD.uuid;
       UPDATE Timesheet
       SET day = NEW.day_of_the_week, startTime = NEW.startTime, endTime = NEW.endTime;
       RETURN NEW;
@@ -5307,9 +4552,9 @@ BEGIN
       WITH deleteAirspc AS (DELETE FROM Airspace WHERE Airspace.uuid = OLD.uuid),
         deleteAirspcTS AS (DELETE FROM AirspaceTimeSlice WHERE AirspaceTimeSlice.uuid = OLD.uuid RETURNING AirspaceTimeSlice.idTimeSlice),
         deleteTSAirspc AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirspcTS.idTimeSlice FROM deleteAirspcTS)),
-        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = OLD.uuid RETURNING AirspaceVolume.idSurface),
+        deleteAirspcVlm AS (DELETE FROM AirspaceVolume WHERE AirspaceVolume.uuidairspc = OLD.uuid RETURNING AirspaceVolume.idSurface),
         deleteSrfc AS (DELETE FROM Surface WHERE Surface.id IN (SELECT deleteAirspcVlm.idSurface FROM deleteAirspcVlm)),
-        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidAirspace = OLD.uuid RETURNING uuidAirTrafficManagementService),
+        deleteAirspcAirTrffcMngmnt AS (DELETE FROM Airspace_AirTrafficManagementService WHERE Airspace_AirTrafficManagementService.uuidairspc = OLD.uuid RETURNING uuidAirTrafficManagementService),
         deleteAirTrffcMngmnt AS (DELETE FROM AirTrafficManagementService WHERE AirTrafficManagementService.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
         deleteAirTrffcMngmntTS AS (DELETE FROM AirTrafficManagementServiceTimeSlice WHERE AirTrafficManagementServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice),
         deleteTSAirTrffcMngmnt AS (DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteAirTrffcMngmntTS.idTimeSlice FROM deleteAirTrffcMngmntTS)),
@@ -5325,14 +4570,14 @@ BEGIN
         deleteSrvcTS AS (DELETE FROM ServiceTimeSlice WHERE ServiceTimeSlice.uuid IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING idTimeSlice, uuidUnit),
         deleteTSSrvc AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteSrvcTS.idTimeSlice FROM deleteSrvcTS)),
         deleteUnit AS (DELETE FROM Unit WHERE Unit.uuid IN (SELECT deleteSrvcTS.uuidUnit FROM deleteSrvcTS)),
-        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelDraPraRsaTimeSlice WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspace = OLD.uuid RETURNING CartographyLabelDraPraRsaTimeSlice.uuid, idTimeSlice),
+        deleteCrtgrphLblTS AS (DELETE FROM CartographyLabelDraPraRsaTimeSlice WHERE CartographyLabelDraPraRsaTimeSlice.uuidairspc = OLD.uuid RETURNING CartographyLabelDraPraRsaTimeSlice.uuid, idTimeSlice),
         deleteCrtgrphLbl AS (DELETE FROM CartographyLabelDraPraRsa WHERE CartographyLabelDraPraRsa.uuid IN (SELECT deleteCrtgrphLblTS.uuid FROM deleteCrtgrphLblTS)),
         deleteTSCrtgrphLbl AS (DELETE FROM TimeSlice WHERE id IN (SELECT deleteCrtgrphLblTS.idTimeSlice FROM deleteCrtgrphLblTS)),
         deleteCllsgnDtl AS (DELETE FROM CallsignDetail WHERE CallsignDetail.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt)),
         deleteSrvcRdCmmnctnChnnl AS (DELETE FROM Service_RadioCommunicationChannel WHERE Service_RadioCommunicationChannel.uuidService IN (SELECT deleteAirspcAirTrffcMngmnt.uuidAirTrafficManagementService FROM deleteAirspcAirTrffcMngmnt) RETURNING uuidRadioCommunicationChannel),
         deleteRdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl)),
         deleteRdCmmnctnChnnlTS AS (DELETE FROM RadioCommunicationChannelTimeSlice WHERE RadioCommunicationChannelTimeSlice.uuid IN (SELECT deleteSrvcRdCmmnctnChnnl.uuidRadioCommunicationChannel FROM deleteSrvcRdCmmnctnChnnl) RETURNING idTimeSlice),
-        deleteAirpcActvtn AS (DELETE FROM AirspaceActivation WHERE AirspaceActivation.uuidairspace = OLD.uuid RETURNING AirspaceActivation.id),
+        deleteAirpcActvtn AS (DELETE FROM AirspaceActivation WHERE AirspaceActivation.uuidairspc = OLD.uuid RETURNING AirspaceActivation.id),
         deleteTmshht AS (DELETE FROM Timesheet WHERE Timesheet.idpropertieswithschedule = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn)),
         deletePrprtsWthSchdl AS (DELETE FROM PropertiesWithSchedule WHERE id = (SELECT deleteAirpcActvtn.id FROM deleteAirpcActvtn))
       DELETE FROM TimeSlice WHERE TimeSlice.id IN (SELECT deleteRdCmmnctnChnnlTS.idTimeSlice FROM deleteRdCmmnctnChnnlTS);
@@ -5384,34 +4629,33 @@ CREATE VIEW TPM_1608 AS
 
 
 -- TPT - ППМ МВЛ
-CREATE VIEW TPT_1608 AS
+CREATE VIEW tpt1613 AS
   SELECT
-    DesignatedPoint.uuid,
-    DesignatedPoint._transasID AS trID,
-    DesignatedPointTimeSlice.idTimeSlice AS TS,
-    DesignatedPointTimeSlice.designator AS nm,
+    cartographylabeltpt.id AS gid,
+    (SELECT DesignatedPoint._transasID AS id
+    FROM DesignatedPoint
+    WHERE DesignatedPoint.uuid = cartographylabeltpt.uuiddesignatedpoint AND DesignatedPoint._transasID LIKE 'TPT%'),
+     -- четырехбуквенник
+    (SELECT DesignatedPointTimeSlice.designator AS nm
+    FROM DesignatedPointTimeSlice, timeslice
+    WHERE designatedPointTimeSlice.uuid = cartographylabeltpt.uuiddesignatedpoint AND designatedpointtimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    --  тип аэродрома
     (SELECT segmentpoint.reportingatc AS tp
-     FROM SegmentPoint, SignificantPoint
-     WHERE SegmentPoint.idSignificantPoint = SignificantPoint.id AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
-    (SELECT Point.magneticVariation AS md
+    FROM SegmentPoint, SignificantPoint
+    WHERE SegmentPoint.idSignificantPoint = SignificantPoint.id AND cartographylabeltpt.uuiddesignatedpoint = SignificantPoint.uuidDesignatedPoint),
+    (SELECT Point.magneticVariation AS ugol
      FROM Point, SignificantPoint
-     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
-    (SELECT Point.latitude
-     FROM Point, SignificantPoint
-     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
-    (SELECT Point.longitude
-     FROM Point, SignificantPoint
-     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
+     WHERE Point.id = SignificantPoint.idPoint AND cartographylabeltpt.uuiddesignatedpoint = SignificantPoint.uuidDesignatedPoint),
+    -- координаты подписи
+    cartographylabeltpt.longitude as xlbl,
+    cartographylabeltpt.latitude as ylbl,
+    cartographylabeltpt.map as map,
+    -- геометрия
     (SELECT Point.geom
      FROM Point, SignificantPoint
-     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid),
-    (SELECT Point.srid
-     FROM Point, SignificantPoint
-     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = DesignatedPoint.uuid)
-  FROM DesignatedPointTimeSlice, DesignatedPoint, TimeSlice
-  WHERE DesignatedPointTimeSlice.uuid = DesignatedPoint.uuid AND DesignatedPointTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-09-15' AND
-         (TimeSlice.validTimeEnd > '2016-09-15' OR TimeSlice.validTimeEnd is NULL) AND DesignatedPoint._transasID LIKE 'TPT%' ;
+     WHERE Point.id = SignificantPoint.idPoint AND SignificantPoint.uuiddesignatedpoint = cartographylabeltpt.uuiddesignatedpoint)
+  FROM cartographylabeltpt;
 
 
 CREATE OR REPLACE FUNCTION tpm_function()
@@ -5514,11 +4758,6 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
-
-
-CREATE TRIGGER tpt_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  TPT_1608 FOR EACH ROW EXECUTE PROCEDURE tpt_function();
 
 
 CREATE VIEW mvl_1608 AS
@@ -5871,53 +5110,197 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
   tra_1608 FOR EACH ROW EXECUTE PROCEDURE tra_function();
 
 
-CREATE VIEW nav_1608 AS
+CREATE OR REPLACE VIEW uaa1613 AS
   SELECT
-    Navaid.uuid,
-    Navaid._transasID       AS trID,
-    NavaidTimeSlice.idTimeSlice,
-    NavaidTimeSlice.designator       AS nm,
-    NavaidTimeSlice.name             AS nl,
-    NavaidTimeSlice.type             AS tp,
-    CASE WHEN NavaidTimeSlice.type = 'NDB'
-      THEN (SELECT ((frequency).value || ' ' || (frequency).unit) AS tf
-            FROM NDB, timeslice
-            WHERE NDB.uuid = Navaid.uuid AND NDB.idtimeslice = TimeSlice.id  AND
-        TimeSlice.validTimeBegin <= '2016-07-21' AND
-        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-    WHEN NavaidTimeSlice.type = 'DME'
-      THEN (SELECT ((ghostFrequency).value || ' ' || (ghostFrequency).unit) AS tf
-            FROM DME, timeslice
-            WHERE DME.uuid = Navaid.uuid AND DME.idtimeslice = TimeSlice.id  AND
-        TimeSlice.validTimeBegin <= '2016-07-21' AND
-        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-    WHEN NavaidTimeSlice.type = 'ILS_DME'
-      THEN (SELECT ((frequency).value || ' ' || (frequency).unit) AS tf
-            FROM Localizer, timeslice
-            WHERE Localizer.uuid = Navaid.uuid AND localizer.idtimeslice = TimeSlice.id  AND
-        TimeSlice.validTimeBegin <= '2016-07-21' AND
-        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-    ELSE (SELECT ((frequency).value || ' ' || (frequency).unit) AS tf
-          FROM VOR, timeslice
-          WHERE VOR.uuid = Navaid.uuid AND VOR.idtimeslice = TimeSlice.id  AND
-        TimeSlice.validTimeBegin <= '2016-07-21' AND
-        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-    END,
-    Point.magneticVariation AS md,
-    Point.latitude,
-    Point.longitude,
-    Point.geom,
-    (SELECT (elevation).value AS height
-      FROM elevatedpoint
-    WHERE elevatedpoint.id = NavaidTimeSlice.idelevatedpoint  AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND
-           TimeSlice.validTimeBegin <= '2016-07-21' AND
-         (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL))
-  FROM Navaid, Point, NavaidTimeSlice, TimeSlice
-  WHERE point.id = NavaidTimeSlice.idElevatedPoint AND
-        NavaidTimeSlice.uuid = Navaid.uuid AND
-        NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND
-        TimeSlice.validTimeBegin <= '2016-07-21' AND
-        (TimeSlice.validTimeEnd > '2016-07-21' OR TimeSlice.validTimeEnd is NULL);
+    cartographylabelairspacearea.id AS gid,
+    (SELECT Airspace._transasID AS id
+    FROM Airspace
+    WHERE Airspace.uuid = cartographylabelairspacearea.uuidairspc),
+    -- наименование ИКАО воздушного пространства
+    (SELECT AirspaceTimeSlice.designator AS nm
+    FROM AirspaceTimeSlice, TimeSlice
+    WHERE AirspaceTimeSlice.uuid = cartographylabelairspacearea.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- наименование русское воздушного пространства
+    (SELECT AirspaceTimeSlice.name AS nl
+    FROM AirspaceTimeSlice, TimeSlice
+    WHERE AirspaceTimeSlice.uuid = cartographylabelairspacearea.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    -- соединение всех высотных полей для правильного вывода для стилистики
+    (SELECT concat(
+                    CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN '(' END,
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    (CASE WHEN (lowerLimit).unit = 'FL' THEN (lowerLimit).unit
+                      ELSE ''
+                      END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((lowerLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((lowerLimit).value,0))
+                      WHEN (lowerLimit).value IS NULL THEN 'GND'
+                      ELSE cast(round((lowerLimit).value,0) as text)
+                      END),
+                      CASE WHEN AirspaceVolume.lowerLimitReference = 'SFC' THEN ')' END,
+                     '#',
+                  -- проверяем в FL или метрах у нас высота, если в FL - выводим это в столбец
+                    CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN '(' END,
+                    (CASE WHEN (upperLimit).unit = 'FL' THEN (upperLimit).unit
+                      ELSE ''
+                      END),
+                   -- проверяем количество цифр в высоте, если их две - то добавляем спереди нолик
+                   (CASE WHEN cast(round((upperLimit).value,0) as INTEGER) < 100
+                      THEN concat('0', round((upperLimit).value,0))
+                      WHEN (upperLimit).value IS NULL THEN 'UNL'
+                      ELSE cast(round((upperLimit).value,0) as text)
+                      END),
+                   CASE WHEN AirspaceVolume.upperlimitreference = 'SFC' THEN ')' END)
+    FROM AirspaceVolume
+    WHERE AirspaceVolume.uuidairspc = cartographylabelairspacearea.uuidairspc)
+    AS he,
+    (SELECT concat(
+        (SELECT CallsignDetail.callSign
+         FROM CallsignDetail, Airspace_AirTrafficManagementService, timeslice, AirTrafficManagementServiceTimeSlice
+         WHERE CallsignDetail.uuidService = AirTrafficManagementServiceTimeSlice.uuid AND
+               AirTrafficManagementServiceTimeSlice.uuid =
+               Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+               Airspace_AirTrafficManagementService.uuidairspc = cartographylabelairspacearea.uuidairspc AND
+               AirTrafficManagementServiceTimeSlice.idtimeslice = timeslice.id AND
+               TimeSlice.validTimeBegin <= '2016-12-08' AND
+               (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)
+         LIMIT 1),
+
+        (SELECT (frequencyTransmission).value
+         FROM RadioCommunicationChannelTimeSlice, Service_RadioCommunicationChannel, timeslice,
+           Airspace_AirTrafficManagementService
+         WHERE
+           RadioCommunicationChannelTimeSlice.uuid = Service_RadioCommunicationChannel.uuidRadioCommunicationChannel AND
+           Service_RadioCommunicationChannel.uuidService =
+           Airspace_AirTrafficManagementService.uuidAirTrafficManagementService AND
+           Airspace_AirTrafficManagementService.uuidairspc = cartographylabelairspacearea.uuidairspc AND
+           RadioCommunicationChannelTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2016-12-08'
+           AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)
+         LIMIT 1)))
+    AS fr,
+    cartographylabelairspacearea.longitude as xlbl,
+    cartographylabelairspacearea.latitude as ylbl,
+    (SELECT Surface.geom
+      FROM Surface, AirspaceVolume, AirspaceTimeSlice, timeslice
+    WHERE Surface.id = AirspaceVolume.idSurface AND AirspaceVolume.uuidairspc = cartographylabelairspacearea.uuidairspc AND
+          AirspaceTimeSlice.uuid = AirspaceVolume.uuidairspc AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    cartographylabelairspacearea.map as map
+  FROM cartographylabelairspacearea WHERE cartographylabelairspacearea.uuidairspc IN
+          (SELECT airspacetimeslice.uuid FROM airspacetimeslice, timeslice WHERE AirspaceTimeSlice.type = 'ATZ' AND AirspaceTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL));
+
+
+
+CREATE OR REPLACE VIEW nav1613  as
+SELECT
+    cartographylabelnav.id AS gid,
+    (SELECT Navaid._transasID AS id
+     FROM Navaid
+     WHERE Navaid.uuid = cartographylabelnav.uuidnavaid),
+    (SELECT NavaidTimeSlice.designator AS nm
+     FROM NavaidTimeSlice, timeslice
+     WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND navaidtimeslice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+    (SELECT NavaidTimeSlice.name AS nl
+     FROM NavaidTimeSlice, timeslice
+     WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND navaidtimeslice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+    (SELECT NavaidTimeSlice.type AS tp
+     FROM NavaidTimeSlice, timeslice
+     WHERE NavaidTimeSlice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+    -- Выборка частоты РНС. В зависимости от типа РНС частота храняится в разных таблицах. Если Nav.type = 'NDB',
+    -- то информация о частоте будет лежать в таблице NDB
+
+    -- если тип NDB
+    CASE WHEN (SELECT NavaidTimeSlice.type FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'NDB'
+      -- то частоту выбираем из таблицы NDB
+       THEN (SELECT ((frequency).value || ' ' || (frequency).unit)
+             FROM NDB, timeslice, navaid_navaidequipment
+             WHERE NDB.uuid = navaid_navaidequipment.uuidnavaidequipment AND
+                   navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
+                   NDB.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+    -- если тип DME
+    WHEN (SELECT NavaidTimeSlice.type FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'DME'
+      --  то частоту выбираем из таблицы DME
+      THEN (SELECT ((ghostFrequency).value || ' ' || (ghostFrequency).unit)
+             FROM DME, timeslice, navaid_navaidequipment
+             WHERE DME.uuid = navaid_navaidequipment.uuidnavaidequipment AND
+                   navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
+                   DME.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+    -- если тип ILS_DME
+    WHEN (SELECT NavaidTimeSlice.type FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'ILS_DME'
+      --  то частоту выбираем из таблицы Localizer
+      THEN (SELECT ((frequency).value || ' ' || (frequency).unit)
+             FROM Localizer, timeslice, navaid_navaidequipment
+             WHERE Localizer.uuid = navaid_navaidequipment.uuidnavaidequipment AND
+                   navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
+                   Localizer.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+    -- оставшийся тип, еще не рассмотренный - VOR
+    ELSE (SELECT ((frequency).value || ' ' || (frequency).unit)
+           FROM VOR, timeslice, navaid_navaidequipment
+           WHERE VOR.uuid = navaid_navaidequipment.uuidnavaidequipment AND
+                   navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
+                   VOR.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+     END
+     AS tf,
+    -- магнитное склонение
+       (SELECT Point.magneticVariation AS ugol
+       FROM point, NavaidTimeSlice, timeslice
+       WHERE point.id = NavaidTimeSlice.idElevatedPoint AND navaidtimeslice.uuid = cartographylabelnav.uuidnavaid
+             AND navaidtimeslice.idTimeSlice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+             (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+    -- проверка является ли РНС аэродромным
+     CASE WHEN (SELECT NavaidTimeSlice.purpose FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'TERMINAL'
+       THEN text 'да'
+       WHEN (SELECT NavaidTimeSlice.purpose FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'ALL'
+       THEN text 'да'
+       ELSE text 'нет'
+       END
+    AS isa,
+    -- высотная отметка
+    (SELECT (elevation).value AS ha_m
+      FROM elevatedpoint, timeslice, navaidtimeslice
+      WHERE elevatedpoint.id = NavaidTimeSlice.idelevatedpoint AND navaidtimeslice.uuid = cartographylabelnav.uuidnavaid
+            AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+            (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+       -- координаты подписи
+       cartographylabelnav.longitude AS xlbl,
+       cartographylabelnav.latitude  AS ylbl,
+       cartographylabelnav.map       AS map,
+       (SELECT Point.geom
+        FROM Point, navaidtimeslice, timeslice
+        WHERE Point.id = navaidtimeslice.idelevatedpoint AND navaidtimeslice.uuid = cartographylabelnav.uuidnavaid
+            AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND TimeSlice.validTimeBegin <= '2016-12-08' AND
+            (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
+FROM cartographylabelnav;
+
 
 -- Триггеры для координат
 /*
@@ -5951,11 +5334,11 @@ AFTER INSERT ON AirportHeliportTimeSlice FOR EACH ROW EXECUTE PROCEDURE trigger_
 CREATE OR REPLACE FUNCTION trigger_update_CartographyLabel_CTA()
   RETURNS TRIGGER AS $update_lbl$
 BEGIN
-  INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (uuidairspace) VALUES
+  INSERT INTO CartographyLabel_CTA_CTR_TMA_UAA (uuidairspc) VALUES
     (
       -- (SELECT srid
       -- FROM Surface, airspacevolume, airspace
-      -- WHERE Surface.id IN (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidAirspace = (SELECT Airspace.uuid FROM Airspace WHERE Airspace.uuid = NEW.uuid))),
+      -- WHERE Surface.id IN (SELECT AirspaceVolume.idSurface FROM AirspaceVolume WHERE AirspaceVolume.uuidairspc = (SELECT Airspace.uuid FROM Airspace WHERE Airspace.uuid = NEW.uuid))),
       NEW.uuid
     );
   RETURN NEW;
@@ -6005,10 +5388,6 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER inserting_Point
 BEFORE INSERT OR UPDATE ON Point FOR EACH ROW
-EXECUTE PROCEDURE trigger_insert_Point();
-
-CREATE TRIGGER label_geom
-BEFORE INSERT OR UPDATE ON CartographyLabelARPTimeSlice FOR EACH ROW
 EXECUTE PROCEDURE trigger_insert_Point();
 
 --CREATE TRIGGER inserting_Point_CartographyLabel_CTA_CTR_TMA_UAA
@@ -6150,37 +5529,6 @@ $function$;
 CREATE TRIGGER tpm_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   TPM FOR EACH ROW EXECUTE PROCEDURE tpm_function();
-
--- TPT - ППМ трасс
-CREATE VIEW TPT AS
-  SELECT
-    SegmentPoint.id,
-    (SELECT DesignatedPoint._transasID AS trID
-     FROM DesignatedPoint, significantpoint
-     WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND
-           significantpoint.id = segmentpoint.idsignificantpoint),
-    (SELECT DesignatedPoint.designator AS nm
-     FROM DesignatedPoint, significantpoint
-     WHERE designatedpoint.uuid = significantpoint.uuiddesignatedpoint AND
-           significantpoint.id = segmentpoint.idsignificantpoint),
-    segmentpoint.reportingatc AS tp,
-    point.magneticVariation   AS md,
-    point.latitude,
-    point.longitude,
-    point.geom
-  FROM SegmentPoint, significantpoint, point
-  WHERE SegmentPoint.idsignificantpoint = significantpoint.id AND significantpoint.idpoint = point.id
-        AND (SegmentPoint.id IN (SELECT idEnRouteSegmentPointStart
-                                 FROM RouteSegment
-                                 WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid
-                                                                  FROM Route
-                                                                  WHERE Route.type = 'ATS')) OR
-             SegmentPoint.id IN (SELECT idenroutesegmentpointend
-                                 FROM RouteSegment
-                                 WHERE RouteSegment.uuidRoute IN (SELECT Route.uuid
-                                                                  FROM Route
-                                                                  WHERE Route.type = 'ATS')));
-
 
 CREATE TRIGGER tpt_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
