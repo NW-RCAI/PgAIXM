@@ -3230,6 +3230,94 @@ CREATE OR REPLACE VIEW arp1613 AS
           AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL));
 
 
+CREATE OR REPLACE VIEW arp1704 AS
+  SELECT
+    cartographylabelarp.id AS gid,
+    (SELECT AirportHeliport._transasID AS id
+    FROM AirportHeliport
+    WHERE AirportHeliport.uuid = cartographylabelarp.uuidarphlp),
+    -- наименование на русском
+    (SELECT AirportHeliportTimeSlice.name AS nl
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2017-03-30' AND (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    -- четырехбуквенник
+    (SELECT AirportHeliportTimeSlice.designator AS nm
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2017-03-30' AND (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    --  тип аэродрома
+    (SELECT AirportHeliportTimeSlice.controltype AS tp
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2017-03-30' AND (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT (elevation).value AS ha_m
+      FROM elevatedpoint, airportheliporttimeslice, timeslice
+    WHERE elevatedpoint.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp
+          AND airportheliporttimeslice.idTimeSlice  = timeslice.id
+          AND timeslice.validTimeBegin <= '2017-03-30' AND (timeslice.validTimeEnd > '2017-03-30' OR timeslice.validTimeEnd is NULL)),
+    (SELECT (nominallength).value AS lr_m
+     FROM RunwayTimeSlice, timeslice
+     WHERE RunwayTimeSlice.uuidarphlp = cartographylabelarp.uuidarphlp AND
+           RunwayTimeSlice.idtimeslice = timeslice.id and TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    -- поле покрытие ВПП аэродрома cov
+    (SELECT
+       CASE WHEN
+         -- если composition равен любому значению из перечисленного множества - то покрытие ВПП аэродрома твёрдон
+         (surfacecharacteristics.composition IN
+           ('ASPH', 'ASPH_GRASS', 'CONC', 'CONC_ASPH', 'CONC_GRS', 'BITUM', 'BRICK', 'MEMBRANE', 'METAL', 'MATS', 'PIERCED_STEEL', 'NON_BITUM_MIX', 'OTHER: H'))
+         THEN text 'твердое покрытие'
+        -- если покрытие не входит в этот список - то оно NULL
+        ELSE NULL
+         END
+         AS cov
+     FROM surfacecharacteristics, runwaytimeslice, timeslice
+     WHERE RunwayTimeSlice.idsurfacecharacteristics = surfacecharacteristics.id
+           AND RunwayTimeSlice.uuidarphlp = cartographylabelarp.uuidarphlp AND RunwayTimeSlice.idtimeslice = timeslice.id AND TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    -- поле угол поворота ВПП аэродрома
+    (SELECT RunwayDirectionTimeSlice.trueBearing AS ugol
+    FROM RunwayDirectionTimeSlice
+    WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
+      TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)) AND
+      runwaytimeslice.uuidarphlp = cartographylabelarp.uuidarphlp)
+          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL))),
+    -- закрыт или открыт аэродром
+    (SELECT AirportHeliportTimeSlice.abandoned AS st
+    FROM AirportHeliportTimeSlice, timeslice
+    WHERE airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp AND airportheliporttimeslice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2017-03-30' AND (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    -- освещение аэродрома
+    (SELECT
+       CASE WHEN RunwayDirectionTimeSlice.classLightingJAR = 'BALS' THEN text 'есть'
+         WHEN RunwayDirectionTimeSlice.classLightingJAR = 'OTHER: NODATA' THEN text 'неизвестно'
+         WHEN RunwayDirectionTimeSlice.classLightingJAR = 'NALS' THEN text 'нет'
+         ELSE RunwayDirectionTimeSlice.classLightingJAR
+      END
+         AS le
+    FROM RunwayDirectionTimeSlice
+    WHERE runwaydirectiontimeslice.uuidrunway = (SELECT runwaytimeslice.uuid FROM runwaytimeslice WHERE runwaytimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE
+      TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)) AND
+      runwaytimeslice.uuidarphlp = cartographylabelarp.uuidarphlp)
+          AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL))),
+    -- координаты подписи
+    CartographyLabelARP.longitude as xlbl,
+    CartographyLabelARP.latitude as ylbl,
+    CartographyLabelARP.map as map,
+    -- геометрия
+    (SELECT Point.geom
+      FROM Point, airportheliporttimeslice, timeslice
+      WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL))
+  FROM cartographylabelarp WHERE cartographylabelarp.uuidarphlp in (SELECT airportheliporttimeslice.uuid
+                  FROM airportheliporttimeslice, timeslice WHERE AirportHeliportTimeSlice.type IS NULL AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id
+          AND TimeSlice.validTimeBegin <= '2017-03-30' AND (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL));
 
 
 CREATE OR REPLACE VIEW als1613 AS
@@ -3322,7 +3410,7 @@ CREATE OR REPLACE VIEW als1613 AS
           AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL));
 
 
-CREATE OR REPLACE FUNCTION arp_function1613()
+CREATE OR REPLACE FUNCTION arp_function()
   RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $function$
@@ -3378,7 +3466,7 @@ BEGIN
                             FROM AirportHeliportTimeSlice
                             WHERE AirportHeliportTimeSlice.uuid = (SELECT uuidarphlp FROM cartographylabelarp WHERE id = OLD.gid));
           UPDATE cartographylabelarp
-          SET longitude = NEW.xlbl, latitude = NEW.ylbl
+          SET longitude = NEW.xlbl, latitude = NEW.ylbl, map = NEW.map
           WHERE cartographylabelarp.id = OLD.gid;
           IF NEW.cov = 'твердое покрытие'
           THEN
@@ -3441,9 +3529,12 @@ BEGIN
 END;
 $function$;
 
-CREATE TRIGGER arp_function1613
+CREATE TRIGGER arp_function
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  arp1613 FOR EACH ROW EXECUTE PROCEDURE arp_function1613();
+  arp1613 FOR EACH ROW EXECUTE PROCEDURE arp_function();
+CREATE TRIGGER arp_function
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  arp1704 FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
 
 CREATE OR REPLACE FUNCTION als_function1613()
