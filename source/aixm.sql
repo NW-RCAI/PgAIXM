@@ -2644,7 +2644,6 @@ CREATE TABLE CartographyLabelNAV
   id INTEGER NOT NULL PRIMARY KEY  DEFAULT nextval('auto_id_cartography_label_nav'),
   longitude                longitude,
   latitude                latitude,
-
   map character varying(20),
   srid                INTEGER REFERENCES spatial_ref_sys (srid),
   uuidnavaid id REFERENCES Navaid (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -5249,8 +5248,7 @@ CREATE OR REPLACE VIEW uaa1613 AS
           AND TimeSlice.validTimeBegin <= '2016-12-08' AND (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL));
 
 
-
-CREATE OR REPLACE VIEW nav1613  as
+CREATE OR REPLACE VIEW nav1702  as
 SELECT
     cartographylabelnav.id AS gid,
     (SELECT Navaid._transasID AS id
@@ -5259,82 +5257,96 @@ SELECT
     (SELECT NavaidTimeSlice.designator AS nm
      FROM NavaidTimeSlice, timeslice
      WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND navaidtimeslice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)),
     (SELECT NavaidTimeSlice.name AS nl
      FROM NavaidTimeSlice, timeslice
      WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND navaidtimeslice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)),
     (SELECT NavaidTimeSlice.type AS tp
      FROM NavaidTimeSlice, timeslice
      WHERE NavaidTimeSlice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)),
     -- Выборка частоты РНС. В зависимости от типа РНС частота храняится в разных таблицах. Если Nav.type = 'NDB',
     -- то информация о частоте будет лежать в таблице NDB
 
     -- если тип NDB
     CASE WHEN (SELECT NavaidTimeSlice.type FROM navaidtimeslice, timeslice
            WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'NDB'
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'NDB'
       -- то частоту выбираем из таблицы NDB
        THEN (SELECT ((frequency).value || ' ' || (frequency).unit)
              FROM NDB, timeslice, navaid_navaidequipment
              WHERE NDB.uuid = navaid_navaidequipment.uuidnavaidequipment AND
                    navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
-                   NDB.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+                   NDB.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+                   (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL))
     -- если тип DME
     WHEN (SELECT NavaidTimeSlice.type FROM navaidtimeslice, timeslice
            WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'DME'
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'DME'
       --  то частоту выбираем из таблицы DME
       THEN (SELECT ((ghostFrequency).value || ' ' || (ghostFrequency).unit)
              FROM DME, timeslice, navaid_navaidequipment
              WHERE DME.uuid = navaid_navaidequipment.uuidnavaidequipment AND
                    navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
-                   DME.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+                   DME.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+                   (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL))
     -- если тип ILS_DME
     WHEN (SELECT NavaidTimeSlice.type FROM navaidtimeslice, timeslice
            WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'ILS_DME'
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'ILS_DME'
       --  то частоту выбираем из таблицы Localizer
       THEN (SELECT ((frequency).value || ' ' || (frequency).unit)
              FROM Localizer, timeslice, navaid_navaidequipment
              WHERE Localizer.uuid = navaid_navaidequipment.uuidnavaidequipment AND
                    navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
-                   Localizer.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+                   Localizer.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+                   (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL))
     -- оставшийся тип, еще не рассмотренный - VOR
     ELSE (SELECT ((frequency).value || ' ' || (frequency).unit)
            FROM VOR, timeslice, navaid_navaidequipment
            WHERE VOR.uuid = navaid_navaidequipment.uuidnavaidequipment AND
                    navaid_navaidequipment.uuidnavaid = cartographylabelnav.uuidnavaid AND
-                   VOR.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-                   (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL))
+                   VOR.idtimeslice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+                   (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL))
      END
      AS tf,
     -- магнитное склонение
        (SELECT Point.magneticVariation AS ugol
        FROM point, NavaidTimeSlice, timeslice
        WHERE point.id = NavaidTimeSlice.idElevatedPoint AND navaidtimeslice.uuid = cartographylabelnav.uuidnavaid
-             AND navaidtimeslice.idTimeSlice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-             (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)),
+             AND navaidtimeslice.idTimeSlice = TimeSlice.id AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+             (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)),
+    -- проверка, является ли РНС трассовым
+    CASE WHEN (SELECT NavaidTimeSlice.purpose FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'ENROUTE'
+          THEN text 'да'
+          WHEN (SELECT NavaidTimeSlice.purpose FROM navaidtimeslice, timeslice
+           WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'ALL'
+       THEN text 'да'
+       ELSE text 'нет'
+       END
+    AS ist,
     -- проверка является ли РНС аэродромным
      CASE WHEN (SELECT NavaidTimeSlice.purpose FROM navaidtimeslice, timeslice
            WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'TERMINAL'
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'TERMINAL'
        THEN text 'да'
        WHEN (SELECT NavaidTimeSlice.purpose FROM navaidtimeslice, timeslice
            WHERE navaidtimeslice.uuid = cartographylabelnav.uuidnavaid AND NavaidTimeSlice.idTimeSlice = TimeSlice.id
-           AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-           (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd IS NULL)) = 'ALL'
+           AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+           (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd IS NULL)) = 'ALL'
        THEN text 'да'
        ELSE text 'нет'
        END
@@ -5343,8 +5355,8 @@ SELECT
     (SELECT (elevation).value AS ha_m
       FROM elevatedpoint, timeslice, navaidtimeslice
       WHERE elevatedpoint.id = NavaidTimeSlice.idelevatedpoint AND navaidtimeslice.uuid = cartographylabelnav.uuidnavaid
-            AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-            (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+            AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+            (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd is NULL)),
        -- координаты подписи
        cartographylabelnav.longitude AS xlbl,
        cartographylabelnav.latitude  AS ylbl,
@@ -5352,9 +5364,114 @@ SELECT
        (SELECT Point.geom
         FROM Point, navaidtimeslice, timeslice
         WHERE Point.id = navaidtimeslice.idelevatedpoint AND navaidtimeslice.uuid = cartographylabelnav.uuidnavaid
-            AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND TimeSlice.validTimeBegin <= '2016-12-08' AND
-            (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))
+            AND NavaidTimeSlice.idTimeSlice  = TimeSlice.id  AND TimeSlice.validTimeBegin <= '2017-02-02' AND
+            (TimeSlice.validTimeEnd > '2017-02-02' OR TimeSlice.validTimeEnd is NULL))
 FROM cartographylabelnav;
+
+CREATE OR REPLACE FUNCTION nav_function()
+  RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT'
+  THEN
+    -- вставка нового объекта подписи. При вставке в view NAV вставляется только подпись без геометрии и nm, nl и прочих полей , взятых от Feature
+        WITH select_Navaiduuid AS (SELECT uuid FROM Navaid WHERE Navaid._transasid = NEW.id)
+        INSERT INTO cartographylabelnav (id, longitude, latitude, map, uuidnavaid)
+        VALUES (nextval('auto_id_cartography_label_arp'), NEW.xlbl, NEW.ylbl, NEW.map, (SELECT select_Navaiduuid.uuid FROM select_Navaiduuid));
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE' THEN
+          UPDATE NavaidTimeSlice
+          SET designator = NEW.nm, name = NEW.nl, type = NEW.tp
+          WHERE NavaidTimeSlice.uuid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid);
+
+        IF NEW.tp = 'NDB' THEN
+          UPDATE NDB
+          SET frequency = ROW((SELECT cast((regexp_matches(NEW.tf, '^[0-9]*\.[0-9]*', ''))[1] as DECIMAL(12,4))), (SELECT cast((regexp_matches(NEW.tf, '[A-Z].*', ''))[1] as VARCHAR(40))))
+          WHERE NDB.uuid IN (SELECT uuidnavaid FROM navaid_navaidequipment
+                            WHERE navaid_navaidequipment.uuidnavaid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+        ELSEIF NEW.tp = 'DME' THEN
+          UPDATE DME
+          SET ghostFrequency = ROW((SELECT cast((regexp_matches(NEW.tf, '^[0-9]*\.[0-9]*', ''))[1] as DECIMAL(12,4))), (SELECT cast((regexp_matches(NEW.tf, '[A-Z].*', ''))[1] as VARCHAR(40))))
+          WHERE DME.uuid IN (SELECT uuidnavaid FROM navaid_navaidequipment
+                            WHERE navaid_navaidequipment.uuidnavaid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+        ELSEIF NEW.tp = 'ILS_DME' THEN
+          UPDATE Localizer
+          SET frequency = ROW((SELECT cast((regexp_matches(NEW.tf, '^[0-9]*\.[0-9]*', ''))[1] as DECIMAL(12,4))), (SELECT cast((regexp_matches(NEW.tf, '[A-Z].*', ''))[1] as VARCHAR(40))))
+          WHERE Localizer.uuid IN (SELECT uuidnavaid FROM navaid_navaidequipment
+                            WHERE navaid_navaidequipment.uuidnavaid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+        ELSE UPDATE VOR
+          SET frequency = ROW((SELECT cast((regexp_matches(NEW.tf, '^[0-9]*\.[0-9]*', ''))[1] as DECIMAL(12,4))), (SELECT cast((regexp_matches(NEW.tf, '[A-Z].*', ''))[1] as VARCHAR(40))))
+          WHERE VOR.uuid IN (SELECT uuidnavaid FROM navaid_navaidequipment
+                            WHERE navaid_navaidequipment.uuidnavaid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+        END IF ;
+
+        IF NEW.isa = 'да' AND NEW.ist = 'да'
+          THEN
+          UPDATE NavaidTimeSlice
+          SET purpose = 'ALL'
+          WHERE navaidtimeslice.uuid IN (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid);
+        ELSEIF NEW.isa = 'да' AND NEW.ist = 'нет'
+          THEN
+          UPDATE NavaidTimeSlice
+          SET purpose = 'TERMINAL'
+          WHERE navaidtimeslice.uuid IN (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid);
+        ELSEIF NEW.isa = 'нет' AND NEW.ist = 'да'
+          THEN
+          UPDATE NavaidTimeSlice
+          SET purpose = 'ENROUTE'
+          WHERE navaidtimeslice.uuid IN (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid);
+        END IF;
+          UPDATE Point
+          SET magneticVariation = NEW.ugol
+          WHERE Point.id = (SELECT NavaidTimeSlice.idelevatedpoint
+                            FROM NavaidTimeSlice
+                            WHERE NavaidTimeSlice.uuid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+          UPDATE Point
+          SET geom = NEW.geom
+          WHERE Point.id = (SELECT NavaidTimeSlice.idelevatedpoint
+                            FROM NavaidTimeSlice
+                            WHERE NavaidTimeSlice.uuid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+          UPDATE elevatedpoint
+          SET elevation = ROW (NEW.ha_m, NULL, 'M')
+          WHERE elevatedpoint.id = (SELECT NavaidTimeSlice.idelevatedpoint
+                            FROM NavaidTimeSlice
+                            WHERE NavaidTimeSlice.uuid = (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid));
+          UPDATE cartographylabelnav
+          SET longitude = NEW.xlbl, latitude = NEW.ylbl, map = NEW.map
+          WHERE cartographylabelnav.id = OLD.gid;
+          RETURN NEW;
+  ELSIF TG_OP = 'DELETE'
+    THEN
+       WITH
+    delete_navTS AS (DELETE FROM navaidtimeslice WHERE navaidtimeslice.uuid =
+                        (SELECT uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid)
+                      RETURNING idelevatedpoint, navaidtimeslice.uuid, navaidtimeslice.idtimeslice),
+    delete_TS AS (DELETE FROM timeslice WHERE id = (SELECT delete_navTS.idtimeslice FROM delete_navTS)),
+    delete_LblNav AS (DELETE FROM cartographylabelnav WHERE id = OLD.gid),
+    delete_NavNavEqpmnt AS (DELETE FROM navaid_navaidequipment WHERE uuidnavaid = (SELECT uuid FROM delete_navTS) RETURNING uuidnavaidequipment),
+    delete_NDB AS (DELETE FROM ndb WHERE ndb.uuid = (SELECT uuidnavaidequipment FROM delete_NavNavEqpmnt) RETURNING idtimeslice),
+    delete_NDBTS AS (DELETE FROM timeslice WHERE id = (SELECT idtimeslice FROM delete_NDB)),
+    delete_DME AS (DELETE FROM dme WHERE dme.uuid = (SELECT uuidnavaidequipment FROM delete_NavNavEqpmnt) RETURNING idtimeslice),
+    delete_DMETS AS (DELETE FROM timeslice WHERE id = (SELECT idtimeslice FROM delete_DME)),
+    delete_Localizer AS (DELETE FROM Localizer WHERE Localizer.uuid = (SELECT uuidnavaidequipment FROM delete_NavNavEqpmnt) RETURNING idtimeslice),
+    delete_LocalizerTS AS (DELETE FROM timeslice WHERE id = (SELECT idtimeslice FROM delete_Localizer)),
+    delete_VOR AS (DELETE FROM vor WHERE vor.uuid = (SELECT uuidnavaidequipment FROM delete_NavNavEqpmnt) RETURNING idtimeslice),
+    delete_VORTS AS (DELETE FROM timeslice WHERE id = (SELECT idtimeslice FROM delete_VOR)),
+    delete_point AS (DELETE FROM Point WHERE Point.id IN (SELECT delete_navTS.idelevatedpoint FROM delete_navTS)),
+    delete_navaid AS (DELETE FROM Navaid WHERE Navaid.uuid = (SELECT cartographylabelnav.uuidnavaid FROM cartographylabelnav WHERE id = OLD.gid))
+         DELETE FROM ElevatedPoint
+        WHERE ElevatedPoint.id IN (SELECT delete_navTS.idelevatedpoint FROM delete_navTS);
+      RETURN NULL;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+
+CREATE TRIGGER nav_trigger
+INSTEAD OF INSERT OR UPDATE OR DELETE ON
+  nav1702 FOR EACH ROW EXECUTE PROCEDURE nav_function();
 
 
 -- Триггеры для координат
@@ -5629,104 +5746,4 @@ CREATE TRIGGER GP_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   GP FOR EACH ROW EXECUTE PROCEDURE tpm_function();
 
-
-
--- ROW(NEW.ha,NULL,'M')
-CREATE OR REPLACE FUNCTION nav_function()
-  RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-  IF TG_OP = 'INSERT'
-  THEN
-    WITH inserted_Point AS ( INSERT INTO Point (id, latitude, longitude, magneticVariation, geom)
-    VALUES (NEW.id, NEW.latitude, NEW.longitude, NEW.md, NEW.geom)
-    RETURNING id)
-    INSERT INTO Navaid (uuid, _transasID, designator, name, type, idElevatedPoint)
-    VALUES (uuid_generate_v4(), NEW.trID, NEW.nm, NEW.nl, NEW.tp, (SELECT inserted_Point.id
-                                                                   FROM inserted_Point));
-    IF NEW.tp = 'NDB'
-    THEN
-      INSERT INTO NDB (uuid, frequency) VALUES (NEW.uuid, NEW.tf);
-    ELSEIF NEW.tp = 'DME'
-      THEN
-        INSERT INTO DME (uuid, ghostFrequency) VALUES (NEW.uuid, NEW.tf);
-    ELSEIF NEW.tp = 'ILS_DME'
-      THEN
-        INSERT INTO Localizer (uuid, frequency) VALUES (NEW.uuid, NEW.tf);
-    ELSE
-      INSERT INTO VOR (uuid, frequency) VALUES (NEW.uuid, NEW.tf);
-    END IF;
-
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE'
-    THEN
-      UPDATE Navaid
-      SET _transasID = NEW.trID, designator = NEW.nm, name = NEW.nl, type = NEW.tp
-      WHERE Navaid.uuid = OLD.uuid;
-      UPDATE Point
-      SET
-        magneticVariation = NEW.md,
-        latitude          = NEW.latitude,
-        longitude         = NEW.longitude,
-        geom              = NEW.geom
-      WHERE Point.id = OLD.id;
-      UPDATE NDB
-      SET frequency = NEW.tf
-      WHERE NDB.uuid = OLD.uuid OR NDB.uuid = (SELECT Navaid.uuid
-                                               FROM Navaid
-                                               WHERE NEW.tp = 'NDB' AND Navaid.uuid = OLD.uuid);
-      UPDATE DME
-      SET ghostFrequency = NEW.tf
-      WHERE DME.uuid = OLD.uuid OR DME.uuid = (SELECT Navaid.uuid
-                                               FROM Navaid
-                                               WHERE NEW.tp = 'DME' AND Navaid.uuid = OLD.uuid);
-      UPDATE Localizer
-      SET frequency = NEW.tf
-      WHERE Localizer.uuid = OLD.uuid OR Localizer.uuid = (SELECT Navaid.uuid
-                                                           FROM Navaid
-                                                           WHERE NEW.tp = 'ILS_DME' AND Navaid.uuid = OLD.uuid);
-      UPDATE VOR
-      SET frequency = NEW.tf
-      WHERE VOR.uuid = OLD.uuid OR VOR.uuid = (SELECT Navaid.uuid
-                                               FROM Navaid
-                                               WHERE
-                                                 NOT NEW.tp IN ('NDB', 'DME', 'ILS_DME') AND Navaid.uuid = OLD.uuid);
-      RETURN NEW;
-  ELSIF TG_OP = 'DELETE'
-    THEN
-      DELETE FROM Navaid
-      WHERE Navaid.uuid = OLD.uuid;
-      DELETE FROM EnRouteSegmentPoint
-      WHERE EnRouteSegmentPoint.id = (SELECT SegmentPoint.id
-                                      FROM SegmentPoint
-                                      WHERE SegmentPoint.idSignificantPoint =
-                                            (SELECT SignificantPoint.id
-                                             FROM SignificantPoint
-                                             WHERE SignificantPoint.idPoint = OLD.id));
-      DELETE FROM SegmentPoint
-      WHERE SegmentPoint.idSignificantPoint = (SELECT SignificantPoint.id
-                                               FROM SignificantPoint
-                                               WHERE SignificantPoint.idPoint = OLD.id);
-      DELETE FROM SignificantPoint
-      WHERE SignificantPoint.idPoint = OLD.id;
-      DELETE FROM Point
-      WHERE Point.id = OLD.id;
-      DELETE FROM NDB
-      WHERE NDB.uuid = OLD.uuid;
-      DELETE FROM DME
-      WHERE DME.uuid = OLD.uuid;
-      DELETE FROM Localizer
-      WHERE Localizer.uuid = OLD.uuid;
-      DELETE FROM VOR
-      WHERE VOR.uuid = OLD.uuid;
-      RETURN NULL;
-  END IF;
-  RETURN NEW;
-END;
-$function$;
-
-CREATE TRIGGER nav_trigger
-INSTEAD OF INSERT OR UPDATE OR DELETE ON
-  NAV FOR EACH ROW EXECUTE PROCEDURE nav_function();
   */
