@@ -3138,6 +3138,33 @@ INSTEAD OF INSERT OR UPDATE OR DELETE ON
   OBS FOR EACH ROW EXECUTE PROCEDURE obs_function();
 */
 
+-- The conversion function from decimal coordinates to DMS format
+CREATE OR REPLACE FUNCTION DD2DMS( p_dDecDeg       IN FLOAT,
+                                   p_sDegreeSymbol IN VARCHAR(1),
+                                   p_sMinuteSymbol IN VARCHAR(1),
+                                   p_sSecondSymbol IN VARCHAR(1),
+                                   laltlon IN VARCHAR(10))
+RETURNS VARCHAR(50)
+AS
+$BODY$
+DECLARE
+   v_iDeg INT;
+   v_iMin INT;
+   v_dSec INT;
+BEGIN
+   v_iDeg := Trunc(p_dDecDeg)::INT;
+   v_iMin := Trunc(   (Abs(p_dDecDeg) - Abs(v_iDeg)) * 60)::INT;
+   v_dSec := Trunc(((((Abs(p_dDecDeg) - Abs(v_iDeg)) * 60) - v_iMin) * 60)::NUMERIC)::INT;
+   RETURN
+     (case when laltlon::text = 'lon' then LPAD((TRIM(to_char(v_iDeg,'9999')))::text, 3, '0')
+       else TRIM(to_char(v_iDeg,'9999')) end)
+   || p_sDegreeSymbol::text || LPAD((TRIM(to_char(v_iMin,'99')))::text, 2, '0') || p_sMinuteSymbol::text ||
+          CASE WHEN v_dSec = 0::FLOAT THEN '00' ELSE LPAD((TRIM(to_char(v_dSec,'99')))::text, 2, '0') END || p_sSecondSymbol::text;
+END;
+$BODY$
+  LANGUAGE 'plpgsql' IMMUTABLE STRICT
+  COST 100;
+
 
 CREATE OR REPLACE VIEW arp1613 AS
   SELECT
@@ -3214,6 +3241,17 @@ CREATE OR REPLACE VIEW arp1613 AS
       runwaytimeslice.uuidarphlp = cartographylabelarp.uuidarphlp)
           AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2016-12-08' AND
          (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL))),
+    -- coords in DMS
+    (SELECT concat(DD2DMS(point.latitude,'°', '''','"', 'lat'), 'N') as "N"
+      FROM Point, airportheliporttimeslice, timeslice
+      WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT concat(DD2DMS(point.longitude,'°', '''','"', 'lon'), 'E') as "E"
+      FROM Point, airportheliporttimeslice, timeslice
+      WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2016-12-08' AND
+         (TimeSlice.validTimeEnd > '2016-12-08' OR TimeSlice.validTimeEnd is NULL)),
     -- координаты подписи
     CartographyLabelARP.longitude as xlbl,
     CartographyLabelARP.latitude as ylbl,
@@ -3304,6 +3342,17 @@ CREATE OR REPLACE VIEW arp1704 AS
       runwaytimeslice.uuidarphlp = cartographylabelarp.uuidarphlp)
           AND runwaydirectiontimeslice.idtimeslice IN (SELECT timeslice.id From TimeSlice WHERE TimeSlice.validTimeBegin <= '2017-03-30' AND
          (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL))),
+    -- coords in DMS
+    (SELECT concat(DD2DMS(point.latitude,'°', '''','"', 'lat'), 'N') as "N"
+      FROM Point, airportheliporttimeslice, timeslice
+      WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
+    (SELECT concat(DD2DMS(point.longitude,'°', '''','"', 'lon'), 'E') as "E"
+      FROM Point, airportheliporttimeslice, timeslice
+      WHERE Point.id = airportheliporttimeslice.idelevatedpoint AND airportheliporttimeslice.uuid = cartographylabelarp.uuidarphlp  AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id  AND
+           TimeSlice.validTimeBegin <= '2017-03-30' AND
+         (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL)),
     -- координаты подписи
     CartographyLabelARP.longitude as xlbl,
     CartographyLabelARP.latitude as ylbl,
@@ -3317,6 +3366,7 @@ CREATE OR REPLACE VIEW arp1704 AS
   FROM cartographylabelarp WHERE cartographylabelarp.uuidarphlp in (SELECT airportheliporttimeslice.uuid
                   FROM airportheliporttimeslice, timeslice WHERE AirportHeliportTimeSlice.type IS NULL AND AirportHeliportTimeSlice.idTimeSlice  = TimeSlice.id
           AND TimeSlice.validTimeBegin <= '2017-03-30' AND (TimeSlice.validTimeEnd > '2017-03-30' OR TimeSlice.validTimeEnd is NULL));
+
 
 
 CREATE OR REPLACE VIEW als1613 AS
@@ -3517,21 +3567,21 @@ BEGIN
          delete_SrvcRdCmmnctnChnnl AS (DELETE FROM service_radiocommunicationchannel WHERE service_radiocommunicationchannel.uuidservice IN (SELECT delete_SrvcTS.uuid FROM delete_SrvcTS)),
          delete_TSRdCmmnctnChnnl AS (DELETE FROM timeslice WHERE timeslice.id IN (SELECT delete_RdCmmnctnChnnlTS.idtimeslice FROM delete_RdCmmnctnChnnlTS)),
          delete_RdCmmnctnChnnl AS (DELETE FROM RadioCommunicationChannel WHERE RadioCommunicationChannel.uuid IN (SELECT delete_RdCmmnctnChnnlTS.uuid FROM delete_RdCmmnctnChnnlTS)),
-         delete_CrtgrphLblArp AS (DELETE FROM CartographyLabelARP WHERE CartographyLabelARP.id = OLD.gid)
+         delete_CrtgrphLblArp AS (DELETE FROM CartographyLabelARP WHERE CartographyLabelARP.id = OLD.gid),
+         delete_Arp AS (DELETE FROM AirportHeliport
+      WHERE AirportHeliport.uuid = (SELECT CartographyLabelARP.uuidarphlp FROM CartographyLabelARP WHERE id = OLD.gid))
       DELETE FROM ElevatedPoint
         WHERE ElevatedPoint.id IN (SELECT delete_arpTS.idelevatedpoint FROM delete_arpTS);
-      DELETE FROM AirportHeliport
-      WHERE AirportHeliport.uuid = (SELECT CartographyLabelARP.uuidarphlp FROM CartographyLabelARP WHERE id = OLD.gid);
       RETURN NULL;
   END IF;
   RETURN NEW;
 END;
 $function$;
 
-CREATE TRIGGER arp_function
+CREATE TRIGGER arp_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   arp1613 FOR EACH ROW EXECUTE PROCEDURE arp_function();
-CREATE TRIGGER arp_function
+CREATE TRIGGER arp_trigger
 INSTEAD OF INSERT OR UPDATE OR DELETE ON
   arp1704 FOR EACH ROW EXECUTE PROCEDURE arp_function();
 
